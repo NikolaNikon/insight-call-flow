@@ -58,7 +58,33 @@ export const useCalls = () => {
         .order('date', { ascending: false });
       
       if (error) throw error;
-      return data as Call[];
+      
+      // Преобразуем данные для соответствия интерфейсу Call
+      const transformedData = data?.map(call => ({
+        id: call.id,
+        date: call.date,
+        transcription: call.transcription || '',
+        summary: call.summary || '',
+        general_score: call.general_score || 0,
+        user_satisfaction_index: call.user_satisfaction_index || 0,
+        communication_skills: call.communication_skills || 0,
+        sales_technique: call.sales_technique || 0,
+        transcription_score: call.transcription_score || 0,
+        audio_file_url: call.audio_file_url || '',
+        processing_status: call.processing_status || 'pending',
+        customer: call.customers ? {
+          id: call.customers.id,
+          name: call.customers.name,
+          phone_number: call.customers.phone_number
+        } : null,
+        manager: call.managers ? {
+          id: call.managers.id,
+          name: call.managers.name,
+          department: call.managers.department || ''
+        } : null
+      })) || [];
+
+      return transformedData;
     }
   });
 };
