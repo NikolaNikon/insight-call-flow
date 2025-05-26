@@ -48,7 +48,7 @@ interface Manager {
 
 const Search = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedManager, setSelectedManager] = useState("");
+  const [selectedManager, setSelectedManager] = useState("all");
   const [dateFrom, setDateFrom] = useState<Date>();
   const [dateTo, setDateTo] = useState<Date>();
 
@@ -91,7 +91,7 @@ const Search = () => {
         .order('date', { ascending: false });
 
       // Применяем фильтры
-      if (selectedManager) {
+      if (selectedManager && selectedManager !== "all") {
         query = query.eq('manager_id', selectedManager);
       }
 
@@ -142,7 +142,7 @@ const Search = () => {
 
   const handleResetFilters = () => {
     setSearchTerm("");
-    setSelectedManager("");
+    setSelectedManager("all");
     setDateFrom(undefined);
     setDateTo(undefined);
   };
@@ -206,7 +206,7 @@ const Search = () => {
                     <SelectValue placeholder="Выберите менеджера" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Все менеджеры</SelectItem>
+                    <SelectItem value="all">Все менеджеры</SelectItem>
                     {managers.map((manager) => (
                       <SelectItem key={manager.id} value={manager.id}>
                         {manager.name}
