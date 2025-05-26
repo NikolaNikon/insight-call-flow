@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -16,10 +16,35 @@ import {
   Clock,
   Star,
   Play,
-  FileText
+  FileText,
+  Loader2
 } from "lucide-react";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
+
+interface Call {
+  id: string;
+  date: string;
+  transcription: string;
+  summary: string;
+  general_score: number;
+  user_satisfaction_index: number;
+  audio_file_url: string;
+  customer: {
+    name: string;
+    phone_number: string;
+  };
+  manager: {
+    name: string;
+  };
+}
+
+interface Manager {
+  id: string;
+  name: string;
+}
 
 const Search = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -27,54 +52,119 @@ const Search = () => {
   const [dateFrom, setDateFrom] = useState<Date>();
   const [dateTo, setDateTo] = useState<Date>();
 
-  const searchResults = [
-    {
-      id: "CALL-001",
-      customer: "Иван Иванов",
-      phone: "+7 999 123-45-67",
-      manager: "Петров П.",
-      date: "2024-01-15",
-      time: "14:30",
-      duration: "6:32",
-      general: 8.3,
-      satisfaction: 92,
-      summary: "Клиент интересовался бронированием бани на выходные для компании из 8 человек...",
-      keywords: ["бронирование", "выходные", "компания"]
-    },
-    {
-      id: "CALL-002",
-      customer: "Мария Петрова", 
-      phone: "+7 999 234-56-78",
-      manager: "Иванов И.",
-      date: "2024-01-15",
-      time: "15:45",
-      duration: "4:18",
-      general: 8.1,
-      satisfaction: 88,
-      summary: "Звонок по поводу забытых вещей в раздевалке. Клиент оставил шорты...",
-      keywords: ["забытые вещи", "раздевалка", "шорты"]
-    },
-    {
-      id: "CALL-003",
-      customer: "Алексей Сидоров",
-      phone: "+7 999 345-67-89", 
-      manager: "Сидоров С.",
-      date: "2024-01-14",
-      time: "16:20",
-      duration: "8:45",
-      general: 9.1,
-      satisfaction: 95,
-      summary: "Консультация по услугам VIP-зоны и дополнительным опциям. Обсуждение массажа...",
-      keywords: ["VIP-зона", "массаж", "дополнительные услуги"]
+  // Загрузка менеджеров для фильтра
+  const { data: managers = [] } = useQuery({
+    queryKey: ['managers'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('managers')
+        .select('id, name')
+        .order('name');
+      
+      if (error) throw error;
+      return data as Manager[];
     }
-  ];
+  });
 
-  const managers = ["Все менеджеры", "Иванов И.", "Петров П.", "Сидоров С."];
+  // Загрузка звонков с фильтрацией
+  const { data: calls = [], isLoading, refetch } = useQuery({
+    queryKey: ['calls', searchTerm, selectedManager, dateFrom, dateTo],
+    queryFn: async () => {
+      let query = supabase
+        .from('calls')
+        .select(`
+          id,
+          date,
+          transcription,
+          summary,
+          general_score,
+          user_satisfaction_index,
+          audio_file_url,
+          customers:customer_id (
+            name,
+            phone_number
+          ),
+          managers:manager_id (
+            name
+          )
+        `)
+        .order('date', { ascending: false });
+
+      // Применяем фильтры
+      if (selectedManager) {
+        query = query.eq('manager_id', selectedManager);
+      }
+
+      if (dateFrom) {
+        query = query.gte('date', dateFrom.toISOString());
+      }
+
+      if (dateTo) {
+        query = query.lte('date', dateTo.toISOString());
+      }
+
+      const { data, error } = await query;
+      
+      if (error) throw error;
+
+      // Фильтрация по ключевым словам в транскрипции и описании
+      let filteredData = data || [];
+      if (searchTerm) {
+        const searchLower = searchTerm.toLowerCase();
+        filteredData = filteredData.filter(call => 
+          call.transcription?.toLowerCase().includes(searchLower) ||
+          call.summary?.toLowerCase().includes(searchLower)
+        );
+      }
+
+      return filteredData.map(call => ({
+        id: call.id,
+        date: call.date,
+        transcription: call.transcription || '',
+        summary: call.summary || 'Краткое описание недоступно',
+        general_score: call.general_score || 0,
+        user_satisfaction_index: call.user_satisfaction_index || 0,
+        audio_file_url: call.audio_file_url,
+        customer: {
+          name: call.customers?.name || 'Неизвестный клиент',
+          phone_number: call.customers?.phone_number || ''
+        },
+        manager: {
+          name: call.managers?.name || 'Неизвестный менеджер'
+        }
+      })) as Call[];
+    }
+  });
+
+  const handleSearch = () => {
+    refetch();
+  };
+
+  const handleResetFilters = () => {
+    setSearchTerm("");
+    setSelectedManager("");
+    setDateFrom(undefined);
+    setDateTo(undefined);
+  };
 
   const getScoreColor = (score: number) => {
     if (score >= 8.5) return 'text-green-600';
     if (score >= 7.0) return 'text-yellow-600';
     return 'text-red-600';
+  };
+
+  const formatDate = (dateString: string) => {
+    return format(new Date(dateString), "dd.MM.yyyy HH:mm", { locale: ru });
+  };
+
+  const extractKeywords = (text: string) => {
+    if (!text) return [];
+    
+    const commonWords = ['баня', 'бронирование', 'услуги', 'время', 'цена', 'массаж', 'vip'];
+    const words = text.toLowerCase().split(/\s+/);
+    return commonWords.filter(keyword => 
+      words.some(word => word.includes(keyword))
+    ).slice(0, 3);
   };
 
   return (
@@ -116,9 +206,10 @@ const Search = () => {
                     <SelectValue placeholder="Выберите менеджера" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="">Все менеджеры</SelectItem>
                     {managers.map((manager) => (
-                      <SelectItem key={manager} value={manager}>
-                        {manager}
+                      <SelectItem key={manager.id} value={manager.id}>
+                        {manager.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -171,11 +262,11 @@ const Search = () => {
             </div>
 
             <div className="flex gap-3">
-              <Button className="gap-2">
+              <Button className="gap-2" onClick={handleSearch}>
                 <SearchIcon className="h-4 w-4" />
                 Найти
               </Button>
-              <Button variant="outline" className="gap-2">
+              <Button variant="outline" className="gap-2" onClick={handleResetFilters}>
                 <Filter className="h-4 w-4" />
                 Сбросить фильтры
               </Button>
@@ -189,84 +280,92 @@ const Search = () => {
             <div className="flex items-center justify-between">
               <CardTitle>Результаты поиска</CardTitle>
               <Badge variant="outline">
-                Найдено: {searchResults.length} звонков
+                Найдено: {calls.length} звонков
               </Badge>
             </div>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {searchResults.map((call) => (
-                <div key={call.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-4 mb-3">
-                        <div className="flex items-center gap-2">
-                          <User className="h-4 w-4 text-gray-500" />
-                          <span className="font-medium text-gray-900">{call.customer}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-gray-600">
-                          <Phone className="h-3 w-3" />
-                          <span className="text-sm">{call.phone}</span>
-                        </div>
-                        <Badge variant="outline" className="text-xs">
-                          ID: {call.id}
-                        </Badge>
-                      </div>
-
-                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-sm text-gray-600 mb-3">
-                        <div>
-                          <span className="block">Менеджер:</span>
-                          <span className="font-medium">{call.manager}</span>
-                        </div>
-                        <div>
-                          <span className="block">Дата и время:</span>
-                          <span className="font-medium">{call.date} {call.time}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          <span>{call.duration}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Star className="h-3 w-3" />
-                          <span className={`font-medium ${getScoreColor(call.general)}`}>
-                            {call.general}/10
-                          </span>
-                        </div>
-                      </div>
-
-                      <p className="text-sm text-gray-600 mb-3">{call.summary}</p>
-
-                      <div className="flex items-center gap-2 mb-3">
-                        <span className="text-xs text-gray-500">Ключевые слова:</span>
-                        {call.keywords.map((keyword, index) => (
-                          <Badge key={index} variant="secondary" className="text-xs">
-                            {keyword}
+            {isLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin" />
+                <span className="ml-2">Загрузка звонков...</span>
+              </div>
+            ) : calls.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                Звонки не найдены. Попробуйте изменить параметры поиска.
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {calls.map((call) => (
+                  <div key={call.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-4 mb-3">
+                          <div className="flex items-center gap-2">
+                            <User className="h-4 w-4 text-gray-500" />
+                            <span className="font-medium text-gray-900">{call.customer.name}</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-gray-600">
+                            <Phone className="h-3 w-3" />
+                            <span className="text-sm">{call.customer.phone_number}</span>
+                          </div>
+                          <Badge variant="outline" className="text-xs">
+                            ID: {call.id.slice(0, 8)}...
                           </Badge>
-                        ))}
-                      </div>
-
-                      <div className="flex items-center gap-4 text-xs">
-                        <div className="flex items-center gap-1">
-                          <span className="text-gray-500">Удовлетворенность:</span>
-                          <span className="font-medium text-green-600">{call.satisfaction}%</span>
                         </div>
-                      </div>
-                    </div>
 
-                    <div className="flex flex-col gap-2 ml-4">
-                      <Button size="sm" variant="outline" className="gap-2">
-                        <Play className="h-3 w-3" />
-                        Аудио
-                      </Button>
-                      <Button size="sm" variant="outline" className="gap-2">
-                        <FileText className="h-3 w-3" />
-                        Отчет
-                      </Button>
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-sm text-gray-600 mb-3">
+                          <div>
+                            <span className="block">Менеджер:</span>
+                            <span className="font-medium">{call.manager.name}</span>
+                          </div>
+                          <div>
+                            <span className="block">Дата и время:</span>
+                            <span className="font-medium">{formatDate(call.date)}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Star className="h-3 w-3" />
+                            <span className={`font-medium ${getScoreColor(call.general_score)}`}>
+                              {call.general_score}/10
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span className="text-gray-500">Удовлетворенность:</span>
+                            <span className="font-medium text-green-600">{call.user_satisfaction_index * 10}%</span>
+                          </div>
+                        </div>
+
+                        <p className="text-sm text-gray-600 mb-3">{call.summary}</p>
+
+                        {extractKeywords(call.transcription + ' ' + call.summary).length > 0 && (
+                          <div className="flex items-center gap-2 mb-3">
+                            <span className="text-xs text-gray-500">Ключевые слова:</span>
+                            {extractKeywords(call.transcription + ' ' + call.summary).map((keyword, index) => (
+                              <Badge key={index} variant="secondary" className="text-xs">
+                                {keyword}
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex flex-col gap-2 ml-4">
+                        {call.audio_file_url && (
+                          <Button size="sm" variant="outline" className="gap-2">
+                            <Play className="h-3 w-3" />
+                            Аудио
+                          </Button>
+                        )}
+                        <Button size="sm" variant="outline" className="gap-2">
+                          <FileText className="h-3 w-3" />
+                          Отчет
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

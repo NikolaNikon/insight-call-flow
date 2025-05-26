@@ -9,6 +9,161 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      audit_logs: {
+        Row: {
+          action: string
+          details: Json | null
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          ip_address: unknown | null
+          timestamp: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          details?: Json | null
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          ip_address?: unknown | null
+          timestamp?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          details?: Json | null
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          ip_address?: unknown | null
+          timestamp?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      bookings: {
+        Row: {
+          created_at: string
+          customer_id: string
+          id: string
+          party_size: number
+          status: string | null
+          updated_at: string
+          visit_date: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          id?: string
+          party_size?: number
+          status?: string | null
+          updated_at?: string
+          visit_date: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          id?: string
+          party_size?: number
+          status?: string | null
+          updated_at?: string
+          visit_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      calls: {
+        Row: {
+          advice: string | null
+          agent_performance: number | null
+          audio_file_url: string | null
+          communication_skills: number | null
+          created_at: string
+          customer_id: string | null
+          date: string
+          feedback: string | null
+          general_score: number | null
+          id: string
+          manager_id: string | null
+          processing_status: string | null
+          sales_technique: number | null
+          summary: string | null
+          task_id: string | null
+          transcription: string | null
+          transcription_score: number | null
+          updated_at: string
+          user_satisfaction_index: number | null
+        }
+        Insert: {
+          advice?: string | null
+          agent_performance?: number | null
+          audio_file_url?: string | null
+          communication_skills?: number | null
+          created_at?: string
+          customer_id?: string | null
+          date?: string
+          feedback?: string | null
+          general_score?: number | null
+          id?: string
+          manager_id?: string | null
+          processing_status?: string | null
+          sales_technique?: number | null
+          summary?: string | null
+          task_id?: string | null
+          transcription?: string | null
+          transcription_score?: number | null
+          updated_at?: string
+          user_satisfaction_index?: number | null
+        }
+        Update: {
+          advice?: string | null
+          agent_performance?: number | null
+          audio_file_url?: string | null
+          communication_skills?: number | null
+          created_at?: string
+          customer_id?: string | null
+          date?: string
+          feedback?: string | null
+          general_score?: number | null
+          id?: string
+          manager_id?: string | null
+          processing_status?: string | null
+          sales_technique?: number | null
+          summary?: string | null
+          task_id?: string | null
+          transcription?: string | null
+          transcription_score?: number | null
+          updated_at?: string
+          user_satisfaction_index?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calls_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calls_manager_id_fkey"
+            columns: ["manager_id"]
+            isOneToOne: false
+            referencedRelation: "managers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clustering_logs: {
         Row: {
           cluster_method: string | null
@@ -45,6 +200,68 @@ export type Database = {
           start_time?: string | null
           status?: string | null
           total_keywords?: number | null
+        }
+        Relationships: []
+      }
+      customer_issues: {
+        Row: {
+          call_id: string
+          created_at: string
+          id: string
+          issue_description: string | null
+          issue_type: string
+          resolved: boolean | null
+          severity: string | null
+        }
+        Insert: {
+          call_id: string
+          created_at?: string
+          id?: string
+          issue_description?: string | null
+          issue_type: string
+          resolved?: boolean | null
+          severity?: string | null
+        }
+        Update: {
+          call_id?: string
+          created_at?: string
+          id?: string
+          issue_description?: string | null
+          issue_type?: string
+          resolved?: boolean | null
+          severity?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_issues_call_id_fkey"
+            columns: ["call_id"]
+            isOneToOne: false
+            referencedRelation: "calls"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customers: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          phone_number: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          phone_number: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          phone_number?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -358,6 +575,33 @@ export type Database = {
         }
         Relationships: []
       }
+      managers: {
+        Row: {
+          created_at: string
+          department: string | null
+          id: string
+          name: string
+          telegram_chat_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          department?: string | null
+          id?: string
+          name: string
+          telegram_chat_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          department?: string | null
+          id?: string
+          name?: string
+          telegram_chat_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       n8n_chat_histories: {
         Row: {
           id: number
@@ -375,6 +619,47 @@ export type Database = {
           session_id?: string
         }
         Relationships: []
+      }
+      reports: {
+        Row: {
+          data: Json | null
+          file_url: string | null
+          generated_at: string
+          generated_by: string | null
+          id: string
+          parameters: Json | null
+          report_type: string
+          title: string
+        }
+        Insert: {
+          data?: Json | null
+          file_url?: string | null
+          generated_at?: string
+          generated_by?: string | null
+          id?: string
+          parameters?: Json | null
+          report_type: string
+          title: string
+        }
+        Update: {
+          data?: Json | null
+          file_url?: string | null
+          generated_at?: string
+          generated_by?: string | null
+          id?: string
+          parameters?: Json | null
+          report_type?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reports_generated_by_fkey"
+            columns: ["generated_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       seo_positions: {
         Row: {
@@ -394,6 +679,36 @@ export type Database = {
         }
         Relationships: []
       }
+      users: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          is_active: boolean | null
+          name: string
+          role: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          is_active?: boolean | null
+          name: string
+          role: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          role?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -402,6 +717,10 @@ export type Database = {
       binary_quantize: {
         Args: { "": string } | { "": unknown }
         Returns: unknown
+      }
+      get_customer_booking_count: {
+        Args: { customer_uuid: string }
+        Returns: number
       }
       halfvec_avg: {
         Args: { "": number[] }
