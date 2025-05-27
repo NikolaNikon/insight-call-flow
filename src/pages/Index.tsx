@@ -1,4 +1,3 @@
-
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,6 +16,7 @@ import {
 import { CallsChart } from "@/components/CallsChart";
 import { PerformanceMetrics } from "@/components/PerformanceMetrics";
 import { RecentCalls } from "@/components/RecentCalls";
+import Header from "@/components/Header";
 import { useCallStats } from "@/hooks/useCalls";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -134,19 +134,7 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="bg-white rounded-lg shadow-sm border p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">CallControl</h1>
-              <p className="text-gray-600">Система контроля и аналитики звонков менеджеров</p>
-            </div>
-            <Badge variant="outline" className="text-green-600 border-green-200">
-              <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-              Система активна
-            </Badge>
-          </div>
-        </div>
+        <Header />
 
         {/* Quick Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
