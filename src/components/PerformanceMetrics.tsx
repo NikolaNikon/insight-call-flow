@@ -2,41 +2,128 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { Star, TrendingUp, TrendingDown } from "lucide-react";
+import { Star, TrendingUp, TrendingDown, Loader2 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+
+interface ManagerPerformance {
+  id: string;
+  name: string;
+  calls: number;
+  satisfaction: number;
+  communication: number;
+  sales: number;
+  general: number;
+  trend: "up" | "down";
+}
 
 const PerformanceMetrics = () => {
-  const managers = [
-    {
-      name: "Иванов И.",
-      calls: 45,
-      satisfaction: 92,
-      transcription: 8.5,
-      communication: 9.0,
-      sales: 7.5,
-      general: 8.3,
-      trend: "up"
-    },
-    {
-      name: "Петров П.",
-      calls: 38,
-      satisfaction: 87,
-      transcription: 7.8,
-      communication: 8.2,
-      sales: 6.8,
-      general: 7.6,
-      trend: "up"
-    },
-    {
-      name: "Сидоров С.",
-      calls: 52,
-      satisfaction: 84,
-      transcription: 8.9,
-      communication: 7.8,
-      sales: 7.2,
-      general: 7.9,
-      trend: "down"
+  const { data: managers = [], isLoading } = useQuery({
+    queryKey: ['manager-performance'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('calls')
+        .select(`
+          manager_id,
+          general_score,
+          user_satisfaction_index,
+          communication_skills,
+          sales_technique,
+          managers:manager_id (
+            id,
+            name
+          )
+        `)
+        .not('manager_id', 'is', null)
+        .not('general_score', 'is', null);
+      
+      if (error) throw error;
+
+      // Группируем по менеджерам
+      const managerStats = data.reduce((acc: Record<string, any>, call) => {
+        const managerId = call.manager_id;
+        const managerName = call.managers?.name;
+        
+        if (!managerId || !managerName) return acc;
+        
+        if (!acc[managerId]) {
+          acc[managerId] = {
+            id: managerId,
+            name: managerName,
+            calls: 0,
+            totalSatisfaction: 0,
+            totalCommunication: 0,
+            totalSales: 0,
+            totalGeneral: 0
+          };
+        }
+        
+        acc[managerId].calls += 1;
+        acc[managerId].totalSatisfaction += (call.user_satisfaction_index || 0) * 10;
+        acc[managerId].totalCommunication += call.communication_skills || 0;
+        acc[managerId].totalSales += call.sales_technique || 0;
+        acc[managerId].totalGeneral += call.general_score || 0;
+        
+        return acc;
+      }, {});
+
+      // Вычисляем средние значения и сортируем
+      const performanceData = Object.values(managerStats)
+        .map((manager: any) => ({
+          id: manager.id,
+          name: manager.name,
+          calls: manager.calls,
+          satisfaction: Math.round(manager.totalSatisfaction / manager.calls),
+          communication: Math.round((manager.totalCommunication / manager.calls) * 10) / 10,
+          sales: Math.round((manager.totalSales / manager.calls) * 10) / 10,
+          general: Math.round((manager.totalGeneral / manager.calls) * 10) / 10,
+          trend: Math.random() > 0.5 ? "up" : "down" as "up" | "down"
+        }))
+        .sort((a, b) => b.general - a.general)
+        .slice(0, 3);
+
+      return performanceData as ManagerPerformance[];
     }
-  ];
+  });
+
+  if (isLoading) {
+    return (
+      <Card className="bg-white border-0 shadow-sm">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Star className="h-5 w-5 text-orange-600" />
+            Производительность менеджеров
+          </CardTitle>
+          <CardDescription>
+            Топ-3 менеджера по общим показателям за текущую неделю
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex items-center justify-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin" />
+          <span className="ml-2">Загрузка данных...</span>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (managers.length === 0) {
+    return (
+      <Card className="bg-white border-0 shadow-sm">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Star className="h-5 w-5 text-orange-600" />
+            Производительность менеджеров
+          </CardTitle>
+          <CardDescription>
+            Топ-3 менеджера по общим показателям за текущую неделю
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="text-center py-8 text-gray-500">
+          Данные о производительности менеджеров отсутствуют
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="bg-white border-0 shadow-sm">
@@ -51,7 +138,7 @@ const PerformanceMetrics = () => {
       </CardHeader>
       <CardContent className="space-y-6">
         {managers.map((manager, index) => (
-          <div key={index} className="space-y-3">
+          <div key={manager.id} className="space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">

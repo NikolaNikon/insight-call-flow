@@ -12,20 +12,63 @@ import {
   BarChart3,
   FileText,
   Settings,
-  HeartHandshake,
-  Star
+  HeartHandshake
 } from "lucide-react";
 import { CallsChart } from "@/components/CallsChart";
 import { PerformanceMetrics } from "@/components/PerformanceMetrics";
 import { RecentCalls } from "@/components/RecentCalls";
+import { useCallStats } from "@/hooks/useCalls";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
   const navigate = useNavigate();
+  const { data: callStats } = useCallStats();
+
+  // Получаем количество активных менеджеров
+  const { data: managersCount = 0 } = useQuery({
+    queryKey: ['managers-count'],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('managers')
+        .select('*', { count: 'exact', head: true });
+      
+      if (error) throw error;
+      return count || 0;
+    }
+  });
+
+  // Получаем среднее время обработки звонков
+  const { data: avgProcessingTime = "0 мин" } = useQuery({
+    queryKey: ['avg-processing-time'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('calls')
+        .select('date, created_at')
+        .not('date', 'is', null)
+        .not('created_at', 'is', null);
+      
+      if (error) throw error;
+      
+      if (!data || data.length === 0) return "0 мин";
+      
+      // Вычисляем среднее время обработки (в минутах)
+      const totalTime = data.reduce((sum, call) => {
+        const start = new Date(call.created_at);
+        const end = new Date(call.date);
+        const diff = Math.abs(end.getTime() - start.getTime()) / (1000 * 60);
+        return sum + diff;
+      }, 0);
+      
+      const avgTime = totalTime / data.length;
+      return `${Math.round(avgTime)} мин`;
+    }
+  });
 
   const quickStats = [
     {
       title: "Всего звонков",
-      value: "1,247",
+      value: callStats?.totalCalls?.toString() || "0",
       change: "+12%",
       changeType: "positive" as const,
       icon: Phone,
@@ -33,7 +76,7 @@ const Index = () => {
     },
     {
       title: "Активных менеджеров",
-      value: "24",
+      value: managersCount.toString(),
       change: "+2",
       changeType: "positive" as const,
       icon: Users,
@@ -41,7 +84,7 @@ const Index = () => {
     },
     {
       title: "Время обработки",
-      value: "6.2 мин",
+      value: avgProcessingTime,
       change: "-8%",
       changeType: "positive" as const,
       icon: Clock,
@@ -49,7 +92,7 @@ const Index = () => {
     },
     {
       title: "Удовлетворенность",
-      value: "87%",
+      value: `${callStats?.avgSatisfaction || 0}%`,
       change: "+5%",
       changeType: "positive" as const,
       icon: HeartHandshake,
