@@ -9,11 +9,10 @@ import { AuthProvider } from "./hooks/useAuth";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
-import Search from "./pages/Search";
+import Calls from "./pages/Calls";
 import Analytics from "./pages/Analytics";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
-import Users from "./pages/Users";
 import NotFound from "./pages/NotFound";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "./components/AppSidebar";
@@ -28,70 +27,36 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <SidebarProvider>
-            <div className="min-h-screen flex w-full">
-              <AppSidebar />
-              <SidebarInset>
-                <div className="flex-1 flex flex-col">
-                  <UpdatedHeader />
-                  <main className="flex-1">
-                    <Routes>
-                      <Route path="/auth" element={<Auth />} />
-                      <Route
-                        path="/"
-                        element={
-                          <ProtectedRoute>
-                            <Index />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/search"
-                        element={
-                          <ProtectedRoute>
-                            <Search />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/analytics"
-                        element={
-                          <ProtectedRoute>
-                            <Analytics />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/reports"
-                        element={
-                          <ProtectedRoute>
-                            <Reports />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/users"
-                        element={
-                          <ProtectedRoute>
-                            <Users />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/settings"
-                        element={
-                          <ProtectedRoute>
-                            <Settings />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route path="*" element={<NotFound />} />
-                    </Routes>
-                  </main>
-                </div>
-              </SidebarInset>
-            </div>
-          </SidebarProvider>
+          <Routes>
+            <Route path="/auth" element={<Auth />} />
+            <Route
+              path="/*"
+              element={
+                <ProtectedRoute>
+                  <SidebarProvider>
+                    <div className="min-h-screen flex w-full">
+                      <AppSidebar />
+                      <SidebarInset>
+                        <div className="flex-1 flex flex-col">
+                          <UpdatedHeader />
+                          <main className="flex-1">
+                            <Routes>
+                              <Route path="/" element={<Index />} />
+                              <Route path="/calls" element={<Calls />} />
+                              <Route path="/analytics" element={<Analytics />} />
+                              <Route path="/reports" element={<Reports />} />
+                              <Route path="/settings" element={<Settings />} />
+                              <Route path="*" element={<NotFound />} />
+                            </Routes>
+                          </main>
+                        </div>
+                      </SidebarInset>
+                    </div>
+                  </SidebarProvider>
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
         </BrowserRouter>
       </TooltipProvider>
     </AuthProvider>

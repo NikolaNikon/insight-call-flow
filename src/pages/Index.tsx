@@ -1,3 +1,4 @@
+
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,7 +17,6 @@ import {
 import { CallsChart } from "@/components/CallsChart";
 import { PerformanceMetrics } from "@/components/PerformanceMetrics";
 import { RecentCalls } from "@/components/RecentCalls";
-import Header from "@/components/Header";
 import { useCallStats } from "@/hooks/useCalls";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -72,7 +72,7 @@ const Index = () => {
       change: "+12%",
       changeType: "positive" as const,
       icon: Phone,
-      color: "bg-blue-500"
+      color: "bg-blue"
     },
     {
       title: "Активных менеджеров",
@@ -80,7 +80,7 @@ const Index = () => {
       change: "+2",
       changeType: "positive" as const,
       icon: Users,
-      color: "bg-green-500"
+      color: "bg-green"
     },
     {
       title: "Время обработки",
@@ -88,7 +88,7 @@ const Index = () => {
       change: "-8%",
       changeType: "positive" as const,
       icon: Clock,
-      color: "bg-orange-500"
+      color: "bg-beige"
     },
     {
       title: "Удовлетворенность",
@@ -96,46 +96,44 @@ const Index = () => {
       change: "+5%",
       changeType: "positive" as const,
       icon: HeartHandshake,
-      color: "bg-purple-500"
+      color: "bg-primary"
     }
   ];
 
   const quickActions = [
     {
-      title: "Поиск звонков",
+      title: "Звонки",
       description: "Найти записи по ключевым словам, имени или номеру",
       icon: Search,
-      action: () => navigate("/search"),
-      color: "bg-blue-50 hover:bg-blue-100"
+      action: () => navigate("/calls"),
+      color: "bg-blue-50 hover:bg-blue-100 border-blue-200"
     },
     {
       title: "Аналитика",
       description: "Просмотр детальной аналитики и дашбордов",
       icon: BarChart3,
       action: () => navigate("/analytics"),
-      color: "bg-green-50 hover:bg-green-100"
+      color: "bg-green-50 hover:bg-green-100 border-green/20"
     },
     {
       title: "Отчеты",
       description: "Создание и просмотр отчетов по менеджерам",
       icon: FileText,
       action: () => navigate("/reports"),
-      color: "bg-orange-50 hover:bg-orange-100"
+      color: "bg-beige/10 hover:bg-beige/20 border-beige/20"
     },
     {
       title: "Настройки",
       description: "Управление пользователями и системой",
       icon: Settings,
       action: () => navigate("/settings"),
-      color: "bg-purple-50 hover:bg-purple-100"
+      color: "bg-primary/10 hover:bg-primary/20 border-primary/20"
     }
   ];
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
-        <Header />
-
         {/* Quick Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {quickStats.map((stat, index) => {
@@ -155,7 +153,7 @@ const Index = () => {
                     </Badge>
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-gray-900 mb-1">{stat.value}</p>
+                    <p className="text-2xl font-bold text-graphite mb-1">{stat.value}</p>
                     <p className="text-sm text-gray-600">{stat.title}</p>
                   </div>
                 </CardContent>
@@ -167,7 +165,7 @@ const Index = () => {
         {/* Quick Actions */}
         <Card className="bg-white border-0 shadow-sm">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-graphite">
               <TrendingUp className="h-5 w-5" />
               Быстрые действия
             </CardTitle>
@@ -183,12 +181,12 @@ const Index = () => {
                   <Button
                     key={index}
                     variant="ghost"
-                    className={`h-auto p-4 flex flex-col items-start gap-3 ${action.color} border border-gray-200`}
+                    className={`h-auto p-4 flex flex-col items-start gap-3 ${action.color} border`}
                     onClick={action.action}
                   >
-                    <Icon className="h-6 w-6 text-gray-700" />
+                    <Icon className="h-6 w-6 text-graphite" />
                     <div className="text-left">
-                      <p className="font-medium text-gray-900">{action.title}</p>
+                      <p className="font-semibold text-graphite">{action.title}</p>
                       <p className="text-xs text-gray-600 mt-1">{action.description}</p>
                     </div>
                   </Button>

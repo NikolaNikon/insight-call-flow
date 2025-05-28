@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { 
   Settings as SettingsIcon, 
   Users, 
@@ -15,48 +16,35 @@ import {
   Database,
   Bell,
   Mail,
-  Plus,
   Edit,
   Trash2,
   Key,
-  Bot
+  Bot,
+  HelpCircle,
+  Loader2
 } from "lucide-react";
+import { CreateUserDialog } from "@/components/CreateUserDialog";
+import { useToast } from "@/hooks/use-toast";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 const Settings = () => {
-  const [users, setUsers] = useState([
-    {
-      id: 1,
-      name: "Администратор",
-      email: "admin@callcontrol.ru",
-      role: "admin",
-      status: "active",
-      lastLogin: "2024-01-22 14:30"
-    },
-    {
-      id: 2,
-      name: "Иванов Иван",
-      email: "ivanov@callcontrol.ru", 
-      role: "manager",
-      status: "active",
-      lastLogin: "2024-01-22 12:15"
-    },
-    {
-      id: 3,
-      name: "Петров Петр",
-      email: "petrov@callcontrol.ru",
-      role: "analyst",
-      status: "active", 
-      lastLogin: "2024-01-21 16:45"
-    },
-    {
-      id: 4,
-      name: "Сидоров Семен",
-      email: "sidorov@callcontrol.ru",
-      role: "manager",
-      status: "inactive",
-      lastLogin: "2024-01-18 09:20"
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+  
+  // Загружаем пользователей
+  const { data: users = [], refetch: refetchUsers } = useQuery({
+    queryKey: ['users'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data;
     }
-  ]);
+  });
 
   const [systemSettings, setSystemSettings] = useState({
     autoAnalysis: true,
@@ -71,21 +59,64 @@ const Settings = () => {
     switch (role) {
       case 'admin': return 'bg-red-100 text-red-800';
       case 'manager': return 'bg-blue-100 text-blue-800';
-      case 'analyst': return 'bg-green-100 text-green-800';
+      case 'operator': return 'bg-green-100 text-green-800';
+      case 'viewer': return 'bg-gray-100 text-gray-800';
       default: return 'bg-gray-100 text-gray-800';
     }
-  };
-
-  const getStatusColor = (status: string) => {
-    return status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800';
   };
 
   const getRoleText = (role: string) => {
     switch (role) {
       case 'admin': return 'Администратор';
       case 'manager': return 'Менеджер';
-      case 'analyst': return 'Аналитик';
+      case 'operator': return 'Оператор';
+      case 'viewer': return 'Наблюдатель';
       default: return 'Пользователь';
+    }
+  };
+
+  const handleSaveSecuritySettings = async () => {
+    setIsLoading(true);
+    try {
+      // Здесь будет логика сохранения настроек безопасности
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Имитация API запроса
+      
+      toast({
+        title: "Успешно!",
+        description: "Настройки безопасности сохранены.",
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Ошибка",
+        description: "Не удалось сохранить настройки безопасности.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    try {
+      const { error } = await supabase
+        .from('users')
+        .delete()
+        .eq('id', userId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Успешно!",
+        description: "Пользователь удален.",
+      });
+      
+      refetchUsers();
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Ошибка",
+        description: error.message || "Не удалось удалить пользователя.",
+      });
     }
   };
 
@@ -94,7 +125,7 @@ const Settings = () => {
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="bg-white rounded-lg shadow-sm border p-6">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Настройки</h1>
+          <h1 className="text-3xl font-bold text-graphite mb-2">Настройки</h1>
           <p className="text-gray-600">Управление пользователями, системными настройками и интеграциями</p>
         </div>
 
@@ -111,7 +142,7 @@ const Settings = () => {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="flex items-center gap-2">
+                    <CardTitle className="flex items-center gap-2 text-graphite">
                       <Users className="h-5 w-5" />
                       Управление пользователями
                     </CardTitle>
@@ -119,10 +150,7 @@ const Settings = () => {
                       Добавление, редактирование и управление доступом пользователей
                     </CardDescription>
                   </div>
-                  <Button className="gap-2">
-                    <Plus className="h-4 w-4" />
-                    Добавить пользователя
-                  </Button>
+                  <CreateUserDialog onUserCreated={refetchUsers} />
                 </div>
               </CardHeader>
               <CardContent>
@@ -131,17 +159,17 @@ const Settings = () => {
                     <div key={user.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
-                          <span className="font-medium text-gray-900">{user.name}</span>
+                          <span className="font-semibold text-graphite">{user.name}</span>
                           <Badge className={getRoleColor(user.role)}>
                             {getRoleText(user.role)}
                           </Badge>
-                          <Badge className={getStatusColor(user.status)}>
-                            {user.status === 'active' ? 'Активный' : 'Неактивный'}
+                          <Badge className="bg-green-100 text-green-800">
+                            Активный
                           </Badge>
                         </div>
                         <div className="text-sm text-gray-600 space-x-4">
                           <span>{user.email}</span>
-                          <span>Последний вход: {user.lastLogin}</span>
+                          <span>Создан: {new Date(user.created_at).toLocaleDateString('ru-RU')}</span>
                         </div>
                       </div>
                       <div className="flex gap-2">
@@ -149,7 +177,12 @@ const Settings = () => {
                           <Edit className="h-3 w-3" />
                           Редактировать
                         </Button>
-                        <Button size="sm" variant="outline" className="gap-2 text-red-600 hover:text-red-700">
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          className="gap-2 text-red-600 hover:text-red-700"
+                          onClick={() => handleDeleteUser(user.id)}
+                        >
                           <Trash2 className="h-3 w-3" />
                           Удалить
                         </Button>
@@ -165,7 +198,7 @@ const Settings = () => {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <Card className="bg-white border-0 shadow-sm">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
+                  <CardTitle className="flex items-center gap-2 text-graphite">
                     <SettingsIcon className="h-5 w-5" />
                     Системные настройки
                   </CardTitle>
@@ -176,7 +209,7 @@ const Settings = () => {
                 <CardContent className="space-y-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <Label htmlFor="auto-analysis" className="text-sm font-medium">
+                      <Label htmlFor="auto-analysis" className="text-sm font-semibold text-graphite">
                         Автоматический анализ звонков
                       </Label>
                       <p className="text-sm text-gray-500">
@@ -194,7 +227,7 @@ const Settings = () => {
 
                   <div className="flex items-center justify-between">
                     <div>
-                      <Label htmlFor="backup" className="text-sm font-medium">
+                      <Label htmlFor="backup" className="text-sm font-semibold text-graphite">
                         Автоматическое резервное копирование
                       </Label>
                       <p className="text-sm text-gray-500">
@@ -211,7 +244,7 @@ const Settings = () => {
                   </div>
 
                   <div>
-                    <Label htmlFor="retention" className="text-sm font-medium mb-2 block">
+                    <Label htmlFor="retention" className="text-sm font-semibold text-graphite mb-2 block">
                       Срок хранения данных (месяцы)
                     </Label>
                     <Select 
@@ -237,7 +270,7 @@ const Settings = () => {
 
               <Card className="bg-white border-0 shadow-sm">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
+                  <CardTitle className="flex items-center gap-2 text-graphite">
                     <Bell className="h-5 w-5" />
                     Уведомления
                   </CardTitle>
@@ -248,7 +281,7 @@ const Settings = () => {
                 <CardContent className="space-y-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <Label htmlFor="email-notifications" className="text-sm font-medium">
+                      <Label htmlFor="email-notifications" className="text-sm font-semibold text-graphite">
                         Email уведомления
                       </Label>
                       <p className="text-sm text-gray-500">
@@ -266,7 +299,7 @@ const Settings = () => {
 
                   <div className="flex items-center justify-between">
                     <div>
-                      <Label htmlFor="telegram-notifications" className="text-sm font-medium">
+                      <Label htmlFor="telegram-notifications" className="text-sm font-semibold text-graphite">
                         Telegram уведомления
                       </Label>
                       <p className="text-sm text-gray-500">
@@ -283,7 +316,7 @@ const Settings = () => {
                   </div>
 
                   <div>
-                    <Label htmlFor="email-server" className="text-sm font-medium mb-2 block">
+                    <Label htmlFor="email-server" className="text-sm font-semibold text-graphite mb-2 block">
                       SMTP сервер
                     </Label>
                     <Input 
@@ -305,7 +338,7 @@ const Settings = () => {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <Card className="bg-white border-0 shadow-sm">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
+                  <CardTitle className="flex items-center gap-2 text-graphite">
                     <Bot className="h-5 w-5" />
                     Telegram бот
                   </CardTitle>
@@ -315,7 +348,7 @@ const Settings = () => {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <Label htmlFor="bot-token" className="text-sm font-medium mb-2 block">
+                    <Label htmlFor="bot-token" className="text-sm font-semibold text-graphite mb-2 block">
                       Токен бота
                     </Label>
                     <Input 
@@ -325,15 +358,32 @@ const Settings = () => {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="chat-id" className="text-sm font-medium mb-2 block">
-                      ID чата для уведомлений
-                    </Label>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Label htmlFor="chat-id" className="text-sm font-semibold text-graphite">
+                        ID чата для уведомлений
+                      </Label>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <HelpCircle className="h-4 w-4 text-gray-400 cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="max-w-xs">
+                              Для получения ID чата:<br />
+                              1. Добавьте бота @userinfobot в Telegram<br />
+                              2. Отправьте ему любое сообщение<br />
+                              3. Скопируйте ID из ответа
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
                     <Input 
                       id="chat-id"
                       placeholder="-1001234567890"
                     />
                   </div>
-                  <Button className="w-full">
+                  <Button className="w-full bg-primary hover:bg-primary/90">
                     Проверить подключение
                   </Button>
                 </CardContent>
@@ -341,7 +391,7 @@ const Settings = () => {
 
               <Card className="bg-white border-0 shadow-sm">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
+                  <CardTitle className="flex items-center gap-2 text-graphite">
                     <Database className="h-5 w-5" />
                     CRM интеграция
                   </CardTitle>
@@ -351,7 +401,7 @@ const Settings = () => {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <Label htmlFor="crm-url" className="text-sm font-medium mb-2 block">
+                    <Label htmlFor="crm-url" className="text-sm font-semibold text-graphite mb-2 block">
                       URL API
                     </Label>
                     <Input 
@@ -360,7 +410,7 @@ const Settings = () => {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="api-key" className="text-sm font-medium mb-2 block">
+                    <Label htmlFor="api-key" className="text-sm font-semibold text-graphite mb-2 block">
                       API ключ
                     </Label>
                     <Input 
@@ -370,12 +420,12 @@ const Settings = () => {
                     />
                   </div>
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="sync-enabled" className="text-sm font-medium">
+                    <Label htmlFor="sync-enabled" className="text-sm font-semibold text-graphite">
                       Автоматическая синхронизация
                     </Label>
                     <Switch id="sync-enabled" />
                   </div>
-                  <Button className="w-full">
+                  <Button className="w-full bg-primary hover:bg-primary/90">
                     Тестировать соединение
                   </Button>
                 </CardContent>
@@ -383,7 +433,7 @@ const Settings = () => {
 
               <Card className="bg-white border-0 shadow-sm">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
+                  <CardTitle className="flex items-center gap-2 text-graphite">
                     <Key className="h-5 w-5" />
                     API настройки
                   </CardTitle>
@@ -393,7 +443,7 @@ const Settings = () => {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <Label htmlFor="ai-api-url" className="text-sm font-medium mb-2 block">
+                    <Label htmlFor="ai-api-url" className="text-sm font-semibold text-graphite mb-2 block">
                       URL API анализа
                     </Label>
                     <Input 
@@ -402,7 +452,7 @@ const Settings = () => {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="ai-api-key" className="text-sm font-medium mb-2 block">
+                    <Label htmlFor="ai-api-key" className="text-sm font-semibold text-graphite mb-2 block">
                       API ключ
                     </Label>
                     <Input 
@@ -413,7 +463,7 @@ const Settings = () => {
                   </div>
                   <div className="flex items-center justify-between">
                     <div>
-                      <Label htmlFor="api-enabled" className="text-sm font-medium">
+                      <Label htmlFor="api-enabled" className="text-sm font-semibold text-graphite">
                         API включен
                       </Label>
                       <p className="text-sm text-gray-500">
@@ -428,7 +478,7 @@ const Settings = () => {
                       }
                     />
                   </div>
-                  <Button className="w-full">
+                  <Button className="w-full bg-primary hover:bg-primary/90">
                     Проверить API
                   </Button>
                 </CardContent>
@@ -439,7 +489,7 @@ const Settings = () => {
           <TabsContent value="security" className="space-y-6">
             <Card className="bg-white border-0 shadow-sm">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 text-graphite">
                   <Shield className="h-5 w-5" />
                   Безопасность и доступ
                 </CardTitle>
@@ -450,17 +500,17 @@ const Settings = () => {
               <CardContent className="space-y-6">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <div className="space-y-4">
-                    <h4 className="font-medium text-gray-900">Политики паролей</h4>
+                    <h4 className="font-semibold text-graphite">Политики паролей</h4>
                     
                     <div className="flex items-center justify-between">
-                      <Label htmlFor="password-complexity" className="text-sm font-medium">
+                      <Label htmlFor="password-complexity" className="text-sm font-semibold text-graphite">
                         Сложные пароли
                       </Label>
                       <Switch id="password-complexity" defaultChecked />
                     </div>
                     
                     <div>
-                      <Label htmlFor="password-length" className="text-sm font-medium mb-2 block">
+                      <Label htmlFor="password-length" className="text-sm font-semibold text-graphite mb-2 block">
                         Минимальная длина пароля
                       </Label>
                       <Select defaultValue="8">
@@ -477,7 +527,7 @@ const Settings = () => {
                     </div>
 
                     <div>
-                      <Label htmlFor="session-timeout" className="text-sm font-medium mb-2 block">
+                      <Label htmlFor="session-timeout" className="text-sm font-semibold text-graphite mb-2 block">
                         Время сессии (часы)
                       </Label>
                       <Select defaultValue="8">
@@ -495,24 +545,24 @@ const Settings = () => {
                   </div>
 
                   <div className="space-y-4">
-                    <h4 className="font-medium text-gray-900">Аудит и логирование</h4>
+                    <h4 className="font-semibold text-graphite">Аудит и логирование</h4>
                     
                     <div className="flex items-center justify-between">
-                      <Label htmlFor="audit-log" className="text-sm font-medium">
+                      <Label htmlFor="audit-log" className="text-sm font-semibold text-graphite">
                         Журнал аудита
                       </Label>
                       <Switch id="audit-log" defaultChecked />
                     </div>
                     
                     <div className="flex items-center justify-between">
-                      <Label htmlFor="failed-login" className="text-sm font-medium">
+                      <Label htmlFor="failed-login" className="text-sm font-semibold text-graphite">
                         Логировать неудачные входы
                       </Label>
                       <Switch id="failed-login" defaultChecked />
                     </div>
                     
                     <div className="flex items-center justify-between">
-                      <Label htmlFor="data-access" className="text-sm font-medium">
+                      <Label htmlFor="data-access" className="text-sm font-semibold text-graphite">
                         Логировать доступ к данным
                       </Label>
                       <Switch id="data-access" defaultChecked />
@@ -527,7 +577,7 @@ const Settings = () => {
                 <div className="pt-6 border-t border-gray-200">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h4 className="font-medium text-gray-900">Двухфакторная аутентификация</h4>
+                      <h4 className="font-semibold text-graphite">Двухфакторная аутентификация</h4>
                       <p className="text-sm text-gray-500">
                         Требовать 2FA для всех пользователей
                       </p>
@@ -537,7 +587,12 @@ const Settings = () => {
                 </div>
 
                 <div className="pt-6 border-t border-gray-200">
-                  <Button className="w-full">
+                  <Button 
+                    className="w-full bg-primary hover:bg-primary/90"
+                    onClick={handleSaveSecuritySettings}
+                    disabled={isLoading}
+                  >
+                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Сохранить настройки безопасности
                   </Button>
                 </div>
