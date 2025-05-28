@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -16,6 +15,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
+import { CallProcessingStatus } from "./CallProcessingStatus";
 
 interface RecentCall {
   id: string;
@@ -34,6 +34,7 @@ interface RecentCall {
   sales_technique: number;
   transcription_score: number;
   audio_file_url?: string;
+  processing_status: string;
 }
 
 const RecentCalls = () => {
@@ -52,6 +53,7 @@ const RecentCalls = () => {
           sales_technique,
           transcription_score,
           audio_file_url,
+          processing_status,
           customers:customer_id (
             name,
             phone_number
@@ -81,7 +83,8 @@ const RecentCalls = () => {
         communication_skills: call.communication_skills || 0,
         sales_technique: call.sales_technique || 0,
         transcription_score: call.transcription_score || 0,
-        audio_file_url: call.audio_file_url
+        audio_file_url: call.audio_file_url,
+        processing_status: call.processing_status || 'pending'
       })) as RecentCall[] || [];
     }
   });
@@ -175,9 +178,7 @@ const RecentCalls = () => {
                       <User className="h-4 w-4 text-gray-500" />
                       <span className="font-medium text-gray-900">{call.customer.name}</span>
                     </div>
-                    <Badge className="bg-green-100 text-green-800">
-                      Завершен
-                    </Badge>
+                    <CallProcessingStatus status={call.processing_status} />
                   </div>
                   
                   <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-sm text-gray-600 mb-3">
