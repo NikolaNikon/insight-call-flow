@@ -22,15 +22,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
 
         // Create user profile if it doesn't exist
         if (session?.user && event === 'SIGNED_IN') {
-          // Используем setTimeout для предотвращения блокировки и корректной очистки
-          const timeoutId = setTimeout(async () => {
+          // Use setTimeout to prevent blocking and ensure proper cleanup
+          setTimeout(async () => {
             try {
               const { data: existingUser } = await supabase
                 .from('users')
@@ -52,9 +52,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               console.error('Error creating user profile:', error);
             }
           }, 0);
-
-          // Возвращаем функцию очистки для предотвращения утечек памяти
-          return () => clearTimeout(timeoutId);
         }
       }
     );
