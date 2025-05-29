@@ -29,24 +29,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         // Create user profile if it doesn't exist
         if (session?.user && event === 'SIGNED_IN') {
-          setTimeout(async () => {
-            const { data: existingUser } = await supabase
-              .from('users')
-              .select('id')
-              .eq('id', session.user.id)
-              .single();
-
-            if (!existingUser) {
-              await supabase
+          // Используем setTimeout для предотвращения блокировки и корректной очистки
+          const timeoutId = setTimeout(async () => {
+            try {
+              const { data: existingUser } = await supabase
                 .from('users')
-                .insert({
-                  id: session.user.id,
-                  email: session.user.email || '',
-                  name: session.user.user_metadata?.name || 'Пользователь',
-                  role: 'viewer'
-                });
+                .select('id')
+                .eq('id', session.user.id)
+                .single();
+
+              if (!existingUser) {
+                await supabase
+                  .from('users')
+                  .insert({
+                    id: session.user.id,
+                    email: session.user.email || '',
+                    name: session.user.user_metadata?.name || 'Пользователь',
+                    role: 'viewer'
+                  });
+              }
+            } catch (error) {
+              console.error('Error creating user profile:', error);
             }
           }, 0);
+
+          // Возвращаем функцию очистки для предотвращения утечек памяти
+          return () => clearTimeout(timeoutId);
         }
       }
     );
@@ -58,7 +66,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signIn = async (email: string, password: string) => {

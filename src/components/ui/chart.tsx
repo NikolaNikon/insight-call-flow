@@ -1,5 +1,6 @@
 import * as React from "react"
 import * as RechartsPrimitive from "recharts"
+import DOMPurify from 'dompurify'
 
 import { cn } from "@/lib/utils"
 
@@ -65,6 +66,11 @@ const ChartContainer = React.forwardRef<
 })
 ChartContainer.displayName = "Chart"
 
+const sanitizeCSSValue = (value: string): string => {
+  // Удаляем потенциально опасные символы для CSS
+  return value.replace(/[<>"']/g, '').replace(/javascript:/gi, '').replace(/expression\(/gi, '');
+}
+
 const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
   const colorConfig = Object.entries(config).filter(
     ([_, config]) => config.theme || config.color
@@ -74,25 +80,40 @@ const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
     return null
   }
 
-  return (
-    <style
-      dangerouslySetInnerHTML={{
-        __html: Object.entries(THEMES)
-          .map(
-            ([theme, prefix]) => `
-${prefix} [data-chart=${id}] {
+  // Санитизируем ID для предотвращения XSS
+  const sanitizedId = sanitizeCSSValue(id)
+
+  const cssContent = Object.entries(THEMES)
+    .map(
+      ([theme, prefix]) => `
+${prefix} [data-chart=${sanitizedId}] {
 ${colorConfig
   .map(([key, itemConfig]) => {
     const color =
       itemConfig.theme?.[theme as keyof typeof itemConfig.theme] ||
       itemConfig.color
-    return color ? `  --color-${key}: ${color};` : null
+    // Санитизируем цвет и ключ
+    const sanitizedKey = sanitizeCSSValue(key)
+    const sanitizedColor = color ? sanitizeCSSValue(color) : null
+    return sanitizedColor ? `  --color-${sanitizedKey}: ${sanitizedColor};` : null
   })
+  .filter(Boolean)
   .join("\n")}
 }
 `
-          )
-          .join("\n"),
+    )
+    .join("\n")
+
+  // Используем DOMPurify для дополнительной защиты CSS контента
+  const sanitizedCSS = DOMPurify.sanitize(cssContent, { 
+    ALLOWED_TAGS: [],
+    ALLOWED_ATTR: []
+  })
+
+  return (
+    <style
+      dangerouslySetInnerHTML={{
+        __html: sanitizedCSS,
       }}
     />
   )

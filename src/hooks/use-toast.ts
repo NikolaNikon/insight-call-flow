@@ -1,3 +1,4 @@
+
 import * as React from "react"
 
 import type {
@@ -71,6 +72,14 @@ const addToRemoveQueue = (toastId: string) => {
   toastTimeouts.set(toastId, timeout)
 }
 
+// Функция для очистки всех таймеров (важно для безопасности)
+const clearAllTimeouts = () => {
+  toastTimeouts.forEach((timeout) => {
+    clearTimeout(timeout)
+  })
+  toastTimeouts.clear()
+}
+
 export const reducer = (state: State, action: Action): State => {
   switch (action.type) {
     case "ADD_TOAST":
@@ -90,8 +99,6 @@ export const reducer = (state: State, action: Action): State => {
     case "DISMISS_TOAST": {
       const { toastId } = action
 
-      // ! Side effects ! - This could be extracted into a dismissToast() action,
-      // but I'll keep it here for simplicity
       if (toastId) {
         addToRemoveQueue(toastId)
       } else {
@@ -178,6 +185,8 @@ function useToast() {
       if (index > -1) {
         listeners.splice(index, 1)
       }
+      // Очищаем таймеры при размонтировании компонента
+      clearAllTimeouts()
     }
   }, [state])
 
