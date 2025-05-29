@@ -34,7 +34,7 @@ interface RecentCall {
   sales_technique: number;
   transcription_score: number;
   audio_file_url?: string;
-  processing_status: string;
+  processing_status: 'pending' | 'processing' | 'completed' | 'failed';
 }
 
 const RecentCalls = () => {
@@ -67,6 +67,15 @@ const RecentCalls = () => {
       
       if (error) throw error;
 
+      const normalizeProcessingStatus = (status: string | null): 'pending' | 'processing' | 'completed' | 'failed' => {
+        if (!status) return 'pending';
+        const normalizedStatus = status.toLowerCase();
+        if (['pending', 'processing', 'completed', 'failed'].includes(normalizedStatus)) {
+          return normalizedStatus as 'pending' | 'processing' | 'completed' | 'failed';
+        }
+        return 'pending';
+      };
+
       return data?.map(call => ({
         id: call.id,
         customer: {
@@ -84,7 +93,7 @@ const RecentCalls = () => {
         sales_technique: call.sales_technique || 0,
         transcription_score: call.transcription_score || 0,
         audio_file_url: call.audio_file_url,
-        processing_status: call.processing_status || 'pending'
+        processing_status: normalizeProcessingStatus(call.processing_status)
       })) as RecentCall[] || [];
     }
   });
