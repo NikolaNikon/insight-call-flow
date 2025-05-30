@@ -1,5 +1,5 @@
 
-import { User, Clock, Star } from "lucide-react";
+import { User, Clock, Star, Users } from "lucide-react";
 import { CallProcessingStatus } from "./CallProcessingStatus";
 import { CallMetrics } from "./CallMetrics";
 import { CallActions } from "./CallActions";
@@ -7,6 +7,7 @@ import { CallDiarization } from "./CallDiarization";
 import { getScoreColor, formatDate, calculateDuration } from "@/utils/callUtils";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 interface DiarizationSegment {
   speaker: string;
@@ -45,9 +46,12 @@ export const RecentCallItem = ({ call }: RecentCallItemProps) => {
 
   // Парсим диаризацию из task_id если она есть
   let diarizationData = null;
+  let hasDiarization = false;
+  
   if (call.task_id) {
     try {
       diarizationData = JSON.parse(call.task_id);
+      hasDiarization = diarizationData?.segments && diarizationData.segments.length > 0;
     } catch (e) {
       console.warn('Не удалось распарсить данные диаризации:', e);
     }
@@ -63,6 +67,12 @@ export const RecentCallItem = ({ call }: RecentCallItemProps) => {
               <span className="font-medium text-gray-900">{call.customer.name}</span>
             </div>
             <CallProcessingStatus status={call.processing_status} />
+            {hasDiarization && (
+              <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-800">
+                <Users className="h-3 w-3 mr-1" />
+                Диаризация
+              </Badge>
+            )}
           </div>
           
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-sm text-gray-600 mb-3">
@@ -97,7 +107,7 @@ export const RecentCallItem = ({ call }: RecentCallItemProps) => {
             salesTechnique={call.sales_technique}
           />
 
-          {diarizationData?.segments && (
+          {hasDiarization && (
             <div className="mt-3">
               <Button
                 variant="outline"
@@ -105,6 +115,7 @@ export const RecentCallItem = ({ call }: RecentCallItemProps) => {
                 onClick={() => setShowDiarization(!showDiarization)}
                 className="text-xs"
               >
+                <Users className="h-3 w-3 mr-1" />
                 {showDiarization ? 'Скрыть диалог' : 'Показать диалог'}
               </Button>
               
