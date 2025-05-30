@@ -3,7 +3,17 @@ import { User, Clock, Star } from "lucide-react";
 import { CallProcessingStatus } from "./CallProcessingStatus";
 import { CallMetrics } from "./CallMetrics";
 import { CallActions } from "./CallActions";
+import { CallDiarization } from "./CallDiarization";
 import { getScoreColor, formatDate, calculateDuration } from "@/utils/callUtils";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+
+interface DiarizationSegment {
+  speaker: string;
+  start: number;
+  end: number;
+  text: string;
+}
 
 interface RecentCall {
   id: string;
@@ -23,6 +33,7 @@ interface RecentCall {
   transcription_score: number;
   audio_file_url?: string;
   processing_status: 'pending' | 'processing' | 'completed' | 'failed';
+  task_id?: string;
 }
 
 interface RecentCallItemProps {
@@ -30,6 +41,18 @@ interface RecentCallItemProps {
 }
 
 export const RecentCallItem = ({ call }: RecentCallItemProps) => {
+  const [showDiarization, setShowDiarization] = useState(false);
+
+  // Парсим диаризацию из task_id если она есть
+  let diarizationData = null;
+  if (call.task_id) {
+    try {
+      diarizationData = JSON.parse(call.task_id);
+    } catch (e) {
+      console.warn('Не удалось распарсить данные диаризации:', e);
+    }
+  }
+
   return (
     <div className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
       <div className="flex items-start justify-between mb-3">
@@ -73,6 +96,28 @@ export const RecentCallItem = ({ call }: RecentCallItemProps) => {
             communicationSkills={call.communication_skills}
             salesTechnique={call.sales_technique}
           />
+
+          {diarizationData?.segments && (
+            <div className="mt-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowDiarization(!showDiarization)}
+                className="text-xs"
+              >
+                {showDiarization ? 'Скрыть диалог' : 'Показать диалог'}
+              </Button>
+              
+              {showDiarization && (
+                <div className="mt-3">
+                  <CallDiarization 
+                    segments={diarizationData.segments}
+                    duration={diarizationData.duration}
+                  />
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <CallActions audioFileUrl={call.audio_file_url} />
