@@ -2,7 +2,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { Play, SkipBack, SkipForward, Volume2, Download } from "lucide-react";
+import { Play, Pause, SkipBack, SkipForward, Volume2, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface AudioPlayerProps {
@@ -15,6 +15,7 @@ export const AudioPlayer = ({ audioFileUrl, callId }: AudioPlayerProps) => {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(1);
+  const [isLoading, setIsLoading] = useState(true);
   const audioRef = useRef<HTMLAudioElement>(null);
   const { toast } = useToast();
 
@@ -23,36 +24,55 @@ export const AudioPlayer = ({ audioFileUrl, callId }: AudioPlayerProps) => {
     if (!audio) return;
 
     const updateTime = () => setCurrentTime(audio.currentTime);
-    const updateDuration = () => setDuration(audio.duration);
+    const updateDuration = () => {
+      setDuration(audio.duration);
+      setIsLoading(false);
+    };
     const handleEnded = () => setIsPlaying(false);
+    const handleCanPlay = () => setIsLoading(false);
+    const handleError = () => {
+      setIsLoading(false);
+      toast({
+        title: "Ошибка загрузки",
+        description: "Не удалось загрузить аудиофайл",
+        variant: "destructive",
+      });
+    };
 
     audio.addEventListener('timeupdate', updateTime);
     audio.addEventListener('loadedmetadata', updateDuration);
     audio.addEventListener('ended', handleEnded);
+    audio.addEventListener('canplay', handleCanPlay);
+    audio.addEventListener('error', handleError);
 
     return () => {
       audio.removeEventListener('timeupdate', updateTime);
       audio.removeEventListener('loadedmetadata', updateDuration);
       audio.removeEventListener('ended', handleEnded);
+      audio.removeEventListener('canplay', handleCanPlay);
+      audio.removeEventListener('error', handleError);
     };
-  }, [audioFileUrl]);
+  }, [audioFileUrl, toast]);
 
-  const togglePlay = () => {
+  const togglePlay = async () => {
     const audio = audioRef.current;
     if (!audio) return;
 
-    if (isPlaying) {
-      audio.pause();
-    } else {
-      audio.play().catch(() => {
-        toast({
-          title: "Ошибка воспроизведения",
-          description: "Не удалось воспроизвести аудиофайл",
-          variant: "destructive",
-        });
+    try {
+      if (isPlaying) {
+        audio.pause();
+        setIsPlaying(false);
+      } else {
+        await audio.play();
+        setIsPlaying(true);
+      }
+    } catch (error) {
+      toast({
+        title: "Ошибка воспроизведения",
+        description: "Не удалось воспроизвести аудиофайл",
+        variant: "destructive",
       });
     }
-    setIsPlaying(!isPlaying);
   };
 
   const handleSeek = (value: number[]) => {
@@ -92,6 +112,7 @@ export const AudioPlayer = ({ audioFileUrl, callId }: AudioPlayerProps) => {
       const link = document.createElement('a');
       link.href = audioFileUrl;
       link.download = `call_${callId || 'audio'}.mp3`;
+      link.target = '_blank';
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -110,6 +131,7 @@ export const AudioPlayer = ({ audioFileUrl, callId }: AudioPlayerProps) => {
   };
 
   const formatTime = (time: number) => {
+    if (isNaN(time)) return "0:00";
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
@@ -121,15 +143,15 @@ export const AudioPlayer = ({ audioFileUrl, callId }: AudioPlayerProps) => {
       
       {/* Основные контролы */}
       <div className="flex items-center justify-center gap-2">
-        <Button size="sm" variant="outline" onClick={skipBackward}>
+        <Button size="sm" variant="outline" onClick={skipBackward} disabled={isLoading}>
           <SkipBack className="h-4 w-4" />
         </Button>
         
-        <Button size="sm" onClick={togglePlay} className="w-12 h-12">
-          <Play className="h-5 w-5" />
+        <Button size="sm" onClick={togglePlay} className="w-12 h-12" disabled={isLoading}>
+          {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
         </Button>
         
-        <Button size="sm" variant="outline" onClick={skipForward}>
+        <Button size="sm" variant="outline" onClick={skipForward} disabled={isLoading}>
           <SkipForward className="h-4 w-4" />
         </Button>
         
@@ -146,6 +168,7 @@ export const AudioPlayer = ({ audioFileUrl, callId }: AudioPlayerProps) => {
           step={1}
           onValueChange={handleSeek}
           className="w-full"
+          disabled={isLoading}
         />
         <div className="flex justify-between text-xs text-gray-500">
           <span>{formatTime(currentTime)}</span>

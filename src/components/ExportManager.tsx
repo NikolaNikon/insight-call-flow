@@ -19,9 +19,13 @@ export const ExportManager = () => {
   const { data: exports = [], refetch } = useQuery({
     queryKey: ['exports'],
     queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Пользователь не авторизован');
+
       const { data, error } = await supabase
         .from('exports')
         .select('*')
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(10);
       
@@ -34,13 +38,19 @@ export const ExportManager = () => {
     setIsExporting(true);
     
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('Пользователь не авторизован');
+      }
+
       // Создаем запись экспорта
       const { data, error } = await supabase
         .from('exports')
         .insert({
           type: exportType,
           filters: {},
-          status: 'pending'
+          status: 'pending',
+          user_id: user.id
         })
         .select()
         .single();
@@ -59,11 +69,11 @@ export const ExportManager = () => {
 
       refetch();
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('Export error:', error);
       toast({
         title: "Ошибка экспорта",
-        description: "Не удалось создать отчет",
+        description: error.message || "Не удалось создать отчет",
         variant: "destructive"
       });
     } finally {
