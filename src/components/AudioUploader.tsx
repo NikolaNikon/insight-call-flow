@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { Upload, X, FileAudio, Users, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -290,7 +289,6 @@ export const AudioUploader = () => {
           <Button
             variant="outline"
             onClick={() => fileInputRef.current?.click()}
-            disabled={!selectedManager || !selectedCustomer}
           >
             Выбрать файлы
           </Button>
