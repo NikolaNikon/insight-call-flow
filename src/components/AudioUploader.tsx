@@ -94,7 +94,7 @@ export const AudioUploader = () => {
     setFiles(prev => [...prev, ...newFiles]);
   };
 
-  const uploadFile = async (uploadFile: UploadFile) => {
+  const uploadFile = async (uploadFileData: UploadFile) => {
     if (!selectedManager || !selectedCustomer) {
       toast({
         title: "Ошибка",
@@ -107,11 +107,11 @@ export const AudioUploader = () => {
     try {
       // Обновляем статус
       setFiles(prev => prev.map(f => 
-        f.id === uploadFile.id ? { ...f, status: 'uploading' } : f
+        f.id === uploadFileData.id ? { ...f, status: 'uploading' } : f
       ));
 
       const formData = new FormData();
-      formData.append('audio', uploadFile.file);
+      formData.append('audio', uploadFileData.file);
       formData.append('managerId', selectedManager);
       formData.append('customerId', selectedCustomer);
 
@@ -124,7 +124,7 @@ export const AudioUploader = () => {
 
       // Обновляем статус на обработку
       setFiles(prev => prev.map(f => 
-        f.id === uploadFile.id 
+        f.id === uploadFileData.id 
           ? { ...f, status: 'processing', callId: data.callId, progress: 100 }
           : f
       ));
@@ -135,12 +135,12 @@ export const AudioUploader = () => {
       });
 
       // Начинаем мониторинг обработки
-      startProcessingMonitor(uploadFile.id, data.callId);
+      startProcessingMonitor(uploadFileData.id, data.callId);
 
     } catch (error) {
       console.error('Upload error:', error);
       setFiles(prev => prev.map(f => 
-        f.id === uploadFile.id 
+        f.id === uploadFileData.id 
           ? { ...f, status: 'error', error: 'Ошибка загрузки файла' }
           : f
       ));
@@ -311,24 +311,24 @@ export const AudioUploader = () => {
         {files.length > 0 && (
           <div className="space-y-4">
             <h3 className="font-medium">Файлы для загрузки</h3>
-            {files.map(uploadFile => (
-              <div key={uploadFile.id} className="border rounded-lg p-4">
+            {files.map(uploadFileData => (
+              <div key={uploadFileData.id} className="border rounded-lg p-4">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
                     <FileAudio className="h-4 w-4 text-gray-500" />
-                    <span className="font-medium">{uploadFile.file.name}</span>
+                    <span className="font-medium">{uploadFileData.file.name}</span>
                     <Badge 
                       variant="outline" 
-                      className={`text-white ${getStatusColor(uploadFile.status)}`}
+                      className={`text-white ${getStatusColor(uploadFileData.status)}`}
                     >
-                      {getStatusText(uploadFile.status)}
+                      {getStatusText(uploadFileData.status)}
                     </Badge>
                   </div>
                   <div className="flex items-center gap-2">
-                    {uploadFile.status === 'pending' && (
+                    {uploadFileData.status === 'pending' && (
                       <Button
                         size="sm"
-                        onClick={() => uploadFile(uploadFile)}
+                        onClick={() => uploadFile(uploadFileData)}
                         disabled={!selectedManager || !selectedCustomer}
                       >
                         Загрузить
@@ -337,23 +337,23 @@ export const AudioUploader = () => {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => removeFile(uploadFile.id)}
+                      onClick={() => removeFile(uploadFileData.id)}
                     >
                       <X className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
                 
-                {uploadFile.status === 'uploading' && (
-                  <Progress value={uploadFile.progress} className="mb-2" />
+                {uploadFileData.status === 'uploading' && (
+                  <Progress value={uploadFileData.progress} className="mb-2" />
                 )}
                 
-                {uploadFile.error && (
-                  <p className="text-sm text-red-600">{uploadFile.error}</p>
+                {uploadFileData.error && (
+                  <p className="text-sm text-red-600">{uploadFileData.error}</p>
                 )}
                 
                 <div className="text-xs text-gray-500">
-                  Размер: {(uploadFile.file.size / 1024 / 1024).toFixed(2)} MB
+                  Размер: {(uploadFileData.file.size / 1024 / 1024).toFixed(2)} MB
                 </div>
               </div>
             ))}
