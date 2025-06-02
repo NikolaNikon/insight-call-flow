@@ -2,6 +2,8 @@
 import { Button } from "@/components/ui/button";
 import { Play, FileText, MessageSquare } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { AudioPlayer } from "./AudioPlayer";
+import { useState } from "react";
 
 interface CallActionsProps {
   audioFileUrl?: string;
@@ -10,31 +12,7 @@ interface CallActionsProps {
 
 export const CallActions = ({ audioFileUrl, callId }: CallActionsProps) => {
   const { toast } = useToast();
-
-  const handlePlayAudio = () => {
-    if (audioFileUrl) {
-      // Создаем элемент audio для воспроизведения
-      const audio = new Audio(audioFileUrl);
-      audio.play().catch(() => {
-        toast({
-          title: "Ошибка воспроизведения",
-          description: "Не удалось воспроизвести аудиофайл",
-          variant: "destructive",
-        });
-      });
-      
-      toast({
-        title: "Воспроизведение аудио",
-        description: "Аудиозапись начала воспроизводиться",
-      });
-    } else {
-      toast({
-        title: "Аудио недоступно",
-        description: "Аудиофайл для данного звонка не найден",
-        variant: "destructive",
-      });
-    }
-  };
+  const [showPlayer, setShowPlayer] = useState(false);
 
   const handleGenerateReport = () => {
     toast({
@@ -53,11 +31,25 @@ export const CallActions = ({ audioFileUrl, callId }: CallActionsProps) => {
   return (
     <div className="flex flex-col gap-2 ml-4">
       {audioFileUrl && (
-        <Button size="sm" variant="outline" className="gap-2" onClick={handlePlayAudio}>
-          <Play className="h-3 w-3" />
-          Аудио
-        </Button>
+        <>
+          <Button 
+            size="sm" 
+            variant="outline" 
+            className="gap-2" 
+            onClick={() => setShowPlayer(!showPlayer)}
+          >
+            <Play className="h-3 w-3" />
+            Аудио
+          </Button>
+          
+          {showPlayer && (
+            <div className="mt-2 w-80">
+              <AudioPlayer audioFileUrl={audioFileUrl} callId={callId} />
+            </div>
+          )}
+        </>
       )}
+      
       <Button size="sm" variant="outline" className="gap-2" onClick={handleGenerateReport}>
         <FileText className="h-3 w-3" />
         Отчет
