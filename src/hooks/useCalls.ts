@@ -14,6 +14,7 @@ export interface Call {
   transcription_score: number;
   audio_file_url: string;
   processing_status: string;
+  task_id?: string;
   customer: {
     id: string;
     name: string;
@@ -44,6 +45,7 @@ export const useCalls = () => {
           transcription_score,
           audio_file_url,
           processing_status,
+          task_id,
           customers:customer_id (
             id,
             name,
@@ -72,6 +74,7 @@ export const useCalls = () => {
         transcription_score: call.transcription_score || 0,
         audio_file_url: call.audio_file_url || '',
         processing_status: call.processing_status || 'pending',
+        task_id: call.task_id,
         customer: call.customers ? {
           id: call.customers.id,
           name: call.customers.name,
@@ -95,17 +98,22 @@ export const useCallStats = () => {
     queryFn: async () => {
       const { data: calls, error } = await supabase
         .from('calls')
-        .select('general_score, user_satisfaction_index, date')
+        .select('general_score, user_satisfaction_index, date, processing_status')
         .not('general_score', 'is', null);
       
       if (error) throw error;
 
       const totalCalls = calls.length;
-      const avgScore = calls.reduce((sum, call) => sum + (call.general_score || 0), 0) / totalCalls;
-      const avgSatisfaction = calls.reduce((sum, call) => sum + (call.user_satisfaction_index || 0), 0) / totalCalls;
+      const completedCalls = calls.filter(call => call.processing_status === 'completed');
+      const avgScore = completedCalls.length > 0 
+        ? completedCalls.reduce((sum, call) => sum + (call.general_score || 0), 0) / completedCalls.length
+        : 0;
+      const avgSatisfaction = completedCalls.length > 0
+        ? completedCalls.reduce((sum, call) => sum + (call.user_satisfaction_index || 0), 0) / completedCalls.length
+        : 0;
       
       // Группировка по дням для графика
-      const dailyStats = calls.reduce((acc: Record<string, { calls: number; satisfaction: number }>, call) => {
+      const dailyStats = completedCalls.reduce((acc: Record<string, { calls: number; satisfaction: number }>, call) => {
         const date = new Date(call.date).toISOString().split('T')[0];
         if (!acc[date]) {
           acc[date] = { calls: 0, satisfaction: 0 };

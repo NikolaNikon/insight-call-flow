@@ -92,17 +92,22 @@ export type Database = {
           created_at: string
           customer_id: string | null
           date: string
+          error_message: string | null
           feedback: string | null
+          file_format: string | null
+          file_size: number | null
           general_score: number | null
           id: string
           manager_id: string | null
           processing_status: string | null
+          processing_step: string | null
           sales_technique: number | null
           summary: string | null
           task_id: string | null
           transcription: string | null
           transcription_score: number | null
           updated_at: string
+          upload_progress: number | null
           user_satisfaction_index: number | null
         }
         Insert: {
@@ -113,17 +118,22 @@ export type Database = {
           created_at?: string
           customer_id?: string | null
           date?: string
+          error_message?: string | null
           feedback?: string | null
+          file_format?: string | null
+          file_size?: number | null
           general_score?: number | null
           id?: string
           manager_id?: string | null
           processing_status?: string | null
+          processing_step?: string | null
           sales_technique?: number | null
           summary?: string | null
           task_id?: string | null
           transcription?: string | null
           transcription_score?: number | null
           updated_at?: string
+          upload_progress?: number | null
           user_satisfaction_index?: number | null
         }
         Update: {
@@ -134,17 +144,22 @@ export type Database = {
           created_at?: string
           customer_id?: string | null
           date?: string
+          error_message?: string | null
           feedback?: string | null
+          file_format?: string | null
+          file_size?: number | null
           general_score?: number | null
           id?: string
           manager_id?: string | null
           processing_status?: string | null
+          processing_step?: string | null
           sales_technique?: number | null
           summary?: string | null
           task_id?: string | null
           transcription?: string | null
           transcription_score?: number | null
           updated_at?: string
+          upload_progress?: number | null
           user_satisfaction_index?: number | null
         }
         Relationships: [
@@ -330,6 +345,39 @@ export type Database = {
           embedding?: string | null
           id?: number
           metadata?: Json | null
+        }
+        Relationships: []
+      }
+      exports: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          file_url: string | null
+          filters: Json | null
+          id: string
+          status: string | null
+          type: string
+          user_id: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          file_url?: string | null
+          filters?: Json | null
+          id?: string
+          status?: string | null
+          type: string
+          user_id?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          file_url?: string | null
+          filters?: Json | null
+          id?: string
+          status?: string | null
+          type?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -714,45 +762,9 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      binary_quantize: {
-        Args: { "": string } | { "": unknown }
-        Returns: unknown
-      }
       get_customer_booking_count: {
         Args: { customer_uuid: string }
         Returns: number
-      }
-      halfvec_avg: {
-        Args: { "": number[] }
-        Returns: unknown
-      }
-      halfvec_out: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      halfvec_send: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      halfvec_typmod_in: {
-        Args: { "": unknown[] }
-        Returns: number
-      }
-      hnsw_bit_support: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      hnsw_halfvec_support: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      hnsw_sparsevec_support: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      hnswhandler: {
-        Args: { "": unknown }
-        Returns: unknown
       }
       import_chistopar_multigroup: {
         Args: { csv_content: string }
@@ -770,26 +782,6 @@ export type Database = {
         Args: { csv_content: string }
         Returns: number
       }
-      ivfflat_bit_support: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      ivfflat_halfvec_support: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      ivfflathandler: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      l2_norm: {
-        Args: { "": unknown } | { "": unknown }
-        Returns: number
-      }
-      l2_normalize: {
-        Args: { "": string } | { "": unknown } | { "": unknown }
-        Returns: string
-      }
       match_documents: {
         Args: { query_embedding: string; match_count?: number; filter?: Json }
         Returns: {
@@ -798,42 +790,6 @@ export type Database = {
           metadata: Json
           similarity: number
         }[]
-      }
-      sparsevec_out: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      sparsevec_send: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      sparsevec_typmod_in: {
-        Args: { "": unknown[] }
-        Returns: number
-      }
-      vector_avg: {
-        Args: { "": number[] }
-        Returns: string
-      }
-      vector_dims: {
-        Args: { "": string } | { "": unknown }
-        Returns: number
-      }
-      vector_norm: {
-        Args: { "": string }
-        Returns: number
-      }
-      vector_out: {
-        Args: { "": string }
-        Returns: unknown
-      }
-      vector_send: {
-        Args: { "": string }
-        Returns: string
-      }
-      vector_typmod_in: {
-        Args: { "": unknown[] }
-        Returns: number
       }
     }
     Enums: {
