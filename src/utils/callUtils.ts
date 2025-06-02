@@ -1,6 +1,9 @@
 
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
+import { zonedTimeToUtc, utcToZonedTime } from "date-fns-tz";
+
+const MOSCOW_TIMEZONE = 'Europe/Moscow';
 
 export const getScoreColor = (score: number) => {
   if (score >= 8.5) return 'text-green-600';
@@ -10,13 +13,22 @@ export const getScoreColor = (score: number) => {
 
 export const formatDate = (dateString: string) => {
   const date = new Date(dateString);
+  const moscowTime = utcToZonedTime(date, MOSCOW_TIMEZONE);
   const now = new Date();
-  const diffHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+  const moscowNow = utcToZonedTime(now, MOSCOW_TIMEZONE);
+  
+  const diffHours = Math.floor((moscowNow.getTime() - moscowTime.getTime()) / (1000 * 60 * 60));
   
   if (diffHours < 1) return 'Меньше часа назад';
   if (diffHours < 24) return `${diffHours} ${diffHours === 1 ? 'час' : diffHours < 5 ? 'часа' : 'часов'} назад`;
   
-  return format(date, "dd.MM.yyyy HH:mm", { locale: ru });
+  return format(moscowTime, "dd.MM.yyyy HH:mm", { locale: ru });
+};
+
+export const formatMoscowTime = (dateString: string) => {
+  const date = new Date(dateString);
+  const moscowTime = utcToZonedTime(date, MOSCOW_TIMEZONE);
+  return format(moscowTime, "dd.MM.yyyy HH:mm", { locale: ru });
 };
 
 export const calculateDuration = (date: string) => {

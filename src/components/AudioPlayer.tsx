@@ -2,22 +2,27 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { Play, Pause, SkipBack, SkipForward, Volume2, Download } from "lucide-react";
+import { Play, Pause, SkipBack, SkipForward, Volume2, Download, ExternalLink } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useTelfinIntegration } from "@/hooks/useTelfinIntegration";
 
 interface AudioPlayerProps {
   audioFileUrl: string;
   callId?: string;
+  telfinClientId?: string;
+  telfinRecordUuid?: string;
 }
 
-export const AudioPlayer = ({ audioFileUrl, callId }: AudioPlayerProps) => {
+export const AudioPlayer = ({ audioFileUrl, callId, telfinClientId, telfinRecordUuid }: AudioPlayerProps) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
+  const [currentAudioUrl, setCurrentAudioUrl] = useState(audioFileUrl);
   const audioRef = useRef<HTMLAudioElement>(null);
   const { toast } = useToast();
+  const { getAudioUrl, downloadAudio } = useTelfinIntegration();
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -52,7 +57,7 @@ export const AudioPlayer = ({ audioFileUrl, callId }: AudioPlayerProps) => {
       audio.removeEventListener('canplay', handleCanPlay);
       audio.removeEventListener('error', handleError);
     };
-  }, [audioFileUrl, toast]);
+  }, [currentAudioUrl, toast]);
 
   const togglePlay = async () => {
     const audio = audioRef.current;
@@ -107,10 +112,10 @@ export const AudioPlayer = ({ audioFileUrl, callId }: AudioPlayerProps) => {
     audio.currentTime = Math.min(duration, audio.currentTime + 10);
   };
 
-  const downloadAudio = () => {
+  const downloadAudioFile = () => {
     try {
       const link = document.createElement('a');
-      link.href = audioFileUrl;
+      link.href = currentAudioUrl;
       link.download = `call_${callId || 'audio'}.mp3`;
       link.target = '_blank';
       document.body.appendChild(link);
@@ -130,6 +135,27 @@ export const AudioPlayer = ({ audioFileUrl, callId }: AudioPlayerProps) => {
     }
   };
 
+  const loadFromTelfin = async () => {
+    if (!telfinClientId || !telfinRecordUuid) {
+      toast({
+        title: "Ошибка",
+        description: "Не указаны данные для загрузки из Телфин",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const telfinUrl = await getAudioUrl(telfinClientId, telfinRecordUuid);
+      if (telfinUrl) {
+        setCurrentAudioUrl(telfinUrl);
+        setIsLoading(true);
+      }
+    } catch (error) {
+      console.error('Error loading from Telfin:', error);
+    }
+  };
+
   const formatTime = (time: number) => {
     if (isNaN(time)) return "0:00";
     const minutes = Math.floor(time / 60);
@@ -139,7 +165,7 @@ export const AudioPlayer = ({ audioFileUrl, callId }: AudioPlayerProps) => {
 
   return (
     <div className="w-full bg-gray-50 border rounded-lg p-4 space-y-3">
-      <audio ref={audioRef} src={audioFileUrl} preload="metadata" />
+      <audio ref={audioRef} src={currentAudioUrl} preload="metadata" />
       
       {/* Основные контролы */}
       <div className="flex items-center justify-center gap-2">
@@ -155,9 +181,15 @@ export const AudioPlayer = ({ audioFileUrl, callId }: AudioPlayerProps) => {
           <SkipForward className="h-4 w-4" />
         </Button>
         
-        <Button size="sm" variant="outline" onClick={downloadAudio}>
+        <Button size="sm" variant="outline" onClick={downloadAudioFile}>
           <Download className="h-4 w-4" />
         </Button>
+
+        {(telfinClientId && telfinRecordUuid) && (
+          <Button size="sm" variant="outline" onClick={loadFromTelfin} title="Загрузить из Телфин">
+            <ExternalLink className="h-4 w-4" />
+          </Button>
+        )}
       </div>
 
       {/* Таймлайн */}
