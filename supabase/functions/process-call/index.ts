@@ -20,7 +20,7 @@ interface NexaraTranscriptionResponse {
   }>;
 }
 
-async function transcribeAudio(audioFileUrl: string): Promise<NexaraTranscriptionResponse> {
+async function downloadAndTranscribeAudio(audioFileUrl: string): Promise<NexaraTranscriptionResponse> {
   const nexaraApiKey = Deno.env.get('NEXARA_API_KEY');
   
   if (!nexaraApiKey) {
@@ -28,21 +28,33 @@ async function transcribeAudio(audioFileUrl: string): Promise<NexaraTranscriptio
   }
 
   try {
-    console.log('Начинаем транскрибацию через Nexara API для:', audioFileUrl);
+    console.log('Скачиваем аудиофайл:', audioFileUrl);
+    
+    // Скачиваем файл из Supabase Storage
+    const audioResponse = await fetch(audioFileUrl);
+    if (!audioResponse.ok) {
+      throw new Error(`Не удалось скачать аудиофайл: ${audioResponse.status}`);
+    }
+    
+    const audioBlob = await audioResponse.blob();
+    console.log('Аудиофайл скачан, размер:', audioBlob.size, 'байт');
 
-    // Отправляем URL аудиофайла на Nexara API с диаризацией
+    // Создаем FormData для отправки файла
+    const formData = new FormData();
+    formData.append('file', audioBlob, 'audio.mp3');
+    formData.append('task', 'diarize');
+    formData.append('diarization_setting', 'telephonic');
+    formData.append('response_format', 'verbose_json');
+
+    console.log('Отправляем файл в Nexara API...');
+
+    // Отправляем файл на Nexara API
     const response = await fetch('https://api.nexara.ru/api/v1/audio/transcriptions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${nexaraApiKey}`,
-        'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        url: audioFileUrl,
-        task: 'diarize', // Включаем диаризацию для определения спикеров
-        diarization_setting: 'telephonic', // Оптимизировано для телефонных звонков
-        response_format: 'verbose_json'
-      })
+      body: formData
     });
 
     if (!response.ok) {
@@ -195,12 +207,21 @@ serve(async (req) => {
     // Обновляем статус на "processing"
     await supabase
       .from('calls')
-      .update({ processing_status: 'processing' })
+      .update({ 
+        processing_status: 'processing',
+        processing_step: 'transcribing'
+      })
       .eq('id', callId)
 
     try {
       // Транскрибируем аудио через Nexara API
-      const transcriptionResult = await transcribeAudio(audioFileUrl);
+      const transcriptionResult = await downloadAndTranscribeAudio(audioFileUrl);
+      
+      // Обновляем статус на анализ
+      await supabase
+        .from('calls')
+        .update({ processing_step: 'analyzing' })
+        .eq('id', callId)
       
       // Анализируем транскрипцию
       const analysis = analyzeTranscription(transcriptionResult);
@@ -209,7 +230,8 @@ serve(async (req) => {
       const updateData = {
         transcription: transcriptionResult.text,
         ...analysis,
-        processing_status: 'completed'
+        processing_status: 'completed',
+        processing_step: 'completed'
       };
 
       // Если есть сегменты диаризации, сохраняем их в поле task_id как JSON
@@ -254,6 +276,7 @@ serve(async (req) => {
         .from('calls')
         .update({ 
           processing_status: 'failed',
+          processing_step: 'failed',
           feedback: `Ошибка транскрибации: ${transcriptionError.message}`
         })
         .eq('id', callId)
