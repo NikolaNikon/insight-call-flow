@@ -10,7 +10,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
 interface Keyword {
-  id: string;
+  id: number;
   phrase: string;
   frequency?: number;
   created_at: string;
@@ -70,7 +70,7 @@ export const KeywordManager = () => {
   });
 
   const deleteKeywordMutation = useMutation({
-    mutationFn: async (id: string) => {
+    mutationFn: async (id: number) => {
       const { error } = await supabase
         .from('keywords')
         .delete()
@@ -111,7 +111,7 @@ export const KeywordManager = () => {
     addKeywordMutation.mutate(newKeyword);
   };
 
-  const handleDeleteKeyword = (id: string) => {
+  const handleDeleteKeyword = (id: number) => {
     deleteKeywordMutation.mutate(id);
   };
 
