@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -189,6 +188,20 @@ const Calls = () => {
     return commonWords.filter(keyword => 
       words.some(word => word.includes(keyword))
     ).slice(0, 3);
+  };
+
+  const handlePlayAudio = (audioUrl: string) => {
+    if (audioUrl) {
+      const audio = new Audio(audioUrl);
+      audio.play().catch(() => {
+        console.error('Ошибка воспроизведения аудио');
+      });
+    }
+  };
+
+  const handleGenerateReport = (callId: string) => {
+    console.log('Генерация отчета для звонка:', callId);
+    // Здесь будет логика генерации отчета
   };
 
   return (
@@ -394,12 +407,22 @@ const Calls = () => {
 
                         <div className="flex flex-col gap-2 ml-4">
                           {call.audio_file_url && (
-                            <Button size="sm" variant="outline" className="gap-2">
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              className="gap-2"
+                              onClick={() => handlePlayAudio(call.audio_file_url)}
+                            >
                               <Play className="h-3 w-3" />
                               Аудио
                             </Button>
                           )}
-                          <Button size="sm" variant="outline" className="gap-2">
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            className="gap-2"
+                            onClick={() => handleGenerateReport(call.id)}
+                          >
                             <FileText className="h-3 w-3" />
                             Отчет
                           </Button>

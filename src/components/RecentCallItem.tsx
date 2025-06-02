@@ -131,7 +131,7 @@ export const RecentCallItem = ({ call }: RecentCallItemProps) => {
           )}
         </div>
 
-        <CallActions audioFileUrl={call.audio_file_url} />
+        <CallActions audioFileUrl={call.audio_file_url} callId={call.id} />
       </div>
     </div>
   );
