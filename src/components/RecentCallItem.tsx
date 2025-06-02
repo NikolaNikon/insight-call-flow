@@ -27,6 +27,7 @@ interface RecentCall {
   };
   date: string;
   summary: string;
+  transcription?: string;
   general_score: number;
   user_satisfaction_index: number;
   communication_skills: number;
@@ -131,7 +132,12 @@ export const RecentCallItem = ({ call }: RecentCallItemProps) => {
           )}
         </div>
 
-        <CallActions audioFileUrl={call.audio_file_url} callId={call.id} />
+        <CallActions 
+          audioFileUrl={call.audio_file_url} 
+          callId={call.id}
+          transcription={call.transcription}
+          summary={call.summary}
+        />
       </div>
     </div>
   );

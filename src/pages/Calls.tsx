@@ -31,6 +31,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import { CallActions } from "@/components/CallActions";
 
 interface Call {
   id: string;
@@ -199,9 +200,9 @@ const Calls = () => {
     }
   };
 
-  const handleGenerateReport = (callId: string) => {
-    console.log('Генерация отчета для звонка:', callId);
-    // Здесь будет логика генерации отчета
+  const handleGenerateReport = (call: Call) => {
+    // Открываем диалог с транскрипцией
+    console.log('Показать отчет для звонка:', call.id);
   };
 
   return (
@@ -405,28 +406,12 @@ const Calls = () => {
                           )}
                         </div>
 
-                        <div className="flex flex-col gap-2 ml-4">
-                          {call.audio_file_url && (
-                            <Button 
-                              size="sm" 
-                              variant="outline" 
-                              className="gap-2"
-                              onClick={() => handlePlayAudio(call.audio_file_url)}
-                            >
-                              <Play className="h-3 w-3" />
-                              Аудио
-                            </Button>
-                          )}
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            className="gap-2"
-                            onClick={() => handleGenerateReport(call.id)}
-                          >
-                            <FileText className="h-3 w-3" />
-                            Отчет
-                          </Button>
-                        </div>
+                        <CallActions 
+                          audioFileUrl={call.audio_file_url}
+                          callId={call.id}
+                          transcription={call.transcription}
+                          summary={call.summary}
+                        />
                       </div>
                     </div>
                   ))}

@@ -62,10 +62,14 @@ export const ExportManager = () => {
         description: `Начинается создание ${exportType.toUpperCase()} отчета`,
       });
 
-      // Здесь можно вызвать edge function для генерации отчета
-      // await supabase.functions.invoke('generate-export', {
-      //   body: { exportId: data.id, type: exportType }
-      // });
+      // Вызываем edge function для генерации отчета
+      const { error: functionError } = await supabase.functions.invoke('generate-export', {
+        body: { exportId: data.id, type: exportType }
+      });
+
+      if (functionError) {
+        throw new Error(functionError.message);
+      }
 
       refetch();
       
