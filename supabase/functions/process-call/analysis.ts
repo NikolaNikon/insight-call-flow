@@ -35,33 +35,33 @@ export function analyzeTranscription(transcription: NexaraTranscriptionResponse)
   const customerTalkTime = customerSegments.reduce((total, seg) => total + (seg.end - seg.start), 0);
   const talkRatio = customerTalkTime > 0 ? managerTalkTime / customerTalkTime : 1;
   
-  // Расчет метрик
+  // Расчет метрик (возвращаем целые числа)
   let general_score = 7; // Базовый балл
   general_score += Math.min(2, positiveCount * 0.5); // Позитивные слова добавляют балл
   general_score -= Math.min(2, negativeCount * 0.5); // Негативные слова убавляют балл
   general_score += Math.min(1, qualityCount * 0.3); // Вежливость добавляет балл
-  general_score = Math.min(10, Math.max(1, general_score));
+  general_score = Math.round(Math.min(10, Math.max(1, general_score)));
   
-  // Удовлетворенность клиента
+  // Удовлетворенность клиента (возвращаем целые числа)
   let satisfaction = 7;
   satisfaction += Math.min(2, positiveCount * 0.6);
   satisfaction -= Math.min(3, negativeCount * 0.8);
-  satisfaction = Math.min(10, Math.max(1, satisfaction));
+  satisfaction = Math.round(Math.min(10, Math.max(1, satisfaction)));
   
-  // Коммуникативные навыки
+  // Коммуникативные навыки (возвращаем целые числа)
   let communication = 7;
   communication += Math.min(2, qualityCount * 0.4);
   communication += talkRatio > 2 ? -1 : (talkRatio < 0.5 ? 1 : 0); // Оптимальное соотношение речи
-  communication = Math.min(10, Math.max(1, communication));
+  communication = Math.round(Math.min(10, Math.max(1, communication)));
   
-  // Техника продаж
+  // Техника продаж (возвращаем целые числа)
   let sales = 6;
   sales += Math.min(2, salesCount * 0.5);
   sales += transcription.segments && transcription.segments.length > 4 ? 1 : 0; // Структурированный разговор
-  sales = Math.min(10, Math.max(1, sales));
+  sales = Math.round(Math.min(10, Math.max(1, sales)));
   
-  // Качество транскрипции
-  const transcription_score = transcription.text.length > 50 ? 9.5 : 7;
+  // Качество транскрипции (возвращаем целые числа)
+  const transcription_score = transcription.text.length > 50 ? 10 : 7;
   
   // Генерация описания на основе диаризации
   let summary = 'Стандартный разговор с клиентом';
@@ -97,11 +97,11 @@ export function analyzeTranscription(transcription: NexaraTranscriptionResponse)
   
   return {
     summary,
-    general_score: Math.round(general_score * 10) / 10,
-    user_satisfaction_index: Math.round(satisfaction * 10) / 10,
-    communication_skills: Math.round(communication * 10) / 10,
-    sales_technique: Math.round(sales * 10) / 10,
-    transcription_score: Math.round(transcription_score * 10) / 10,
+    general_score,
+    user_satisfaction_index: satisfaction,
+    communication_skills: communication,
+    sales_technique: sales,
+    transcription_score,
     feedback,
     advice
   };
