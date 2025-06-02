@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Bell, Check, X } from "lucide-react";
+import { Bell, Check, X, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -80,6 +80,25 @@ export const NotificationCenter = () => {
     toast({
       title: "Уведомление удалено",
     });
+  };
+
+  const copyNotification = async (notification: Notification) => {
+    const text = `${notification.title}\n${notification.message}\nВремя: ${formatTime(notification.timestamp)}`;
+    
+    try {
+      await navigator.clipboard.writeText(text);
+      toast({
+        title: "Скопировано в буфер обмена",
+        description: "Текст уведомления скопирован",
+      });
+    } catch (error) {
+      console.error('Failed to copy notification:', error);
+      toast({
+        title: "Ошибка копирования",
+        description: "Не удалось скопировать текст уведомления",
+        variant: "destructive",
+      });
+    }
   };
 
   const getTypeColor = (type: string) => {
@@ -165,12 +184,22 @@ export const NotificationCenter = () => {
                       </p>
                     </div>
                     <div className="flex gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6"
+                        onClick={() => copyNotification(notification)}
+                        title="Копировать уведомление"
+                      >
+                        <Copy className="h-3 w-3" />
+                      </Button>
                       {!notification.read && (
                         <Button
                           variant="ghost"
                           size="icon"
                           className="h-6 w-6"
                           onClick={() => markAsRead(notification.id)}
+                          title="Отметить как прочитанное"
                         >
                           <Check className="h-3 w-3" />
                         </Button>
@@ -180,6 +209,7 @@ export const NotificationCenter = () => {
                         size="icon"
                         className="h-6 w-6"
                         onClick={() => removeNotification(notification.id)}
+                        title="Удалить уведомление"
                       >
                         <X className="h-3 w-3" />
                       </Button>

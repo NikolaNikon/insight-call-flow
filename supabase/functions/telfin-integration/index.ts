@@ -48,11 +48,17 @@ serve(async (req) => {
           }
         });
         
+        console.log('Response status:', response.status);
+        console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+        
         if (!response.ok) {
-          throw new Error(`HTTP error! Status: ${response.status}`);
+          const errorText = await response.text();
+          console.error('Error response:', errorText);
+          throw new Error(`HTTP error! Status: ${response.status} - ${errorText}`);
         }
         
         const data: TelfinStorageUrlResponse = await response.json();
+        console.log('Success response:', data);
         
         return new Response(JSON.stringify({ success: true, audioUrl: data.record_url }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -74,9 +80,12 @@ serve(async (req) => {
         const response = await fetch(url, {
           method: 'GET',
           headers: {
-            'Authorization': `Basic ${credentials}`
+            'Authorization': `Basic ${credentials}`,
+            'Accept': '*/*'
           }
         });
+        
+        console.log('Download response status:', response.status);
         
         if (!response.ok) {
           console.error('Download failed with status:', response.status);
@@ -113,9 +122,12 @@ serve(async (req) => {
         const response = await fetch(url, {
           method: 'GET',
           headers: {
-            'Authorization': `Bearer ${accessToken}`
+            'Authorization': `Bearer ${accessToken}`,
+            'Accept': '*/*'
           }
         });
+        
+        console.log('OAuth download response status:', response.status);
         
         if (!response.ok) {
           console.error('OAuth download failed with status:', response.status);
