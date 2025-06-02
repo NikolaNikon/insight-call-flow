@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,9 +20,11 @@ import {
   Key,
   Bot,
   HelpCircle,
-  Loader2
+  Loader2,
+  Phone
 } from "lucide-react";
 import { CreateUserDialog } from "@/components/CreateUserDialog";
+import { TelfinSettings } from "@/components/TelfinSettings";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -130,10 +131,11 @@ const Settings = () => {
         </div>
 
         <Tabs defaultValue="users" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="users">Пользователи</TabsTrigger>
             <TabsTrigger value="system">Система</TabsTrigger>
             <TabsTrigger value="integrations">Интеграции</TabsTrigger>
+            <TabsTrigger value="telfin">Телфин</TabsTrigger>
             <TabsTrigger value="security">Безопасность</TabsTrigger>
           </TabsList>
 
@@ -484,6 +486,23 @@ const Settings = () => {
                 </CardContent>
               </Card>
             </div>
+          </TabsContent>
+
+          <TabsContent value="telfin" className="space-y-6">
+            <Card className="bg-white border-0 shadow-sm">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-graphite">
+                  <Phone className="h-5 w-5 text-blue-600" />
+                  Интеграция с Телфин
+                </CardTitle>
+                <CardDescription>
+                  Настройка подключения к API Телфин для получения аудиозаписей звонков
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <TelfinSettings />
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="security" className="space-y-6">
