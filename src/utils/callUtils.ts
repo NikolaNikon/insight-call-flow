@@ -1,7 +1,7 @@
 
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
-import { zonedTimeToUtc, utcToZonedTime } from "date-fns-tz";
+import { toZonedTime, fromZonedTime } from "date-fns-tz";
 
 const MOSCOW_TIMEZONE = 'Europe/Moscow';
 
@@ -13,9 +13,9 @@ export const getScoreColor = (score: number) => {
 
 export const formatDate = (dateString: string) => {
   const date = new Date(dateString);
-  const moscowTime = utcToZonedTime(date, MOSCOW_TIMEZONE);
+  const moscowTime = toZonedTime(date, MOSCOW_TIMEZONE);
   const now = new Date();
-  const moscowNow = utcToZonedTime(now, MOSCOW_TIMEZONE);
+  const moscowNow = toZonedTime(now, MOSCOW_TIMEZONE);
   
   const diffHours = Math.floor((moscowNow.getTime() - moscowTime.getTime()) / (1000 * 60 * 60));
   
@@ -27,7 +27,7 @@ export const formatDate = (dateString: string) => {
 
 export const formatMoscowTime = (dateString: string) => {
   const date = new Date(dateString);
-  const moscowTime = utcToZonedTime(date, MOSCOW_TIMEZONE);
+  const moscowTime = toZonedTime(date, MOSCOW_TIMEZONE);
   return format(moscowTime, "dd.MM.yyyy HH:mm", { locale: ru });
 };
 
