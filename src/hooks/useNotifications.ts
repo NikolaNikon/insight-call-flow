@@ -4,6 +4,10 @@ import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import type { Database } from '@/integrations/supabase/types';
+
+// Используем типы из Supabase
+type NotificationRow = Database['public']['Tables']['notifications']['Row'];
 
 export interface DatabaseNotification {
   id: string;
@@ -12,8 +16,8 @@ export interface DatabaseNotification {
   message: string;
   type: 'info' | 'success' | 'warning' | 'error';
   read: boolean;
-  entity_type?: string;
-  entity_id?: string;
+  entity_type?: string | null;
+  entity_id?: string | null;
   metadata: Record<string, any>;
   created_at: string;
   updated_at: string;
@@ -26,6 +30,23 @@ export const useNotifications = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Функция для приведения типов из БД к нашему интерфейсу
+  const mapNotificationFromDB = (dbNotification: NotificationRow): DatabaseNotification => {
+    return {
+      id: dbNotification.id,
+      user_id: dbNotification.user_id,
+      title: dbNotification.title,
+      message: dbNotification.message,
+      type: dbNotification.type as 'info' | 'success' | 'warning' | 'error',
+      read: dbNotification.read,
+      entity_type: dbNotification.entity_type,
+      entity_id: dbNotification.entity_id,
+      metadata: (dbNotification.metadata as Record<string, any>) || {},
+      created_at: dbNotification.created_at,
+      updated_at: dbNotification.updated_at,
+    };
+  };
+
   // Загружаем уведомления
   const fetchNotifications = async () => {
     try {
@@ -36,7 +57,9 @@ export const useNotifications = () => {
         .limit(50);
 
       if (error) throw error;
-      setNotifications(data || []);
+      
+      const mappedNotifications = (data || []).map(mapNotificationFromDB);
+      setNotifications(mappedNotifications);
     } catch (error) {
       console.error('Error fetching notifications:', error);
       toast({
@@ -145,8 +168,9 @@ export const useNotifications = () => {
 
       if (error) throw error;
 
-      setNotifications(prev => [data, ...prev]);
-      return data;
+      const mappedNotification = mapNotificationFromDB(data);
+      setNotifications(prev => [mappedNotification, ...prev]);
+      return mappedNotification;
     } catch (error) {
       console.error('Error creating notification:', error);
       throw error;
@@ -173,20 +197,21 @@ export const useNotifications = () => {
           console.log('Notification update:', payload);
           
           if (payload.eventType === 'INSERT') {
-            setNotifications(prev => [payload.new as DatabaseNotification, ...prev]);
+            const mappedNotification = mapNotificationFromDB(payload.new as NotificationRow);
+            setNotifications(prev => [mappedNotification, ...prev]);
             
             // Показываем toast для новых уведомлений
-            const newNotification = payload.new as DatabaseNotification;
             toast({
-              title: newNotification.title,
-              description: newNotification.message,
-              variant: newNotification.type === 'error' ? 'destructive' : 'default'
+              title: mappedNotification.title,
+              description: mappedNotification.message,
+              variant: mappedNotification.type === 'error' ? 'destructive' : 'default'
             });
           } else if (payload.eventType === 'UPDATE') {
+            const mappedNotification = mapNotificationFromDB(payload.new as NotificationRow);
             setNotifications(prev => 
               prev.map(notification => 
-                notification.id === payload.new.id 
-                  ? payload.new as DatabaseNotification
+                notification.id === mappedNotification.id 
+                  ? mappedNotification
                   : notification
               )
             );
