@@ -12,11 +12,13 @@ import {
   Edit,
   Calendar
 } from 'lucide-react';
-import { useKnowledgeArticles, useIncrementViews } from '@/hooks/useKnowledgeBase';
+import { useKnowledgeArticles, type KnowledgeArticle } from '@/hooks/useKnowledgeBase';
 
 interface ArticlesListProps {
   searchQuery: string;
   selectedCategory: string;
+  onViewArticle?: (article: KnowledgeArticle) => void;
+  onEditArticle?: (article: KnowledgeArticle) => void;
 }
 
 const statusLabels = {
@@ -31,18 +33,16 @@ const statusColors = {
   published: 'bg-green-100 text-green-800'
 };
 
-export const ArticlesList = ({ searchQuery, selectedCategory }: ArticlesListProps) => {
+export const ArticlesList = ({ 
+  searchQuery, 
+  selectedCategory,
+  onViewArticle,
+  onEditArticle
+}: ArticlesListProps) => {
   const { data: articles = [], isLoading } = useKnowledgeArticles(
     searchQuery,
     selectedCategory === 'all' ? undefined : selectedCategory
   );
-  const incrementViews = useIncrementViews();
-
-  const handleViewArticle = (articleId: string) => {
-    incrementViews.mutate(articleId);
-    // TODO: Открыть статью в отдельном модальном окне или на новой странице
-    console.log('Открыть статью:', articleId);
-  };
 
   if (isLoading) {
     return (
@@ -112,7 +112,7 @@ export const ArticlesList = ({ searchQuery, selectedCategory }: ArticlesListProp
                 </div>
                 <CardTitle 
                   className="text-lg hover:text-primary cursor-pointer"
-                  onClick={() => handleViewArticle(article.id)}
+                  onClick={() => onViewArticle?.(article)}
                 >
                   {article.title}
                 </CardTitle>
@@ -120,10 +120,17 @@ export const ArticlesList = ({ searchQuery, selectedCategory }: ArticlesListProp
                   {article.description}
                 </CardDescription>
               </div>
-              <Button variant="ghost" size="sm" className="gap-2">
-                <Edit className="h-4 w-4" />
-                Редактировать
-              </Button>
+              {onEditArticle && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="gap-2"
+                  onClick={() => onEditArticle(article)}
+                >
+                  <Edit className="h-4 w-4" />
+                  Редактировать
+                </Button>
+              )}
             </div>
           </CardHeader>
           <CardContent className="pt-0">
@@ -145,7 +152,7 @@ export const ArticlesList = ({ searchQuery, selectedCategory }: ArticlesListProp
               <Button 
                 variant="outline" 
                 size="sm"
-                onClick={() => handleViewArticle(article.id)}
+                onClick={() => onViewArticle?.(article)}
               >
                 Читать
               </Button>

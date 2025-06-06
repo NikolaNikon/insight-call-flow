@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -23,17 +23,19 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { ArticleTemplateSelector } from './ArticleTemplateSelector';
 import { MarkdownRenderer } from './MarkdownRenderer';
-import { useKnowledgeCategories, useCreateArticle } from '@/hooks/useKnowledgeBase';
+import { useKnowledgeCategories, useCreateArticle, useUpdateArticle, type KnowledgeArticle } from '@/hooks/useKnowledgeBase';
 
 interface CreateArticleDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  editingArticle?: KnowledgeArticle | null;
 }
 
-export const CreateArticleDialog = ({ open, onOpenChange }: CreateArticleDialogProps) => {
+export const CreateArticleDialog = ({ open, onOpenChange, editingArticle }: CreateArticleDialogProps) => {
   const { toast } = useToast();
   const { data: categories = [] } = useKnowledgeCategories();
   const createArticle = useCreateArticle();
+  const updateArticle = useUpdateArticle();
   
   const [step, setStep] = useState<'template' | 'content'>('template');
   const [formData, setFormData] = useState({
@@ -44,6 +46,32 @@ export const CreateArticleDialog = ({ open, onOpenChange }: CreateArticleDialogP
     template: 'general' as const,
     status: 'draft' as const
   });
+
+  // Заполнение формы при редактировании
+  useEffect(() => {
+    if (editingArticle && open) {
+      setFormData({
+        title: editingArticle.title,
+        description: editingArticle.description || '',
+        category_id: editingArticle.category_id || '',
+        content: editingArticle.content,
+        template: editingArticle.template,
+        status: editingArticle.status
+      });
+      setStep('content'); // Сразу к редактированию контента
+    } else if (!editingArticle && open) {
+      // Сброс формы для создания новой статьи
+      setFormData({
+        title: '',
+        description: '',
+        category_id: '',
+        content: '',
+        template: 'general',
+        status: 'draft'
+      });
+      setStep('template');
+    }
+  }, [editingArticle, open]);
 
   const handleTemplateSelect = (template: string, content: string) => {
     setFormData(prev => ({
@@ -67,7 +95,20 @@ export const CreateArticleDialog = ({ open, onOpenChange }: CreateArticleDialogP
     }
 
     try {
-      await createArticle.mutateAsync(formData);
+      if (editingArticle) {
+        // Обновление существующей статьи
+        await updateArticle.mutateAsync({
+          id: editingArticle.id,
+          title: formData.title,
+          description: formData.description,
+          category_id: formData.category_id,
+          content: formData.content,
+          status: formData.status
+        });
+      } else {
+        // Создание новой статьи
+        await createArticle.mutateAsync(formData);
+      }
       
       // Сброс формы
       setFormData({
@@ -81,27 +122,36 @@ export const CreateArticleDialog = ({ open, onOpenChange }: CreateArticleDialogP
       setStep('template');
       onOpenChange(false);
     } catch (error) {
-      console.error('Ошибка создания статьи:', error);
+      console.error('Ошибка при сохранении статьи:', error);
     }
   };
+
+  const isEditing = !!editingArticle;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle>
-            {step === 'template' ? 'Выберите шаблон статьи' : 'Создать новую статью'}
+            {isEditing 
+              ? 'Редактировать статью'
+              : step === 'template' 
+                ? 'Выберите шаблон статьи' 
+                : 'Создать новую статью'
+            }
           </DialogTitle>
           <DialogDescription>
-            {step === 'template' 
-              ? 'Выберите подходящий шаблон для вашей статьи'
-              : 'Заполните информацию о статье и её содержание'
+            {isEditing
+              ? 'Внесите изменения в статью'
+              : step === 'template' 
+                ? 'Выберите подходящий шаблон для вашей статьи'
+                : 'Заполните информацию о статье и её содержание'
             }
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex-1 overflow-hidden">
-          {step === 'template' ? (
+          {step === 'template' && !isEditing ? (
             <ArticleTemplateSelector onSelect={handleTemplateSelect} />
           ) : (
             <form onSubmit={handleSubmit} className="h-full flex flex-col">
@@ -135,15 +185,33 @@ export const CreateArticleDialog = ({ open, onOpenChange }: CreateArticleDialogP
                 </div>
               </div>
 
-              <div className="space-y-2 mb-4">
-                <Label htmlFor="description">Краткое описание *</Label>
-                <Textarea
-                  id="description"
-                  placeholder="Краткое описание содержания статьи"
-                  value={formData.description}
-                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                  rows={2}
-                />
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div className="space-y-2">
+                  <Label htmlFor="description">Краткое описание *</Label>
+                  <Textarea
+                    id="description"
+                    placeholder="Краткое описание содержания статьи"
+                    value={formData.description}
+                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                    rows={2}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="status">Статус публикации</Label>
+                  <Select
+                    value={formData.status}
+                    onValueChange={(value) => setFormData(prev => ({ ...prev, status: value as any }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="draft">Черновик</SelectItem>
+                      <SelectItem value="internal">Внутренняя</SelectItem>
+                      <SelectItem value="published">Опубликована</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
               <div className="flex-1 overflow-hidden">
@@ -170,13 +238,15 @@ export const CreateArticleDialog = ({ open, onOpenChange }: CreateArticleDialogP
               </div>
 
               <DialogFooter className="mt-4">
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={() => setStep('template')}
-                >
-                  Назад
-                </Button>
+                {!isEditing && (
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => setStep('template')}
+                  >
+                    Назад
+                  </Button>
+                )}
                 <Button 
                   type="button" 
                   variant="outline" 
@@ -186,9 +256,14 @@ export const CreateArticleDialog = ({ open, onOpenChange }: CreateArticleDialogP
                 </Button>
                 <Button 
                   type="submit"
-                  disabled={createArticle.isPending}
+                  disabled={createArticle.isPending || updateArticle.isPending}
                 >
-                  {createArticle.isPending ? 'Создание...' : 'Создать статью'}
+                  {createArticle.isPending || updateArticle.isPending 
+                    ? 'Сохранение...' 
+                    : isEditing 
+                      ? 'Сохранить изменения'
+                      : 'Создать статью'
+                  }
                 </Button>
               </DialogFooter>
             </form>

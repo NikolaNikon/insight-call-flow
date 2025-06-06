@@ -8,11 +8,77 @@ import { KnowledgeBaseHeader } from '@/components/KnowledgeBaseHeader';
 import { ArticlesList } from '@/components/ArticlesList';
 import { CreateArticleDialog } from '@/components/CreateArticleDialog';
 import { ArticleCategories } from '@/components/ArticleCategories';
+import { ArticleViewer } from '@/components/ArticleViewer';
+import { ArticleVersionHistory } from '@/components/ArticleVersionHistory';
+import { useToast } from '@/hooks/use-toast';
+import { useCreateArticle, type KnowledgeArticle } from '@/hooks/useKnowledgeBase';
 
 const KnowledgeBase = () => {
+  const { toast } = useToast();
+  const createArticle = useCreateArticle();
+  
   const [searchQuery, setSearchQuery] = useState('');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('all');
+  
+  // Состояния для просмотра статей
+  const [selectedArticle, setSelectedArticle] = useState<KnowledgeArticle | null>(null);
+  const [isArticleViewerOpen, setIsArticleViewerOpen] = useState(false);
+  const [isVersionHistoryOpen, setIsVersionHistoryOpen] = useState(false);
+  const [editingArticle, setEditingArticle] = useState<KnowledgeArticle | null>(null);
+
+  const handleViewArticle = (article: KnowledgeArticle) => {
+    setSelectedArticle(article);
+    setIsArticleViewerOpen(true);
+  };
+
+  const handleEditArticle = (article: KnowledgeArticle) => {
+    setEditingArticle(article);
+    setSelectedArticle(null);
+    setIsArticleViewerOpen(false);
+    setIsCreateDialogOpen(true);
+  };
+
+  const handleDuplicateArticle = async (article: KnowledgeArticle) => {
+    try {
+      await createArticle.mutateAsync({
+        title: `${article.title} (копия)`,
+        content: article.content,
+        description: article.description,
+        category_id: article.category_id || undefined,
+        template: article.template,
+        status: 'draft'
+      });
+      
+      setIsArticleViewerOpen(false);
+      
+      toast({
+        title: 'Статья скопирована',
+        description: 'Создана копия статьи в статусе "Черновик"',
+      });
+    } catch (error) {
+      toast({
+        title: 'Ошибка',
+        description: 'Не удалось скопировать статью',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleViewHistory = (article: KnowledgeArticle) => {
+    setSelectedArticle(article);
+    setIsArticleViewerOpen(false);
+    setIsVersionHistoryOpen(true);
+  };
+
+  const handleRestoreVersion = () => {
+    // Обновляем данные после восстановления версии
+    setIsVersionHistoryOpen(false);
+    toast({
+      title: 'Версия восстановлена',
+      description: 'Статья была успешно восстановлена к выбранной версии',
+    });
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -33,7 +99,10 @@ const KnowledgeBase = () => {
           </div>
           
           <Button 
-            onClick={() => setIsCreateDialogOpen(true)}
+            onClick={() => {
+              setEditingArticle(null);
+              setIsCreateDialogOpen(true);
+            }}
             className="gap-2"
           >
             <Plus className="h-4 w-4" />
@@ -73,6 +142,8 @@ const KnowledgeBase = () => {
                 <ArticlesList 
                   searchQuery={searchQuery}
                   selectedCategory={selectedCategory}
+                  onViewArticle={handleViewArticle}
+                  onEditArticle={handleEditArticle}
                 />
               </div>
             </div>
@@ -110,9 +181,27 @@ const KnowledgeBase = () => {
           </TabsContent>
         </Tabs>
 
+        {/* Диалоги */}
         <CreateArticleDialog 
           open={isCreateDialogOpen}
           onOpenChange={setIsCreateDialogOpen}
+          editingArticle={editingArticle}
+        />
+
+        <ArticleViewer
+          article={selectedArticle}
+          open={isArticleViewerOpen}
+          onOpenChange={setIsArticleViewerOpen}
+          onEdit={handleEditArticle}
+          onDuplicate={handleDuplicateArticle}
+          onViewHistory={handleViewHistory}
+        />
+
+        <ArticleVersionHistory
+          article={selectedArticle}
+          open={isVersionHistoryOpen}
+          onOpenChange={setIsVersionHistoryOpen}
+          onRestore={handleRestoreVersion}
         />
       </div>
     </div>
