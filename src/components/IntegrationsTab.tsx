@@ -160,7 +160,6 @@ export const IntegrationsTab = () => {
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="bg-white/90 backdrop-blur-sm px-6 py-3 rounded-lg border shadow-sm">
             <span className="text-lg font-semibold text-gray-600">Soon</span>
-            <p className="text-sm text-gray-500 mt-1">Займемся им позже</p>
           </div>
         </div>
       </div>
