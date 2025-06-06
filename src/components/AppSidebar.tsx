@@ -1,5 +1,5 @@
 
-import { Calendar, BarChart3, Search, FileText, Settings, LayoutDashboard } from "lucide-react";
+import { Calendar, BarChart3, Search, FileText, Settings, LayoutDashboard, BookOpen } from "lucide-react";
 import { useLocation, Link } from "react-router-dom";
 import {
   Sidebar,
@@ -34,6 +34,11 @@ const menuItems = [
     title: "Отчёты",
     url: "/reports",
     icon: FileText,
+  },
+  {
+    title: "База знаний",
+    url: "/knowledge-base",
+    icon: BookOpen,
   },
   {
     title: "Настройки",

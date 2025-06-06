@@ -15,6 +15,7 @@ import Analytics from "./pages/Analytics";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
 import Users from "./pages/Users";
+import KnowledgeBase from "./pages/KnowledgeBase";
 import NotFound from "./pages/NotFound";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "./components/AppSidebar";
@@ -45,6 +46,7 @@ const AppWithRealtime = () => {
                           <Route path="/calls" element={<Calls />} />
                           <Route path="/analytics" element={<Analytics />} />
                           <Route path="/reports" element={<Reports />} />
+                          <Route path="/knowledge-base" element={<KnowledgeBase />} />
                           <Route path="/settings" element={<Settings />} />
                           <Route path="/users" element={<Users />} />
                           <Route path="*" element={<NotFound />} />
