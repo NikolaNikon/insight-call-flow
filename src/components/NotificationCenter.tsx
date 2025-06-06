@@ -1,5 +1,4 @@
 
-import { useState } from "react";
 import { Bell, Check, X, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,80 +9,22 @@ import {
 } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
-
-interface Notification {
-  id: string;
-  title: string;
-  message: string;
-  type: "info" | "success" | "warning" | "error";
-  timestamp: Date;
-  read: boolean;
-}
-
-const mockNotifications: Notification[] = [
-  {
-    id: "1",
-    title: "Обновление системы",
-    message: "Добавлена новая функция анализа тональности звонков",
-    type: "info",
-    timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
-    read: false,
-  },
-  {
-    id: "2", 
-    title: "Новые звонки",
-    message: "Обработано 15 новых записей за последний час",
-    type: "success",
-    timestamp: new Date(Date.now() - 30 * 60 * 1000),
-    read: false,
-  },
-  {
-    id: "3",
-    title: "Техническое обслуживание",
-    message: "Планируется техническое обслуживание 25.01 с 02:00 до 04:00",
-    type: "warning",
-    timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000),
-    read: true,
-  },
-];
+import { useNotifications } from "@/hooks/useNotifications";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export const NotificationCenter = () => {
-  const [notifications, setNotifications] = useState<Notification[]>(mockNotifications);
+  const { 
+    notifications, 
+    loading, 
+    unreadCount, 
+    markAsRead, 
+    markAllAsRead, 
+    removeNotification 
+  } = useNotifications();
   const { toast } = useToast();
 
-  const unreadCount = notifications.filter(n => !n.read).length;
-
-  const markAsRead = (id: string) => {
-    setNotifications(prev => 
-      prev.map(notification => 
-        notification.id === id 
-          ? { ...notification, read: true }
-          : notification
-      )
-    );
-    toast({
-      title: "Уведомление отмечено как прочитанное",
-    });
-  };
-
-  const markAllAsRead = () => {
-    setNotifications(prev => 
-      prev.map(notification => ({ ...notification, read: true }))
-    );
-    toast({
-      title: "Все уведомления отмечены как прочитанные",
-    });
-  };
-
-  const removeNotification = (id: string) => {
-    setNotifications(prev => prev.filter(n => n.id !== id));
-    toast({
-      title: "Уведомление удалено",
-    });
-  };
-
-  const copyNotification = async (notification: Notification) => {
-    const text = `${notification.title}\n${notification.message}\nВремя: ${formatTime(notification.timestamp)}`;
+  const copyNotification = async (notification: any) => {
+    const text = `${notification.title}\n${notification.message}\nВремя: ${formatTime(new Date(notification.created_at))}`;
     
     try {
       await navigator.clipboard.writeText(text);
@@ -116,6 +57,14 @@ export const NotificationCenter = () => {
     const hours = Math.floor(diff / (1000 * 60 * 60));
     const minutes = Math.floor(diff / (1000 * 60));
 
+    if (hours > 24) {
+      return date.toLocaleDateString('ru-RU', { 
+        day: 'numeric', 
+        month: 'short',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
     if (hours > 0) return `${hours}ч назад`;
     if (minutes > 0) return `${minutes}мин назад`;
     return "Только что";
@@ -153,7 +102,17 @@ export const NotificationCenter = () => {
           </div>
         </div>
         <ScrollArea className="h-80">
-          {notifications.length === 0 ? (
+          {loading ? (
+            <div className="p-4 space-y-3">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="space-y-2">
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-3 w-full" />
+                  <Skeleton className="h-3 w-1/2" />
+                </div>
+              ))}
+            </div>
+          ) : notifications.length === 0 ? (
             <div className="p-4 text-center text-muted-foreground">
               Нет уведомлений
             </div>
@@ -180,7 +139,7 @@ export const NotificationCenter = () => {
                         {notification.message}
                       </p>
                       <p className="text-xs text-gray-400 mt-1">
-                        {formatTime(notification.timestamp)}
+                        {formatTime(new Date(notification.created_at))}
                       </p>
                     </div>
                     <div className="flex gap-1">

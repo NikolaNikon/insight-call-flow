@@ -2,11 +2,10 @@
 import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { NotificationService } from '@/services/notificationService';
 
 export const useRealtimeUpdates = () => {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   useEffect(() => {
     // Подписываемся на изменения в таблице calls
@@ -19,7 +18,7 @@ export const useRealtimeUpdates = () => {
           schema: 'public',
           table: 'calls'
         },
-        (payload) => {
+        async (payload) => {
           console.log('Call update:', payload);
           
           // Обновляем все связанные запросы
@@ -28,20 +27,29 @@ export const useRealtimeUpdates = () => {
           queryClient.invalidateQueries({ queryKey: ['processing-calls'] });
           queryClient.invalidateQueries({ queryKey: ['call-stats'] });
 
-          // Показываем уведомление при завершении обработки
+          // Создаем уведомления при изменении статуса обработки
           if (payload.eventType === 'UPDATE' && payload.new?.processing_status === 'completed') {
-            toast({
-              title: "Обработка завершена",
-              description: "Аудиозапись успешно обработана и готова к просмотру",
-            });
+            try {
+              await NotificationService.notifyCallProcessed(
+                payload.new.id,
+                payload.new.manager_id,
+                true
+              );
+            } catch (error) {
+              console.error('Failed to create completion notification:', error);
+            }
           }
 
           if (payload.eventType === 'UPDATE' && payload.new?.processing_status === 'failed') {
-            toast({
-              title: "Ошибка обработки",
-              description: "Не удалось обработать аудиозапись",
-              variant: "destructive"
-            });
+            try {
+              await NotificationService.notifyCallProcessed(
+                payload.new.id,
+                payload.new.manager_id,
+                false
+              );
+            } catch (error) {
+              console.error('Failed to create failure notification:', error);
+            }
           }
         }
       )
@@ -57,15 +65,32 @@ export const useRealtimeUpdates = () => {
           schema: 'public',
           table: 'exports'
         },
-        (payload) => {
+        async (payload) => {
           console.log('Export update:', payload);
           queryClient.invalidateQueries({ queryKey: ['exports'] });
 
           if (payload.eventType === 'UPDATE' && payload.new?.status === 'completed') {
-            toast({
-              title: "Отчет готов",
-              description: "Экспорт завершен, файл готов к скачиванию",
-            });
+            try {
+              await NotificationService.notifyExportComplete(
+                payload.new.id,
+                payload.new.user_id,
+                true
+              );
+            } catch (error) {
+              console.error('Failed to create export notification:', error);
+            }
+          }
+
+          if (payload.eventType === 'UPDATE' && payload.new?.status === 'failed') {
+            try {
+              await NotificationService.notifyExportComplete(
+                payload.new.id,
+                payload.new.user_id,
+                false
+              );
+            } catch (error) {
+              console.error('Failed to create export failure notification:', error);
+            }
           }
         }
       )
@@ -75,5 +100,5 @@ export const useRealtimeUpdates = () => {
       supabase.removeChannel(callsChannel);
       supabase.removeChannel(exportsChannel);
     };
-  }, [queryClient, toast]);
+  }, [queryClient]);
 };
