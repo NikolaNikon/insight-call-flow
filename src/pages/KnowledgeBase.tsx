@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, Plus, BookOpen } from 'lucide-react';
+import { Search, Plus, BookOpen, History, Settings as SettingsIcon } from 'lucide-react';
 import { KnowledgeBaseHeader } from '@/components/KnowledgeBaseHeader';
 import { ArticlesList } from '@/components/ArticlesList';
 import { CreateArticleDialog } from '@/components/CreateArticleDialog';
@@ -42,13 +42,23 @@ const KnowledgeBase = () => {
         </div>
 
         <Tabs defaultValue="articles" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="articles" className="gap-2">
               <BookOpen className="h-4 w-4" />
               Статьи
             </TabsTrigger>
-            <TabsTrigger value="categories">Категории</TabsTrigger>
-            <TabsTrigger value="recent">Последние изменения</TabsTrigger>
+            <TabsTrigger value="categories" className="gap-2">
+              <SettingsIcon className="h-4 w-4" />
+              Категории
+            </TabsTrigger>
+            <TabsTrigger value="recent" className="gap-2">
+              <History className="h-4 w-4" />
+              Последние изменения
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="gap-2">
+              <BookOpen className="h-4 w-4" />
+              Аналитика
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="articles" className="space-y-6">
@@ -71,14 +81,31 @@ const KnowledgeBase = () => {
           <TabsContent value="categories" className="space-y-6">
             <div className="bg-white rounded-lg shadow-sm border p-6">
               <h3 className="text-lg font-semibold text-graphite mb-4">Управление категориями</h3>
-              <p className="text-gray-600">Раздел управления категориями будет реализован в следующих версиях.</p>
+              <p className="text-gray-600">
+                Здесь вы сможете создавать, редактировать и удалять категории для организации статей.
+              </p>
+              <Button className="mt-4" variant="outline">
+                <Plus className="h-4 w-4 mr-2" />
+                Добавить категорию
+              </Button>
             </div>
           </TabsContent>
 
           <TabsContent value="recent" className="space-y-6">
             <div className="bg-white rounded-lg shadow-sm border p-6">
               <h3 className="text-lg font-semibold text-graphite mb-4">Последние изменения</h3>
-              <p className="text-gray-600">История изменений документации будет доступна в следующих версиях.</p>
+              <p className="text-gray-600">
+                История изменений и обновлений статей в базе знаний.
+              </p>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="analytics" className="space-y-6">
+            <div className="bg-white rounded-lg shadow-sm border p-6">
+              <h3 className="text-lg font-semibold text-graphite mb-4">Аналитика базы знаний</h3>
+              <p className="text-gray-600">
+                Статистика просмотров, популярные статьи и анализ пользовательского фидбека.
+              </p>
             </div>
           </TabsContent>
         </Tabs>

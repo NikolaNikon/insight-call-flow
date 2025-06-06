@@ -623,6 +623,185 @@ export type Database = {
         }
         Relationships: []
       }
+      knowledge_article_versions: {
+        Row: {
+          article_id: string
+          author_id: string
+          change_summary: string | null
+          content: string
+          created_at: string
+          description: string | null
+          id: string
+          title: string
+          version_number: number
+        }
+        Insert: {
+          article_id: string
+          author_id: string
+          change_summary?: string | null
+          content: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          title: string
+          version_number: number
+        }
+        Update: {
+          article_id?: string
+          author_id?: string
+          change_summary?: string | null
+          content?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          title?: string
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_article_versions_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_articles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      knowledge_articles: {
+        Row: {
+          author_id: string
+          category_id: string | null
+          content: string
+          created_at: string
+          description: string | null
+          id: string
+          published_at: string | null
+          slug: string
+          status: Database["public"]["Enums"]["article_status"]
+          template: Database["public"]["Enums"]["article_template"]
+          title: string
+          updated_at: string
+          version_number: number
+          view_count: number
+        }
+        Insert: {
+          author_id: string
+          category_id?: string | null
+          content: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          published_at?: string | null
+          slug: string
+          status?: Database["public"]["Enums"]["article_status"]
+          template?: Database["public"]["Enums"]["article_template"]
+          title: string
+          updated_at?: string
+          version_number?: number
+          view_count?: number
+        }
+        Update: {
+          author_id?: string
+          category_id?: string | null
+          content?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          published_at?: string | null
+          slug?: string
+          status?: Database["public"]["Enums"]["article_status"]
+          template?: Database["public"]["Enums"]["article_template"]
+          title?: string
+          updated_at?: string
+          version_number?: number
+          view_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_articles_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      knowledge_categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          parent_id: string | null
+          slug: string
+          sort_order: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          parent_id?: string | null
+          slug: string
+          sort_order?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          parent_id?: string | null
+          slug?: string
+          sort_order?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_categories_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      knowledge_feedback: {
+        Row: {
+          article_id: string
+          created_at: string
+          feedback_text: string | null
+          id: string
+          is_helpful: boolean
+          user_id: string | null
+        }
+        Insert: {
+          article_id: string
+          created_at?: string
+          feedback_text?: string | null
+          id?: string
+          is_helpful: boolean
+          user_id?: string | null
+        }
+        Update: {
+          article_id?: string
+          created_at?: string
+          feedback_text?: string | null
+          id?: string
+          is_helpful?: boolean
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_feedback_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_articles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       managers: {
         Row: {
           created_at: string
@@ -824,6 +1003,10 @@ export type Database = {
         Args: { csv_content: string }
         Returns: number
       }
+      increment_article_views: {
+        Args: { article_id: string }
+        Returns: undefined
+      }
       match_documents: {
         Args: { query_embedding: string; match_count?: number; filter?: Json }
         Returns: {
@@ -835,7 +1018,8 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      article_status: "draft" | "internal" | "published"
+      article_template: "instruction" | "integration" | "faq" | "general"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -950,6 +1134,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      article_status: ["draft", "internal", "published"],
+      article_template: ["instruction", "integration", "faq", "general"],
+    },
   },
 } as const
