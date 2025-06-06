@@ -24,6 +24,7 @@ import { useToast } from '@/hooks/use-toast';
 import { ArticleTemplateSelector } from './ArticleTemplateSelector';
 import { MarkdownRenderer } from './MarkdownRenderer';
 import { useKnowledgeCategories, useCreateArticle, useUpdateArticle, type KnowledgeArticle } from '@/hooks/useKnowledgeBase';
+import type { Enums } from '@/integrations/supabase/types';
 
 interface CreateArticleDialogProps {
   open: boolean;
@@ -43,8 +44,8 @@ export const CreateArticleDialog = ({ open, onOpenChange, editingArticle }: Crea
     description: '',
     category_id: '',
     content: '',
-    template: 'general' as const,
-    status: 'draft' as const
+    template: 'general' as Enums<'article_template'>,
+    status: 'draft' as Enums<'article_status'>
   });
 
   // Заполнение формы при редактировании
@@ -76,7 +77,7 @@ export const CreateArticleDialog = ({ open, onOpenChange, editingArticle }: Crea
   const handleTemplateSelect = (template: string, content: string) => {
     setFormData(prev => ({
       ...prev,
-      template: template as any,
+      template: template as Enums<'article_template'>,
       content
     }));
     setStep('content');
@@ -200,7 +201,7 @@ export const CreateArticleDialog = ({ open, onOpenChange, editingArticle }: Crea
                   <Label htmlFor="status">Статус публикации</Label>
                   <Select
                     value={formData.status}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, status: value as any }))}
+                    onValueChange={(value) => setFormData(prev => ({ ...prev, status: value as Enums<'article_status'> }))}
                   >
                     <SelectTrigger>
                       <SelectValue />

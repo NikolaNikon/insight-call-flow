@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { MarkdownRenderer } from './MarkdownRenderer';
 import { ArticleFeedback } from './ArticleFeedback';
-import { useKnowledgeArticles, useIncrementViews, type KnowledgeArticle } from '@/hooks/useKnowledgeBase';
+import { useKnowledgeArticles, useIncrementViews, useKnowledgeCategories, type KnowledgeArticle } from '@/hooks/useKnowledgeBase';
 
 interface ArticleViewerProps {
   article: KnowledgeArticle | null;
@@ -49,7 +49,12 @@ export const ArticleViewer = ({
   onViewHistory 
 }: ArticleViewerProps) => {
   const incrementViews = useIncrementViews();
+  const { data: categories = [] } = useKnowledgeCategories();
   const [tableOfContents, setTableOfContents] = useState<Array<{id: string, text: string, level: number}>>([]);
+
+  // Находим категорию для статьи
+  const articleCategory = article?.category_id ? 
+    categories.find(cat => cat.id === article.category_id) : null;
 
   useEffect(() => {
     if (article && open) {
@@ -112,9 +117,9 @@ export const ArticleViewer = ({
                     <Badge className={`text-xs ${statusColors[article.status as keyof typeof statusColors]}`}>
                       {statusLabels[article.status as keyof typeof statusLabels]}
                     </Badge>
-                    {article.knowledge_categories && (
+                    {articleCategory && (
                       <Badge variant="outline" className="text-xs">
-                        {(article.knowledge_categories as any).name}
+                        {articleCategory.name}
                       </Badge>
                     )}
                     <div className="flex items-center gap-1 text-xs text-gray-500">
