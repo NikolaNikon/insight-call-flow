@@ -2,7 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import type { Tables } from '@/integrations/supabase/types';
+import type { Tables, Enums } from '@/integrations/supabase/types';
 
 export type KnowledgeArticle = Tables<'knowledge_articles'>;
 export type KnowledgeCategory = Tables<'knowledge_categories'>;
@@ -23,7 +23,7 @@ export const useKnowledgeCategories = () => {
   });
 };
 
-export const useKnowledgeArticles = (searchQuery?: string, categoryId?: string, status?: string) => {
+export const useKnowledgeArticles = (searchQuery?: string, categoryId?: string, status?: Enums<'article_status'>) => {
   return useQuery({
     queryKey: ['knowledge-articles', searchQuery, categoryId, status],
     queryFn: async () => {
@@ -59,18 +59,30 @@ export const useCreateArticle = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (article: Partial<KnowledgeArticle>) => {
+    mutationFn: async (article: {
+      title: string;
+      content: string;
+      description?: string;
+      status?: Enums<'article_status'>;
+      template?: Enums<'article_template'>;
+      category_id?: string;
+    }) => {
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) throw new Error('Пользователь не авторизован');
 
-      const slug = article.title?.toLowerCase()
+      const slug = article.title.toLowerCase()
         .replace(/[^а-яёa-z0-9\s]/g, '')
         .replace(/\s+/g, '-') || '';
 
       const { data, error } = await supabase
         .from('knowledge_articles')
         .insert({
-          ...article,
+          title: article.title,
+          content: article.content,
+          description: article.description,
+          status: article.status || 'draft',
+          template: article.template || 'general',
+          category_id: article.category_id,
           author_id: user.user.id,
           slug: `${slug}-${Date.now()}`,
         })
@@ -102,7 +114,7 @@ export const useUpdateArticle = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async ({ id, ...updates }: Partial<KnowledgeArticle> & { id: string }) => {
+    mutationFn: async ({ id, ...updates }: { id: string } & Partial<KnowledgeArticle>) => {
       const { data, error } = await supabase
         .from('knowledge_articles')
         .update(updates)
@@ -128,10 +140,18 @@ export const useSubmitFeedback = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (feedback: Partial<ArticleFeedback>) => {
+    mutationFn: async (feedback: {
+      article_id: string;
+      is_helpful: boolean;
+      feedback_text?: string;
+    }) => {
       const { data, error } = await supabase
         .from('knowledge_feedback')
-        .insert(feedback)
+        .insert({
+          article_id: feedback.article_id,
+          is_helpful: feedback.is_helpful,
+          feedback_text: feedback.feedback_text,
+        })
         .select()
         .single();
 
