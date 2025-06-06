@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -30,10 +29,18 @@ import { TelfinOAuthSettings } from "@/components/TelfinOAuthSettings";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useTelegramTest } from "@/hooks/useTelegramTest";
 
 const Settings = () => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const { testConnection, isLoading: isTelegramTesting } = useTelegramTest();
+  
+  // Telegram настройки
+  const [telegramSettings, setTelegramSettings] = useState({
+    botToken: localStorage.getItem('telegram_bot_token') || '',
+    chatId: localStorage.getItem('telegram_chat_id') || ''
+  });
   
   // Загружаем пользователей
   const { data: users = [], refetch: refetchUsers } = useQuery({
@@ -120,6 +127,32 @@ const Settings = () => {
         title: "Ошибка",
         description: error.message || "Не удалось удалить пользователя.",
       });
+    }
+  };
+
+  const handleSaveTelegramSettings = () => {
+    if (!telegramSettings.botToken || !telegramSettings.chatId) {
+      toast({
+        title: "Ошибка",
+        description: "Заполните токен бота и ID чата",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    localStorage.setItem('telegram_bot_token', telegramSettings.botToken);
+    localStorage.setItem('telegram_chat_id', telegramSettings.chatId);
+
+    toast({
+      title: "Настройки сохранены",
+      description: "Конфигурация Telegram бота сохранена",
+    });
+  };
+
+  const handleTestTelegramConnection = async () => {
+    const success = await testConnection(telegramSettings.botToken, telegramSettings.chatId);
+    if (success) {
+      handleSaveTelegramSettings();
     }
   };
 
@@ -359,6 +392,8 @@ const Settings = () => {
                       id="bot-token"
                       type="password"
                       placeholder="1234567890:ABCdefGHIjklmnoPQRstuvwxyz"
+                      value={telegramSettings.botToken}
+                      onChange={(e) => setTelegramSettings(prev => ({ ...prev, botToken: e.target.value }))}
                     />
                   </div>
                   <div>
@@ -385,10 +420,17 @@ const Settings = () => {
                     <Input 
                       id="chat-id"
                       placeholder="-1001234567890"
+                      value={telegramSettings.chatId}
+                      onChange={(e) => setTelegramSettings(prev => ({ ...prev, chatId: e.target.value }))}
                     />
                   </div>
-                  <Button className="w-full bg-primary hover:bg-primary/90">
-                    Проверить подключение
+                  <Button 
+                    className="w-full bg-primary hover:bg-primary/90"
+                    onClick={handleTestTelegramConnection}
+                    disabled={isTelegramTesting}
+                  >
+                    {isTelegramTesting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    {isTelegramTesting ? 'Тестируем подключение...' : 'Проверить подключение'}
                   </Button>
                 </CardContent>
               </Card>
