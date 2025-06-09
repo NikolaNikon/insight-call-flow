@@ -11,26 +11,37 @@ import {
   Activity,
   Upload,
   Users,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { SidebarLink } from "./SidebarLink";
 
 interface AppSidebarProps {
   isOpen: boolean;
   onClose: () => void;
+  collapsed?: boolean;
+  onToggleCollapse?: () => void;
 }
 
-export const AppSidebar: React.FC<AppSidebarProps> = ({ isOpen, onClose }) => {
+export const AppSidebar: React.FC<AppSidebarProps> = ({ 
+  isOpen, 
+  onClose, 
+  collapsed = false,
+  onToggleCollapse 
+}) => {
   return (
     <aside
-      className={`fixed left-0 top-0 z-50 flex h-full w-72.5 flex-col border-r bg-background transition-transform duration-300 ease-in-out ${
+      className={`fixed left-0 top-0 z-50 flex h-full flex-col border-r bg-background transition-all duration-300 ease-in-out lg:relative lg:translate-x-0 ${
         isOpen ? "translate-x-0" : "-translate-x-full"
-      }`}
+      } ${collapsed ? "lg:w-16" : "lg:w-72"} w-72`}
     >
       <div className="flex items-center justify-between px-4 py-3">
-        <span className="font-bold text-2xl">CallControl</span>
+        {!collapsed && <span className="font-bold text-2xl">CallControl</span>}
+        
+        {/* Mobile close button */}
         <button
           onClick={onClose}
-          className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary hover:bg-secondary h-10 w-10 p-0"
+          className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none hover:bg-secondary h-10 w-10 p-0 lg:hidden"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -49,6 +60,20 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ isOpen, onClose }) => {
           </svg>
           <span className="sr-only">Close sidebar</span>
         </button>
+
+        {/* Desktop collapse button */}
+        {onToggleCollapse && (
+          <button
+            onClick={onToggleCollapse}
+            className="hidden lg:inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none hover:bg-secondary h-8 w-8 p-0"
+          >
+            {collapsed ? (
+              <ChevronRight className="h-4 w-4" />
+            ) : (
+              <ChevronLeft className="h-4 w-4" />
+            )}
+          </button>
+        )}
       </div>
 
       <div className="flex-1 px-3 py-2">
@@ -57,60 +82,72 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ isOpen, onClose }) => {
             to="/"
             icon={<BarChart3 className="h-4 w-4" />}
             text="Дашборд"
+            collapsed={collapsed}
           />
           <SidebarLink
             to="/calls"
             icon={<Phone className="h-4 w-4" />}
             text="Звонки"
+            collapsed={collapsed}
           />
           <SidebarLink
             to="/keyword-trackers"
             icon={<Search className="h-4 w-4" />}
             text="Ключевые слова"
+            collapsed={collapsed}
           />
           <SidebarLink
             to="/analytics"
             icon={<FileBarChart className="h-4 w-4" />}
             text="Аналитика"
+            collapsed={collapsed}
           />
           <SidebarLink
             to="/knowledge-base"
             icon={<BookOpen className="h-4 w-4" />}
             text="База знаний"
+            collapsed={collapsed}
           />
           <SidebarLink
             to="/search"
             icon={<Search className="h-4 w-4" />}
             text="Поиск"
+            collapsed={collapsed}
           />
           <SidebarLink
             to="/monitoring"
             icon={<Activity className="h-4 w-4" />}
             text="Мониторинг"
+            collapsed={collapsed}
           />
           <SidebarLink
             to="/upload"
             icon={<Upload className="h-4 w-4" />}
             text="Загрузка"
+            collapsed={collapsed}
           />
           <SidebarLink
             to="/users"
             icon={<Users className="h-4 w-4" />}
             text="Пользователи"
+            collapsed={collapsed}
           />
           <SidebarLink
             to="/settings"
             icon={<Settings className="h-4 w-4" />}
             text="Настройки"
+            collapsed={collapsed}
           />
         </nav>
       </div>
 
-      <div className="border-t p-4">
-        <p className="text-sm text-muted-foreground">
-          CallControl © {new Date().getFullYear()}
-        </p>
-      </div>
+      {!collapsed && (
+        <div className="border-t p-4">
+          <p className="text-sm text-muted-foreground">
+            CallControl © {new Date().getFullYear()}
+          </p>
+        </div>
+      )}
     </aside>
   );
 };

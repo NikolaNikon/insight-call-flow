@@ -28,17 +28,32 @@ export const useKeywordTrackersApi = (props: UseKeywordTrackersApiProps = {}) =>
   const { data: trackers, isLoading, refetch } = useQuery({
     queryKey: ['keyword-trackers-api', props.category, props.include_stats],
     queryFn: async () => {
-      const params = new URLSearchParams();
-      if (props.category) params.append('category', props.category);
-      if (props.include_stats) params.append('include_stats', 'true');
+      const url = new URL(`${supabase.supabaseUrl}/functions/v1/keyword-trackers-api`);
+      
+      if (props.category) {
+        url.searchParams.append('category', props.category);
+      }
+      if (props.include_stats) {
+        url.searchParams.append('include_stats', 'true');
+      }
 
-      const { data, error } = await supabase.functions.invoke('keyword-trackers-api', {
+      const { data: session } = await supabase.auth.getSession();
+      const token = session?.session?.access_token;
+
+      const response = await fetch(url.toString(), {
         method: 'GET',
-        body: null,
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'apikey': supabase.supabaseKey,
+          'Content-Type': 'application/json',
+        },
       });
 
-      if (error) throw error;
-      return data as KeywordTrackerExtended[];
+      if (!response.ok) {
+        throw new Error(`Failed to fetch trackers: ${response.statusText}`);
+      }
+
+      return response.json() as KeywordTrackerExtended[];
     }
   });
 
@@ -52,13 +67,24 @@ export const useKeywordTrackersApi = (props: UseKeywordTrackersApiProps = {}) =>
   // Create tracker mutation
   const createTrackerMutation = useMutation({
     mutationFn: async (trackerData: Partial<KeywordTrackerExtended>) => {
-      const { data, error } = await supabase.functions.invoke('keyword-trackers-api', {
+      const { data: session } = await supabase.auth.getSession();
+      const token = session?.session?.access_token;
+
+      const response = await fetch(`${supabase.supabaseUrl}/functions/v1/keyword-trackers-api`, {
         method: 'POST',
-        body: trackerData,
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'apikey': supabase.supabaseKey,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(trackerData),
       });
 
-      if (error) throw error;
-      return data;
+      if (!response.ok) {
+        throw new Error(`Failed to create tracker: ${response.statusText}`);
+      }
+
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['keyword-trackers-api'] });
@@ -80,13 +106,24 @@ export const useKeywordTrackersApi = (props: UseKeywordTrackersApiProps = {}) =>
   // Update tracker mutation
   const updateTrackerMutation = useMutation({
     mutationFn: async ({ id, ...updates }: Partial<KeywordTrackerExtended> & { id: string }) => {
-      const { data, error } = await supabase.functions.invoke(`keyword-trackers-api`, {
+      const { data: session } = await supabase.auth.getSession();
+      const token = session?.session?.access_token;
+
+      const response = await fetch(`${supabase.supabaseUrl}/functions/v1/keyword-trackers-api/${id}`, {
         method: 'PATCH',
-        body: updates,
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'apikey': supabase.supabaseKey,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updates),
       });
 
-      if (error) throw error;
-      return data;
+      if (!response.ok) {
+        throw new Error(`Failed to update tracker: ${response.statusText}`);
+      }
+
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['keyword-trackers-api'] });
@@ -108,12 +145,23 @@ export const useKeywordTrackersApi = (props: UseKeywordTrackersApiProps = {}) =>
   // Delete tracker mutation
   const deleteTrackerMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { data, error } = await supabase.functions.invoke(`keyword-trackers-api`, {
+      const { data: session } = await supabase.auth.getSession();
+      const token = session?.session?.access_token;
+
+      const response = await fetch(`${supabase.supabaseUrl}/functions/v1/keyword-trackers-api/${id}`, {
         method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'apikey': supabase.supabaseKey,
+          'Content-Type': 'application/json',
+        },
       });
 
-      if (error) throw error;
-      return data;
+      if (!response.ok) {
+        throw new Error(`Failed to delete tracker: ${response.statusText}`);
+      }
+
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['keyword-trackers-api'] });
@@ -135,13 +183,23 @@ export const useKeywordTrackersApi = (props: UseKeywordTrackersApiProps = {}) =>
   // Recalculate mentions mutation
   const recalculateMentionsMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { data, error } = await supabase.functions.invoke(`keyword-trackers-api`, {
+      const { data: session } = await supabase.auth.getSession();
+      const token = session?.session?.access_token;
+
+      const response = await fetch(`${supabase.supabaseUrl}/functions/v1/keyword-trackers-api/${id}/recalculate`, {
         method: 'POST',
-        body: null,
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'apikey': supabase.supabaseKey,
+          'Content-Type': 'application/json',
+        },
       });
 
-      if (error) throw error;
-      return data;
+      if (!response.ok) {
+        throw new Error(`Failed to recalculate mentions: ${response.statusText}`);
+      }
+
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['keyword-trackers-api'] });
