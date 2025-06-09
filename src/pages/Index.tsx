@@ -1,5 +1,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { PerformanceMetrics } from "@/components/PerformanceMetrics";
 import { RecentCalls } from "@/components/RecentCalls";
 import { CallsChart } from "@/components/CallsChart";
@@ -8,23 +10,129 @@ import { ProcessingMonitor } from "@/components/ProcessingMonitor";
 import { ExportManager } from "@/components/ExportManager";
 import { useRealtimeUpdates } from "@/hooks/useRealtimeUpdates";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Settings, Users, HelpCircle, CheckCircle } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 
 const Index = () => {
   // Подключаем real-time обновления
   useRealtimeUpdates();
+  const navigate = useNavigate();
+  
+  const [setupStatus, setSetupStatus] = useState({
+    telfin: false,
+    telegram: false,
+    users: false
+  });
+
+  useEffect(() => {
+    // Проверяем статус настроек
+    const telfinConfigured = localStorage.getItem('telfin_hostname') && 
+                            localStorage.getItem('telfin_username') && 
+                            localStorage.getItem('telfin_password');
+    
+    const telegramConfigured = localStorage.getItem('telegram_bot_token') && 
+                              localStorage.getItem('telegram_chat_id');
+    
+    const usersConfigured = localStorage.getItem('onboarding_users');
+
+    setSetupStatus({
+      telfin: !!telfinConfigured,
+      telegram: !!telegramConfigured,
+      users: !!usersConfigured
+    });
+  }, []);
+
+  const allConfigured = setupStatus.telfin && setupStatus.telegram && setupStatus.users;
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            CallControl - Аналитика звонков
-          </h1>
-          <p className="text-gray-600">
-            Система контроля качества телефонных переговоров и анализа эффективности менеджеров
-          </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                CallControl - Дашборд
+              </h1>
+              <p className="text-gray-600">
+                Система контроля качества телефонных переговоров и анализа эффективности менеджеров
+              </p>
+            </div>
+            {!allConfigured && (
+              <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+                Требуется настройка
+              </Badge>
+            )}
+          </div>
         </div>
 
+        {/* Блок быстрой настройки (если что-то не настроено) */}
+        {!allConfigured && (
+          <Card className="border-amber-200 bg-amber-50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-amber-800">
+                <Settings className="h-5 w-5" />
+                Завершите настройку системы
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div className={`flex items-center gap-3 p-3 rounded-lg ${setupStatus.telfin ? 'bg-green-100' : 'bg-white border'}`}>
+                  {setupStatus.telfin ? (
+                    <CheckCircle className="h-5 w-5 text-green-600" />
+                  ) : (
+                    <div className="w-5 h-5 border-2 border-gray-300 rounded-full" />
+                  )}
+                  <div>
+                    <p className="font-medium">Телфин API</p>
+                    <p className="text-sm text-gray-600">Подключение телефонии</p>
+                  </div>
+                </div>
+
+                <div className={`flex items-center gap-3 p-3 rounded-lg ${setupStatus.telegram ? 'bg-green-100' : 'bg-white border'}`}>
+                  {setupStatus.telegram ? (
+                    <CheckCircle className="h-5 w-5 text-green-600" />
+                  ) : (
+                    <div className="w-5 h-5 border-2 border-gray-300 rounded-full" />
+                  )}
+                  <div>
+                    <p className="font-medium">Telegram-бот</p>
+                    <p className="text-sm text-gray-600">Уведомления</p>
+                  </div>
+                </div>
+
+                <div className={`flex items-center gap-3 p-3 rounded-lg ${setupStatus.users ? 'bg-green-100' : 'bg-white border'}`}>
+                  {setupStatus.users ? (
+                    <CheckCircle className="h-5 w-5 text-green-600" />
+                  ) : (
+                    <div className="w-5 h-5 border-2 border-gray-300 rounded-full" />
+                  )}
+                  <div>
+                    <p className="font-medium">Пользователи</p>
+                    <p className="text-sm text-gray-600">Команда и роли</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-2">
+                <Button onClick={() => navigate('/settings')} variant="outline">
+                  <Settings className="mr-2 h-4 w-4" />
+                  Открыть настройки
+                </Button>
+                <Button onClick={() => navigate('/users')} variant="outline">
+                  <Users className="mr-2 h-4 w-4" />
+                  Управление пользователями
+                </Button>
+                <Button onClick={() => navigate('/knowledge')} variant="outline">
+                  <HelpCircle className="mr-2 h-4 w-4" />
+                  База знаний
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Основной контент */}
         <Tabs defaultValue="upload" className="space-y-6">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="upload">Загрузка</TabsTrigger>
