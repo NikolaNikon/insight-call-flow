@@ -19,14 +19,21 @@ export const useTelegramSession = () => {
     setIsGeneratingSession(true);
     
     try {
+      console.log('Starting Telegram session...');
+      
       const { data, error } = await supabase.functions.invoke('telegram-start-session');
 
+      console.log('Function response:', data, error);
+
       if (error) {
+        console.error('Supabase function error:', error);
         throw error;
       }
 
-      if (!data.success) {
-        throw new Error(data.error || 'Неизвестная ошибка');
+      if (!data || !data.success) {
+        const errorMessage = data?.error || 'Неизвестная ошибка';
+        console.error('Function returned error:', errorMessage);
+        throw new Error(errorMessage);
       }
 
       toast({
@@ -37,6 +44,7 @@ export const useTelegramSession = () => {
       return data;
     } catch (error: any) {
       const errorMessage = error.message || 'Ошибка при генерации ссылки';
+      console.error('Error in startTelegramSession:', error);
       
       toast({
         title: "Ошибка",
@@ -56,9 +64,16 @@ export const useTelegramSession = () => {
         .from('telegram_sessions')
         .select('used, expires_at')
         .eq('session_code', sessionCode)
-        .single();
+        .maybeSingle();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error checking session status:', error);
+        throw error;
+      }
+      
+      if (!data) {
+        return { used: false, expired: true };
+      }
       
       return {
         used: data.used,

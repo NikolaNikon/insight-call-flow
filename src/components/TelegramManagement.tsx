@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Bot, Trash2, ExternalLink, Loader2, Clock } from 'lucide-react';
+import { Bot, Trash2, ExternalLink, Loader2, Clock, RefreshCw } from 'lucide-react';
 import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { useTelegramSession } from '@/hooks/useTelegramSession';
 import { useToast } from '@/hooks/use-toast';
@@ -66,17 +66,26 @@ export const TelegramManagement = () => {
     if (!pendingSession) return;
 
     const checkInterval = setInterval(async () => {
-      const status = await checkSessionStatus(pendingSession.session_code);
-      
-      if (status.used) {
-        setPendingSession(null);
-        await loadTelegramLinks();
-        toast({
-          title: "Успешно подключено!",
-          description: "Telegram бот успешно подключен к вашему аккаунту",
-        });
-      } else if (status.expired) {
-        setPendingSession(null);
+      try {
+        const status = await checkSessionStatus(pendingSession.session_code);
+        
+        if (status.used) {
+          setPendingSession(null);
+          await loadTelegramLinks();
+          toast({
+            title: "Успешно подключено!",
+            description: "Telegram бот успешно подключен к вашему аккаунту",
+          });
+        } else if (status.expired) {
+          setPendingSession(null);
+          toast({
+            title: "Сессия истекла",
+            description: "Время подключения истекло",
+            variant: "destructive"
+          });
+        }
+      } catch (error) {
+        console.error('Error checking session:', error);
       }
     }, 2000);
 
@@ -87,9 +96,14 @@ export const TelegramManagement = () => {
     setLoading(true);
     try {
       const data = await getTelegramLinks();
-      setLinks(data);
+      setLinks(data || []);
     } catch (error) {
       console.error('Error loading telegram links:', error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось загрузить список подключений",
+        variant: "destructive"
+      });
     } finally {
       setLoading(false);
     }
@@ -103,16 +117,20 @@ export const TelegramManagement = () => {
   };
 
   const handleConnectBot = async () => {
-    const sessionData = await startTelegramSession();
-    if (sessionData && sessionData.success) {
-      setPendingSession({
-        session_code: sessionData.session_code!,
-        telegram_url: sessionData.telegram_url!,
-        expires_at: sessionData.expires_at!
-      });
-      
-      // Автоматически открываем ссылку на Telegram
-      window.open(sessionData.telegram_url, '_blank');
+    try {
+      const sessionData = await startTelegramSession();
+      if (sessionData && sessionData.success) {
+        setPendingSession({
+          session_code: sessionData.session_code!,
+          telegram_url: sessionData.telegram_url!,
+          expires_at: sessionData.expires_at!
+        });
+        
+        // Автоматически открываем ссылку на Telegram
+        window.open(sessionData.telegram_url, '_blank');
+      }
+    } catch (error) {
+      console.error('Error connecting bot:', error);
     }
   };
 
@@ -136,14 +154,27 @@ export const TelegramManagement = () => {
       <CardContent className="space-y-4">
         {loading ? (
           <div className="text-center py-4">
-            <div className="animate-pulse text-gray-500">Загрузка...</div>
+            <div className="animate-pulse text-gray-500 flex items-center justify-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Загрузка...
+            </div>
           </div>
         ) : (
           <>
             {/* Активные подключения */}
             {links.length > 0 && (
               <div className="space-y-3">
-                <h4 className="font-medium text-sm text-gray-700">Активные подключения:</h4>
+                <div className="flex items-center justify-between">
+                  <h4 className="font-medium text-sm text-gray-700">Активные подключения:</h4>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={loadTelegramLinks}
+                    disabled={loading}
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                  </Button>
+                </div>
                 {links.map((link) => (
                   <div
                     key={link.id}

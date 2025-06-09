@@ -61,6 +61,8 @@ serve(async (req) => {
     const firstName = message.from.first_name || '';
     const username = message.from.username || '';
 
+    console.log('Processing message:', text, 'from chat:', chatId);
+
     let responseMessage = '';
 
     // Обработка команд
@@ -70,6 +72,7 @@ serve(async (req) => {
       if (parts.length > 1) {
         // Есть session_code
         const sessionCode = parts[1];
+        console.log('Processing session code:', sessionCode);
         
         // Ищем активную сессию
         const { data: session, error: sessionError } = await supabaseClient
@@ -81,19 +84,22 @@ serve(async (req) => {
           .single();
 
         if (sessionError || !session) {
+          console.log('Invalid session:', sessionError);
           responseMessage = "❌ Неверный или истекший код подключения. Попробуйте сгенерировать новую ссылку в CallControl.";
         } else {
+          console.log('Valid session found for user:', session.user_id);
+          
           // Проверяем, есть ли уже активная связка для этого пользователя
           const { data: existingLink } = await supabaseClient
             .from('telegram_links')
             .select('*')
             .eq('user_id', session.user_id)
             .eq('active', true)
-            .single();
+            .maybeSingle();
 
           if (existingLink) {
             // Обновляем существующую связку
-            await supabaseClient
+            const { error: updateError } = await supabaseClient
               .from('telegram_links')
               .update({
                 chat_id: chatId,
@@ -102,9 +108,14 @@ serve(async (req) => {
                 updated_at: new Date().toISOString()
               })
               .eq('id', existingLink.id);
+
+            if (updateError) {
+              console.error('Error updating existing link:', updateError);
+              responseMessage = "❌ Ошибка при обновлении подключения.";
+            }
           } else {
             // Создаем новую связку
-            await supabaseClient
+            const { error: insertError } = await supabaseClient
               .from('telegram_links')
               .insert({
                 user_id: session.user_id,
@@ -113,15 +124,21 @@ serve(async (req) => {
                 first_name: firstName,
                 active: true
               });
+
+            if (insertError) {
+              console.error('Error creating new link:', insertError);
+              responseMessage = "❌ Ошибка при создании подключения.";
+            }
           }
 
-          // Помечаем сессию как использованную
-          await supabaseClient
-            .from('telegram_sessions')
-            .update({ used: true })
-            .eq('id', session.id);
+          if (!responseMessage) {
+            // Помечаем сессию как использованную
+            await supabaseClient
+              .from('telegram_sessions')
+              .update({ used: true })
+              .eq('id', session.id);
 
-          responseMessage = `✅ Отлично! Ваш аккаунт CallControl успешно подключен к Telegram.
+            responseMessage = `✅ Отлично! Ваш аккаунт CallControl успешно подключен к Telegram.
 
 🔔 Теперь вы будете получать:
 • Уведомления о новых звонках
@@ -129,6 +146,7 @@ serve(async (req) => {
 • Важные системные сообщения
 
 Используйте /help для просмотра доступных команд.`;
+          }
         }
       } else {
         // Обычный /start без параметров
@@ -149,7 +167,7 @@ serve(async (req) => {
         .update({ active: false })
         .eq('chat_id', chatId)
         .select()
-        .single();
+        .maybeSingle();
 
       if (linkData) {
         responseMessage = "❌ Уведомления отключены. Используйте новую ссылку из CallControl для повторного подключения.";
@@ -176,7 +194,7 @@ serve(async (req) => {
         .from('telegram_links')
         .select('active, created_at, telegram_username')
         .eq('chat_id', chatId)
-        .single();
+        .maybeSingle();
 
       if (statusLink) {
         const status = statusLink.active ? "✅ Активен" : "❌ Отключен";

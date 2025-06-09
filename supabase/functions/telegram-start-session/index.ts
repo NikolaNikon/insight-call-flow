@@ -21,6 +21,7 @@ serve(async (req) => {
     // Получаем пользователя из JWT токена
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
+      console.error('No authorization header provided');
       throw new Error('Authorization header required');
     }
 
@@ -28,17 +29,25 @@ serve(async (req) => {
     const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token);
     
     if (authError || !user) {
+      console.error('Auth error:', authError);
       throw new Error('Invalid authentication');
     }
 
+    console.log('User authenticated:', user.id);
+
     // Генерируем уникальный session_code
     const sessionCode = generateSessionCode();
+    console.log('Generated session code:', sessionCode);
     
     // Очищаем старые сессии пользователя
-    await supabaseClient
+    const { error: deleteError } = await supabaseClient
       .from('telegram_sessions')
       .delete()
       .eq('user_id', user.id);
+
+    if (deleteError) {
+      console.error('Error deleting old sessions:', deleteError);
+    }
 
     // Создаем новую сессию
     const { data: session, error: sessionError } = await supabaseClient
@@ -51,8 +60,11 @@ serve(async (req) => {
       .single();
 
     if (sessionError) {
+      console.error('Error creating session:', sessionError);
       throw sessionError;
     }
+
+    console.log('Session created successfully:', session.id);
 
     // Формируем ссылку на бота
     const botUsername = 'callcontrol_tgbot'; // Замените на ваше имя бота
