@@ -1032,6 +1032,8 @@ export type Database = {
           session_code: string
           used: boolean
           user_id: string
+          user_name: string | null
+          user_role: string | null
         }
         Insert: {
           created_at?: string
@@ -1040,6 +1042,8 @@ export type Database = {
           session_code: string
           used?: boolean
           user_id: string
+          user_name?: string | null
+          user_role?: string | null
         }
         Update: {
           created_at?: string
@@ -1048,6 +1052,8 @@ export type Database = {
           session_code?: string
           used?: boolean
           user_id?: string
+          user_name?: string | null
+          user_role?: string | null
         }
         Relationships: [
           {

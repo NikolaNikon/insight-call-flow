@@ -48,7 +48,12 @@ const getRoleDisplayName = (role: string) => {
 };
 
 serve(async (req) => {
+  console.log('=== Telegram Bot Function Called ===');
+  console.log('Method:', req.method);
+  console.log('Headers:', Object.fromEntries(req.headers.entries()));
+
   if (req.method === 'OPTIONS') {
+    console.log('Handling CORS preflight request');
     return new Response('ok', { headers: corsHeaders });
   }
 
@@ -60,13 +65,44 @@ serve(async (req) => {
 
     const botToken = Deno.env.get('TELEGRAM_BOT_TOKEN');
     if (!botToken) {
+      console.error('TELEGRAM_BOT_TOKEN not found in environment variables');
       throw new Error('Telegram bot token not configured');
     }
+    console.log('Bot token found, length:', botToken.length);
 
-    const update: TelegramUpdate = await req.json();
+    // Получаем и логируем тело запроса
+    const requestBody = await req.text();
+    console.log('Raw request body:', requestBody);
+
+    let update: TelegramUpdate;
+    try {
+      update = JSON.parse(requestBody);
+      console.log('Parsed update:', JSON.stringify(update, null, 2));
+    } catch (parseError) {
+      console.error('Failed to parse request body as JSON:', parseError);
+      return new Response(JSON.stringify({ ok: true }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const message = update.message;
 
-    if (!message || !message.text || !message.from) {
+    if (!message) {
+      console.log('No message in update, ignoring');
+      return new Response(JSON.stringify({ ok: true }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (!message.text) {
+      console.log('No text in message, ignoring');
+      return new Response(JSON.stringify({ ok: true }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (!message.from) {
+      console.log('No from user in message, ignoring');
       return new Response(JSON.stringify({ ok: true }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -78,13 +114,16 @@ serve(async (req) => {
     const firstName = message.from.first_name || '';
     const username = message.from.username || '';
 
-    console.log('Processing message:', text, 'from chat:', chatId);
+    console.log('Processing message from user:', userId, 'chat:', chatId, 'text:', text);
+    console.log('User details:', { firstName, username });
 
     let responseMessage = '';
 
     // Обработка команд
     if (text.startsWith('/start')) {
+      console.log('Processing /start command');
       const parts = text.split(' ');
+      console.log('Command parts:', parts);
       
       if (parts.length > 1) {
         // Есть session_code
@@ -100,22 +139,27 @@ serve(async (req) => {
           .gte('expires_at', new Date().toISOString())
           .single();
 
+        console.log('Session query result:', { session, sessionError });
+
         if (sessionError || !session) {
-          console.log('Invalid session:', sessionError);
+          console.log('Invalid session:', sessionError?.message || 'Session not found');
           responseMessage = "❌ Неверный или истекший код подключения. Попробуйте сгенерировать новую ссылку в CallControl.";
         } else {
           console.log('Valid session found for user:', session.user_id);
           
           // Проверяем, есть ли уже активная связка для этого пользователя
-          const { data: existingLink } = await supabaseClient
+          const { data: existingLink, error: existingLinkError } = await supabaseClient
             .from('telegram_links')
             .select('*')
             .eq('user_id', session.user_id)
             .eq('active', true)
             .maybeSingle();
 
+          console.log('Existing link check:', { existingLink, existingLinkError });
+
           if (existingLink) {
             // Обновляем существующую связку
+            console.log('Updating existing link:', existingLink.id);
             const { error: updateError } = await supabaseClient
               .from('telegram_links')
               .update({
@@ -129,9 +173,12 @@ serve(async (req) => {
             if (updateError) {
               console.error('Error updating existing link:', updateError);
               responseMessage = "❌ Ошибка при обновлении подключения.";
+            } else {
+              console.log('Successfully updated existing link');
             }
           } else {
             // Создаем новую связку
+            console.log('Creating new telegram link');
             const { error: insertError } = await supabaseClient
               .from('telegram_links')
               .insert({
@@ -145,21 +192,30 @@ serve(async (req) => {
             if (insertError) {
               console.error('Error creating new link:', insertError);
               responseMessage = "❌ Ошибка при создании подключения.";
+            } else {
+              console.log('Successfully created new telegram link');
             }
           }
 
           if (!responseMessage) {
             // Помечаем сессию как использованную
-            await supabaseClient
+            console.log('Marking session as used');
+            const { error: sessionUpdateError } = await supabaseClient
               .from('telegram_sessions')
               .update({ used: true })
               .eq('id', session.id);
+
+            if (sessionUpdateError) {
+              console.error('Error marking session as used:', sessionUpdateError);
+            }
 
             // Формируем персонализированное приветствие
             const userName = session.user_name || firstName;
             const userRole = session.user_role || 'user';
             const roleDisplayName = getRoleDisplayName(userRole);
             const roleGreeting = greetingsByRole[userRole as keyof typeof greetingsByRole] || greetingsByRole.operator;
+
+            console.log('Creating personalized greeting for:', { userName, userRole, roleDisplayName });
 
             responseMessage = `Привет, ${userName}! 👋
 ✅ Telegram подключён к вашему аккаунту CallControl (роль: ${roleDisplayName}).
@@ -171,13 +227,16 @@ ${roleGreeting}
         }
       } else {
         // Обычный /start без параметров
+        console.log('Processing /start without parameters');
         // Проверяем, есть ли уже подключение
-        const { data: existingConnection } = await supabaseClient
+        const { data: existingConnection, error: connectionError } = await supabaseClient
           .from('telegram_links')
           .select('*, users!inner(name, role)')
           .eq('chat_id', chatId)
           .eq('active', true)
           .maybeSingle();
+
+        console.log('Existing connection check:', { existingConnection, connectionError });
 
         if (existingConnection) {
           const roleDisplayName = getRoleDisplayName(existingConnection.users.role);
@@ -198,13 +257,16 @@ ${roleGreeting}
         }
       }
     } else if (text === '/stop') {
+      console.log('Processing /stop command');
       // Деактивируем пользователя
-      const { data: linkData } = await supabaseClient
+      const { data: linkData, error: stopError } = await supabaseClient
         .from('telegram_links')
         .update({ active: false })
         .eq('chat_id', chatId)
         .select()
         .maybeSingle();
+
+      console.log('Stop command result:', { linkData, stopError });
 
       if (linkData) {
         responseMessage = "❌ Уведомления отключены. Используйте новую ссылку из CallControl для повторного подключения.";
@@ -212,6 +274,7 @@ ${roleGreeting}
         responseMessage = "❓ Аккаунт не найден. Используйте ссылку из CallControl для подключения.";
       }
     } else if (text === '/help') {
+      console.log('Processing /help command');
       responseMessage = `📋 Доступные команды:
 
 /start - Подключить аккаунт CallControl
@@ -227,11 +290,14 @@ ${roleGreeting}
 💡 Для подключения получите ссылку в CallControl:
 Настройки → Интеграции → Подключить Telegram бот`;
     } else if (text === '/status') {
-      const { data: statusLink } = await supabaseClient
+      console.log('Processing /status command');
+      const { data: statusLink, error: statusError } = await supabaseClient
         .from('telegram_links')
         .select('active, created_at, telegram_username, users!inner(name, role)')
         .eq('chat_id', chatId)
         .maybeSingle();
+
+      console.log('Status command result:', { statusLink, statusError });
 
       if (statusLink) {
         const status = statusLink.active ? "✅ Активен" : "❌ Отключен";
@@ -246,25 +312,34 @@ ${roleGreeting}
         responseMessage = "❓ Аккаунт не подключен. Получите ссылку в CallControl для подключения.";
       }
     } else {
+      console.log('Unknown command:', text);
       responseMessage = "❓ Неизвестная команда. Используйте /help для просмотра доступных команд.";
     }
 
+    console.log('Sending response message:', responseMessage);
+
     // Отправляем ответ
-    const telegramResponse = await fetch(
-      `https://api.telegram.org/bot${botToken}/sendMessage`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chat_id: chatId,
-          text: responseMessage,
-          parse_mode: 'HTML'
-        } as TelegramMessage),
-      }
-    );
+    const telegramApiUrl = `https://api.telegram.org/bot${botToken}/sendMessage`;
+    console.log('Calling Telegram API:', telegramApiUrl);
+
+    const telegramResponse = await fetch(telegramApiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: responseMessage,
+        parse_mode: 'HTML'
+      } as TelegramMessage),
+    });
+
+    const telegramResponseText = await telegramResponse.text();
+    console.log('Telegram API response status:', telegramResponse.status);
+    console.log('Telegram API response body:', telegramResponseText);
 
     if (!telegramResponse.ok) {
-      console.error('Telegram API error:', await telegramResponse.text());
+      console.error('Telegram API error:', telegramResponseText);
+    } else {
+      console.log('Message sent successfully to Telegram');
     }
 
     return new Response(JSON.stringify({ ok: true }), {
@@ -273,6 +348,8 @@ ${roleGreeting}
 
   } catch (error) {
     console.error('Error in telegram-bot function:', error);
+    console.error('Error stack:', error.stack);
+    
     return new Response(
       JSON.stringify({ ok: false, error: error.message }),
       {
