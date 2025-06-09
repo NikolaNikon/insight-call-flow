@@ -1,5 +1,8 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { Database } from '@/integrations/supabase/types';
+
+type UserRole = Database['public']['Enums']['user_role'];
 
 interface PersonalNotificationData {
   userId: string;
@@ -62,7 +65,7 @@ export const useTelegramPersonalNotifications = () => {
     }
   };
 
-  const sendRoleBasedNotification = async (roles: string[], message: string, type: 'info' | 'success' | 'warning' | 'error' = 'info') => {
+  const sendRoleBasedNotification = async (roles: UserRole[], message: string, type: 'info' | 'success' | 'warning' | 'error' = 'info') => {
     try {
       // Получаем пользователей с нужными ролями
       const { data: users, error } = await supabase
