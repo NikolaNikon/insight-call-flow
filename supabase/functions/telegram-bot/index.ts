@@ -126,7 +126,7 @@ serve(async (req) => {
       console.log('Command parts:', parts);
       
       if (parts.length > 1) {
-        // Есть session_code
+        // Есть session_code - процесс подключения через ссылку
         const sessionCode = parts[1];
         console.log('Processing session code:', sessionCode);
         
@@ -245,9 +245,10 @@ serve(async (req) => {
           }
         }
       } else {
-        // Обычный /start без параметров
-        console.log('Processing /start without parameters');
-        // Проверяем, есть ли уже подключение
+        // Обычный /start без параметров - ИСПРАВЛЕННАЯ ЛОГИКА
+        console.log('Processing /start without parameters - checking existing connection');
+        
+        // Проверяем, есть ли уже подключение для этого чата
         const { data: existingConnection, error: connectionError } = await supabaseClient
           .from('telegram_links')
           .select('*, users!inner(name, role)')
@@ -255,13 +256,17 @@ serve(async (req) => {
           .eq('active', true)
           .maybeSingle();
 
-        console.log('Existing connection check:', { existingConnection, connectionError });
+        console.log('Existing connection check for chat:', { existingConnection, connectionError });
 
         if (existingConnection) {
+          // Пользователь уже подключен - даем позитивный фидбек
           const roleDisplayName = getRoleDisplayName(existingConnection.users.role);
           const userName = existingConnection.users.name || firstName;
-          responseMessage = `👋 Привет, ${userName}!\n\n✅ Вы уже подключены к CallControl (роль: ${roleDisplayName}).\n🔔 Уведомления включены.\n\n💡 При необходимости используйте /stop для отключения.\n\nИспользуйте /help для просмотра команд.`;
+          const roleGreeting = greetingsByRole[existingConnection.users.role as keyof typeof greetingsByRole] || greetingsByRole.operator;
+          
+          responseMessage = `👋 Привет снова, ${userName}!\n\n✅ Ваш Telegram уже подключён к CallControl (роль: ${roleDisplayName}).\n\n${roleGreeting}\n\n💡 При необходимости используйте /stop для отключения или /help для просмотра команд.`;
         } else {
+          // Нет подключения - показываем инструкцию
           responseMessage = `🤖 Добро пожаловать в CallControl!\n\n📋 Для подключения вашего аккаунта:\n1. Откройте CallControl в браузере\n2. Перейдите в Настройки → Интеграции\n3. Нажмите "Подключить Telegram бот"\n4. Перейдите по полученной ссылке\n\n💡 Или используйте команду /help для дополнительной информации.`;
         }
       }
