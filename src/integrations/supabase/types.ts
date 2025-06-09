@@ -83,6 +83,48 @@ export type Database = {
           },
         ]
       }
+      call_keywords: {
+        Row: {
+          call_id: string | null
+          detected_at: string | null
+          id: string
+          match_count: number | null
+          matched_keywords: Json | null
+          tracker_id: string | null
+        }
+        Insert: {
+          call_id?: string | null
+          detected_at?: string | null
+          id?: string
+          match_count?: number | null
+          matched_keywords?: Json | null
+          tracker_id?: string | null
+        }
+        Update: {
+          call_id?: string | null
+          detected_at?: string | null
+          id?: string
+          match_count?: number | null
+          matched_keywords?: Json | null
+          tracker_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "call_keywords_call_id_fkey"
+            columns: ["call_id"]
+            isOneToOne: false
+            referencedRelation: "calls"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "call_keywords_tracker_id_fkey"
+            columns: ["tracker_id"]
+            isOneToOne: false
+            referencedRelation: "keyword_trackers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       calls: {
         Row: {
           advice: string | null
@@ -99,6 +141,7 @@ export type Database = {
           general_score: number | null
           id: string
           manager_id: string | null
+          org_id: string
           processing_status: string | null
           processing_step: string | null
           sales_technique: number | null
@@ -125,6 +168,7 @@ export type Database = {
           general_score?: number | null
           id?: string
           manager_id?: string | null
+          org_id: string
           processing_status?: string | null
           processing_step?: string | null
           sales_technique?: number | null
@@ -151,6 +195,7 @@ export type Database = {
           general_score?: number | null
           id?: string
           manager_id?: string | null
+          org_id?: string
           processing_status?: string | null
           processing_step?: string | null
           sales_technique?: number | null
@@ -176,6 +221,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "managers"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calls_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calls_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "v_org_dashboard_metrics"
+            referencedColumns: ["org_id"]
           },
         ]
       }
@@ -261,6 +320,7 @@ export type Database = {
           created_at: string
           id: string
           name: string
+          org_id: string
           phone_number: string
           updated_at: string
         }
@@ -268,6 +328,7 @@ export type Database = {
           created_at?: string
           id?: string
           name: string
+          org_id: string
           phone_number: string
           updated_at?: string
         }
@@ -275,10 +336,26 @@ export type Database = {
           created_at?: string
           id?: string
           name?: string
+          org_id?: string
           phone_number?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "customers_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customers_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "v_org_dashboard_metrics"
+            referencedColumns: ["org_id"]
+          },
+        ]
       }
       data_import_logs: {
         Row: {
@@ -593,6 +670,51 @@ export type Database = {
         }
         Relationships: []
       }
+      keyword_trackers: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          keywords: Json
+          name: string
+          org_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          keywords?: Json
+          name: string
+          org_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          keywords?: Json
+          name?: string
+          org_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "keyword_trackers_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "keyword_trackers_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "v_org_dashboard_metrics"
+            referencedColumns: ["org_id"]
+          },
+        ]
+      }
       keywords: {
         Row: {
           created_at: string | null
@@ -808,6 +930,7 @@ export type Database = {
           department: string | null
           id: string
           name: string
+          org_id: string
           telegram_chat_id: string | null
           updated_at: string
         }
@@ -816,6 +939,7 @@ export type Database = {
           department?: string | null
           id?: string
           name: string
+          org_id: string
           telegram_chat_id?: string | null
           updated_at?: string
         }
@@ -824,10 +948,81 @@ export type Database = {
           department?: string | null
           id?: string
           name?: string
+          org_id?: string
           telegram_chat_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "managers_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "managers_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "v_org_dashboard_metrics"
+            referencedColumns: ["org_id"]
+          },
+        ]
+      }
+      metric_history: {
+        Row: {
+          created_at: string | null
+          event_type: string | null
+          id: string
+          metric_id: string | null
+          new_value: number | null
+          notes: string | null
+          old_value: number | null
+          triggered_by: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          event_type?: string | null
+          id?: string
+          metric_id?: string | null
+          new_value?: number | null
+          notes?: string | null
+          old_value?: number | null
+          triggered_by?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          event_type?: string | null
+          id?: string
+          metric_id?: string | null
+          new_value?: number | null
+          notes?: string | null
+          old_value?: number | null
+          triggered_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "metric_history_metric_id_fkey"
+            columns: ["metric_id"]
+            isOneToOne: false
+            referencedRelation: "org_metrics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "metric_history_metric_id_fkey"
+            columns: ["metric_id"]
+            isOneToOne: false
+            referencedRelation: "v_active_nsm"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "metric_history_triggered_by_fkey"
+            columns: ["triggered_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       n8n_chat_histories: {
         Row: {
@@ -889,6 +1084,87 @@ export type Database = {
         }
         Relationships: []
       }
+      org_metrics: {
+        Row: {
+          created_at: string | null
+          current_value: number | null
+          id: string
+          is_active: boolean | null
+          metric_name: string
+          org_id: string | null
+          target_value: number | null
+          unit: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          current_value?: number | null
+          id?: string
+          is_active?: boolean | null
+          metric_name: string
+          org_id?: string | null
+          target_value?: number | null
+          unit?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          current_value?: number | null
+          id?: string
+          is_active?: boolean | null
+          metric_name?: string
+          org_id?: string | null
+          target_value?: number | null
+          unit?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_metrics_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_metrics_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "v_org_dashboard_metrics"
+            referencedColumns: ["org_id"]
+          },
+        ]
+      }
+      organizations: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          settings: Json | null
+          subdomain: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          settings?: Json | null
+          subdomain?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          settings?: Json | null
+          subdomain?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       reports: {
         Row: {
           data: Json | null
@@ -896,6 +1172,7 @@ export type Database = {
           generated_at: string
           generated_by: string | null
           id: string
+          org_id: string
           parameters: Json | null
           report_type: string
           title: string
@@ -906,6 +1183,7 @@ export type Database = {
           generated_at?: string
           generated_by?: string | null
           id?: string
+          org_id: string
           parameters?: Json | null
           report_type: string
           title: string
@@ -916,6 +1194,7 @@ export type Database = {
           generated_at?: string
           generated_by?: string | null
           id?: string
+          org_id?: string
           parameters?: Json | null
           report_type?: string
           title?: string
@@ -927,6 +1206,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "v_org_dashboard_metrics"
+            referencedColumns: ["org_id"]
           },
         ]
       }
@@ -990,6 +1283,7 @@ export type Database = {
           created_at: string
           first_name: string | null
           id: string
+          org_id: string
           telegram_username: string | null
           updated_at: string
           user_id: string
@@ -1000,6 +1294,7 @@ export type Database = {
           created_at?: string
           first_name?: string | null
           id?: string
+          org_id: string
           telegram_username?: string | null
           updated_at?: string
           user_id: string
@@ -1010,11 +1305,26 @@ export type Database = {
           created_at?: string
           first_name?: string | null
           id?: string
+          org_id?: string
           telegram_username?: string | null
           updated_at?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "telegram_links_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "telegram_links_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "v_org_dashboard_metrics"
+            referencedColumns: ["org_id"]
+          },
           {
             foreignKeyName: "telegram_links_user_id_fkey"
             columns: ["user_id"]
@@ -1065,6 +1375,54 @@ export type Database = {
           },
         ]
       }
+      telegram_settings: {
+        Row: {
+          bot_token: string
+          bot_username: string | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          org_id: string | null
+          updated_at: string | null
+          webhook_url: string | null
+        }
+        Insert: {
+          bot_token: string
+          bot_username?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          org_id?: string | null
+          updated_at?: string | null
+          webhook_url?: string | null
+        }
+        Update: {
+          bot_token?: string
+          bot_username?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          org_id?: string | null
+          updated_at?: string | null
+          webhook_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "telegram_settings_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "telegram_settings_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: true
+            referencedRelation: "v_org_dashboard_metrics"
+            referencedColumns: ["org_id"]
+          },
+        ]
+      }
       users: {
         Row: {
           created_at: string
@@ -1072,6 +1430,7 @@ export type Database = {
           id: string
           is_active: boolean | null
           name: string
+          org_id: string
           role: Database["public"]["Enums"]["user_role"] | null
           updated_at: string
         }
@@ -1081,6 +1440,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           name: string
+          org_id: string
           role?: Database["public"]["Enums"]["user_role"] | null
           updated_at?: string
         }
@@ -1090,14 +1450,72 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           name?: string
+          org_id?: string
           role?: Database["public"]["Enums"]["user_role"] | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "users_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "users_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "v_org_dashboard_metrics"
+            referencedColumns: ["org_id"]
+          },
+        ]
       }
     }
     Views: {
-      [_ in never]: never
+      v_active_nsm: {
+        Row: {
+          created_at: string | null
+          current_value: number | null
+          id: string | null
+          is_active: boolean | null
+          metric_name: string | null
+          org_id: string | null
+          org_name: string | null
+          org_subdomain: string | null
+          target_value: number | null
+          unit: string | null
+          updated_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_metrics_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_metrics_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "v_org_dashboard_metrics"
+            referencedColumns: ["org_id"]
+          },
+        ]
+      }
+      v_org_dashboard_metrics: {
+        Row: {
+          active_managers: number | null
+          active_trackers: number | null
+          avg_satisfaction: number | null
+          avg_score: number | null
+          org_id: string | null
+          org_name: string | null
+          total_calls: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       cleanup_expired_telegram_codes: {
@@ -1108,9 +1526,21 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: number
       }
+      get_current_user_org_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_customer_booking_count: {
         Args: { customer_uuid: string }
         Returns: number
+      }
+      get_metric_trend: {
+        Args: { metric_id_param: string; days_back?: number }
+        Returns: {
+          date: string
+          value: number
+          change_percent: number
+        }[]
       }
       import_chistopar_multigroup: {
         Args: { csv_content: string }
