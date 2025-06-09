@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import {
   BrowserRouter as Router,
   Routes,
@@ -22,49 +22,19 @@ import TelegramTracker from '@/pages/TelegramTracker';
 import Welcome from '@/pages/Welcome';
 import NotFound from '@/pages/NotFound';
 import KeywordTrackers from '@/pages/KeywordTrackers';
-import { useOrganization } from '@/hooks/useOrganization';
-import { AppShell } from '@/components/AppShell';
+import ProtectedRoute from '@/components/ProtectedRoute';
 import { Toaster } from '@/components/ui/toaster';
-import { useToast } from '@/hooks/use-toast';
-
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const user = useUser();
-  const { organization, isLoading } = useOrganization();
-  const { toast } = useToast();
-  const [hasCheckedOrg, setHasCheckedOrg] = useState(false);
-
-  useEffect(() => {
-    if (user && !organization && !isLoading && !hasCheckedOrg) {
-      toast({
-        title: "Организация не найдена",
-        description: "Обратитесь к администратору для добавления в организацию.",
-        variant: "destructive",
-      });
-      setHasCheckedOrg(true);
-    }
-  }, [user, organization, isLoading, toast, hasCheckedOrg]);
-
-  if (!user) {
-    return <Navigate to="/auth" replace />;
-  }
-
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
-
-  if (!organization && hasCheckedOrg) {
-    return <Navigate to="/welcome" replace />;
-  }
-
-  return <AppShell>{children}</AppShell>;
-};
 
 function App() {
   return (
     <>
       <Router>
         <Routes>
-          <Route path="/" element={<Index />} />
+          <Route path="/" element={
+            <ProtectedRoute>
+              <Index />
+            </ProtectedRoute>
+          } />
           <Route path="/calls" element={
             <ProtectedRoute>
               <Calls />
