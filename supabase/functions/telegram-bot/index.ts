@@ -49,6 +49,10 @@ const getRoleDisplayName = (role: string) => {
   return roleNames[role] || role;
 };
 
+const getFriendlyName = (firstName?: string, username?: string) => {
+  return firstName || username || 'друг';
+};
+
 serve(async (req) => {
   console.log('=== Telegram Bot Function Called ===');
   console.log('Method:', req.method);
@@ -145,14 +149,14 @@ serve(async (req) => {
             }
           } else {
             // Успешное подключение
-            const userName = confirmResult.user_name || firstName;
             const userRole = confirmResult.user_role || 'operator';
             const roleDisplayName = getRoleDisplayName(userRole);
             const roleGreeting = greetingsByRole[userRole as keyof typeof greetingsByRole] || greetingsByRole.operator;
+            const friendlyName = getFriendlyName(firstName, username);
 
-            console.log('Creating personalized greeting for:', { userName, userRole, roleDisplayName });
+            console.log('Creating personalized greeting for:', { friendlyName, userRole, roleDisplayName });
 
-            responseMessage = `Привет, ${userName}! 👋\n✅ Telegram подключён к вашему аккаунту CallControl (роль: ${roleDisplayName}).\n\n${roleGreeting}\n\nИспользуйте /help для просмотра доступных команд.`;
+            responseMessage = `Привет, ${friendlyName}! 👋\n✅ Telegram подключён к CallControl как ${roleDisplayName}.\n\n${roleGreeting}\n\n💡 Используйте /help для просмотра доступных команд.`;
           }
         } catch (error) {
           console.error('Error calling confirm function:', error);
@@ -175,13 +179,14 @@ serve(async (req) => {
         if (existingConnection) {
           // Пользователь уже подключен
           const roleDisplayName = getRoleDisplayName(existingConnection.users.role);
-          const userName = existingConnection.users.name || firstName;
+          const friendlyName = getFriendlyName(firstName, username);
           const roleGreeting = greetingsByRole[existingConnection.users.role as keyof typeof greetingsByRole] || greetingsByRole.operator;
           
-          responseMessage = `👋 Привет снова, ${userName}!\n\n✅ Ваш Telegram уже подключён к CallControl (роль: ${roleDisplayName}).\n\n${roleGreeting}\n\n💡 При необходимости используйте /stop для отключения или /help для просмотра команд.`;
+          responseMessage = `👋 Привет снова, ${friendlyName}!\n\n✅ Ваш Telegram уже подключён к CallControl (роль: ${roleDisplayName}).\n\n${roleGreeting}\n\n💡 При необходимости используйте /stop для отключения или /help для просмотра команд.`;
         } else {
           // Нет подключения
-          responseMessage = `🤖 Добро пожаловать в CallControl!\n\n📋 Для подключения вашего аккаунта:\n1. Откройте CallControl в браузере\n2. Перейдите в Настройки → Интеграции\n3. Нажмите "Подключить Telegram бот"\n4. Перейдите по полученной ссылке\n\n💡 Или используйте команду /help для дополнительной информации.`;
+          const friendlyName = getFriendlyName(firstName, username);
+          responseMessage = `🤖 Добро пожаловать в CallControl, ${friendlyName}!\n\n📋 Для подключения вашего аккаунта:\n1. Откройте CallControl в браузере\n2. Перейдите в Настройки → Интеграции\n3. Нажмите "Подключить Telegram бот"\n4. Перейдите по полученной ссылке\n\n💡 Или используйте команду /help для дополнительной информации.`;
         }
       }
     } else if (text === '/stop') {
@@ -197,14 +202,15 @@ serve(async (req) => {
       console.log('Stop command result:', { linkData, stopError });
 
       if (linkData) {
-        const userName = linkData.users?.name || firstName;
-        responseMessage = `👋 До свидания, ${userName}!\n\n❌ Уведомления отключены.\n\n🔄 Для повторного подключения используйте новую ссылку из CallControl:\nНастройки → Интеграции → Подключить Telegram бот`;
+        const friendlyName = getFriendlyName(firstName, username);
+        responseMessage = `👋 До свидания, ${friendlyName}!\n\n❌ Уведомления отключены.\n\n🔄 Для повторного подключения используйте новую ссылку из CallControl:\nНастройки → Интеграции → Подключить Telegram бот`;
       } else {
         responseMessage = "❓ Активное подключение не найдено.\n\n📋 Для подключения используйте ссылку из CallControl:\nНастройки → Интеграции → Подключить Telegram бот";
       }
     } else if (text === '/help') {
       console.log('Processing /help command');
-      responseMessage = `📋 Доступные команды:\n\n/start - Подключить аккаунт CallControl\n/stop - Отключить уведомления\n/status - Проверить статус подключения\n/help - Показать эту справку\n\n🔔 После подключения вы будете получать:\n• Уведомления о новых звонках\n• Еженедельные отчеты\n• Важные системные сообщения\n\n💡 Для подключения получите ссылку в CallControl:\nНастройки → Интеграции → Подключить Telegram бот`;
+      const friendlyName = getFriendlyName(firstName, username);
+      responseMessage = `📋 Доступные команды, ${friendlyName}:\n\n/start - Подключить аккаунт CallControl\n/stop - Отключить уведомления\n/status - Проверить статус подключения\n/help - Показать эту справку\n\n🔔 После подключения вы будете получать:\n• Уведомления о новых звонках\n• Еженедельные отчеты\n• Важные системные сообщения\n\n💡 Для подключения получите ссылку в CallControl:\nНастройки → Интеграции → Подключить Telegram бот`;
     } else if (text === '/status') {
       console.log('Processing /status command');
       const { data: statusLink, error: statusError } = await supabaseClient
@@ -219,8 +225,8 @@ serve(async (req) => {
         const status = statusLink.active ? "✅ Активен" : "❌ Отключен";
         const connectedDate = new Date(statusLink.created_at).toLocaleDateString('ru-RU');
         const roleDisplayName = getRoleDisplayName(statusLink.users.role);
-        const userName = statusLink.users.name || firstName;
-        responseMessage = `📊 Статус подключения: ${status}\n\n👤 Пользователь: ${userName}\n🎭 Роль: ${roleDisplayName}\n📅 Подключен: ${connectedDate}\n🏷️ Username: ${statusLink.telegram_username ? '@' + statusLink.telegram_username : 'не указан'}`;
+        const friendlyName = getFriendlyName(firstName, username);
+        responseMessage = `📊 Статус подключения: ${status}\n\n👤 Пользователь: ${friendlyName}\n🎭 Роль: ${roleDisplayName}\n📅 Подключен: ${connectedDate}\n🏷️ Username: ${statusLink.telegram_username ? '@' + statusLink.telegram_username : 'не указан'}`;
       } else {
         responseMessage = "❓ Аккаунт не подключен.\n\n📋 Получите ссылку в CallControl для подключения:\nНастройки → Интеграции → Подключить Telegram бот";
       }

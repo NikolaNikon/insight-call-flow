@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -69,28 +68,19 @@ export const useTelegramSession = () => {
 
   const checkSessionStatus = async (sessionCode: string) => {
     try {
-      const { data, error } = await supabase
-        .from('telegram_sessions')
-        .select('used, expires_at')
-        .eq('session_code', sessionCode)
-        .maybeSingle();
+      const { data, error } = await supabase.functions.invoke('telegram-session-status', {
+        body: { session_code: sessionCode }
+      });
 
       if (error) {
         console.error('Error checking session status:', error);
         throw error;
       }
       
-      if (!data) {
-        return { used: false, expired: true };
-      }
-      
-      return {
-        used: data.used,
-        expired: new Date(data.expires_at) < new Date()
-      };
+      return data || { connected: false, expired: true };
     } catch (error) {
       console.error('Error checking session status:', error);
-      return { used: false, expired: true };
+      return { connected: false, expired: true };
     }
   };
 

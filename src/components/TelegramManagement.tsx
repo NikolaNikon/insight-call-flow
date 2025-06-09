@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -239,7 +238,8 @@ export const TelegramManagement = () => {
             {showTimeoutWarning ? (
               <>⏰ Время подключения скоро истечет! Завершите подключение в Telegram.</>
             ) : (
-              <>🤖 Ожидаем, когда вы нажмёте /start в Telegram.</>
+              <>💬 Как только вы нажмёте START в Telegram, подключение завершится автоматически.
+              Если ничего не происходит — проверьте, не заблокирован ли бот.</>
             )}
           </AlertDescription>
         </Alert>
@@ -255,7 +255,14 @@ export const TelegramManagement = () => {
       );
     }
 
-    return null;
+    return (
+      <Alert className="border-gray-200 bg-gray-50">
+        <Bot className="h-4 w-4 text-gray-600" />
+        <AlertDescription className="text-gray-700">
+          🔌 Telegram не подключен к вашему аккаунту CallControl
+        </AlertDescription>
+      </Alert>
+    );
   };
 
   return (
@@ -266,7 +273,7 @@ export const TelegramManagement = () => {
           Telegram уведомления
         </CardTitle>
         <CardDescription>
-          Управление подключениями к Telegram боту для получения уведомлений
+          Получайте уведомления о звонках и отчёты прямо в Telegram
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -399,33 +406,17 @@ export const TelegramManagement = () => {
                 }
               </Button>
             )}
-
-            {/* Информация о попытках подключения */}
-            {connectionAttempts > 0 && connectionAttempts < MAX_CONNECTION_ATTEMPTS && (
-              <div className="text-center text-sm text-gray-500">
-                Попыток подключения: {connectionAttempts} из {MAX_CONNECTION_ATTEMPTS}
-              </div>
-            )}
           </>
         )}
 
         <div className="border-t pt-4 space-y-3">
-          <h4 className="font-medium">Как это работает:</h4>
-          <ol className="list-decimal list-inside space-y-1 text-sm text-gray-600">
-            <li>Нажмите "Подключить Telegram бот"</li>
-            <li>Автоматически откроется чат с ботом</li>
-            <li>Нажмите "START" в боте в течение 10 минут</li>
-            <li>Подключение будет активировано автоматически</li>
-          </ol>
-
-          <div className="bg-blue-50 p-3 rounded-lg">
-            <h5 className="font-medium text-blue-900 mb-2">💡 Полезные советы:</h5>
-            <ul className="text-sm text-blue-700 space-y-1">
-              <li>• Если Telegram заблокирован, попробуйте с другой сети</li>
-              <li>• Один аккаунт CallControl = один Telegram</li>
-              <li>• При проблемах обновите страницу и попробуйте снова</li>
-            </ul>
-          </div>
+          <h4 className="font-medium">Что вы получите:</h4>
+          <ul className="list-disc list-inside space-y-1 text-sm text-gray-600">
+            <li>Уведомления о новых звонках</li>
+            <li>Еженедельные отчёты по эффективности</li>
+            <li>Важные системные сообщения</li>
+            <li>Алерты по критичным ситуациям</li>
+          </ul>
         </div>
       </CardContent>
     </Card>
