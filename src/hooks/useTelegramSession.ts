@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useUserProfile } from '@/hooks/useUserProfile';
 
 interface TelegramSessionResponse {
   success: boolean;
@@ -14,6 +15,7 @@ interface TelegramSessionResponse {
 export const useTelegramSession = () => {
   const [isGeneratingSession, setIsGeneratingSession] = useState(false);
   const { toast } = useToast();
+  const { ensureUserProfile } = useUserProfile();
 
   const startTelegramSession = async (): Promise<TelegramSessionResponse | null> => {
     setIsGeneratingSession(true);
@@ -21,6 +23,12 @@ export const useTelegramSession = () => {
     try {
       console.log('Starting Telegram session...');
       
+      // Сначала убеждаемся, что профиль пользователя существует
+      const profileResult = await ensureUserProfile();
+      if (!profileResult) {
+        throw new Error('Не удалось создать профиль пользователя');
+      }
+
       const { data, error } = await supabase.functions.invoke('telegram-start-session');
 
       console.log('Function response:', data, error);

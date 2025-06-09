@@ -3,7 +3,8 @@ import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Bot, Trash2, ExternalLink, Loader2, Clock, RefreshCw } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Bot, Trash2, ExternalLink, Loader2, Clock, RefreshCw, AlertCircle } from 'lucide-react';
 import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { useTelegramSession } from '@/hooks/useTelegramSession';
 import { useToast } from '@/hooks/use-toast';
@@ -28,6 +29,7 @@ export const TelegramManagement = () => {
   const [loading, setLoading] = useState(true);
   const [pendingSession, setPendingSession] = useState<PendingSession | null>(null);
   const [timeLeft, setTimeLeft] = useState<number>(0);
+  const [error, setError] = useState<string | null>(null);
   
   const { getTelegramLinks, deactivateTelegramLink } = useTelegramAuth();
   const { startTelegramSession, checkSessionStatus, isGeneratingSession } = useTelegramSession();
@@ -94,11 +96,13 @@ export const TelegramManagement = () => {
 
   const loadTelegramLinks = async () => {
     setLoading(true);
+    setError(null);
     try {
       const data = await getTelegramLinks();
       setLinks(data || []);
     } catch (error) {
       console.error('Error loading telegram links:', error);
+      setError('Не удалось загрузить список подключений');
       toast({
         title: "Ошибка",
         description: "Не удалось загрузить список подключений",
@@ -118,6 +122,7 @@ export const TelegramManagement = () => {
 
   const handleConnectBot = async () => {
     try {
+      setError(null);
       const sessionData = await startTelegramSession();
       if (sessionData && sessionData.success) {
         setPendingSession({
@@ -129,8 +134,9 @@ export const TelegramManagement = () => {
         // Автоматически открываем ссылку на Telegram
         window.open(sessionData.telegram_url, '_blank');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error connecting bot:', error);
+      setError(error.message || 'Ошибка при подключении бота');
     }
   };
 
@@ -152,6 +158,13 @@ export const TelegramManagement = () => {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        {error && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
         {loading ? (
           <div className="text-center py-4">
             <div className="animate-pulse text-gray-500 flex items-center justify-center gap-2">
