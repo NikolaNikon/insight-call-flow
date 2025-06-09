@@ -948,6 +948,82 @@ export type Database = {
         }
         Relationships: []
       }
+      telegram_auth_codes: {
+        Row: {
+          code: string
+          created_at: string
+          expires_at: string
+          id: string
+          used: boolean
+          user_id: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          used?: boolean
+          user_id?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          used?: boolean
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "telegram_auth_codes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      telegram_links: {
+        Row: {
+          active: boolean
+          chat_id: number
+          created_at: string
+          first_name: string | null
+          id: string
+          telegram_username: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          chat_id: number
+          created_at?: string
+          first_name?: string | null
+          id?: string
+          telegram_username?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          chat_id?: number
+          created_at?: string
+          first_name?: string | null
+          id?: string
+          telegram_username?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "telegram_links_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       users: {
         Row: {
           created_at: string
@@ -983,6 +1059,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cleanup_expired_telegram_codes: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
       get_customer_booking_count: {
         Args: { customer_uuid: string }
         Returns: number

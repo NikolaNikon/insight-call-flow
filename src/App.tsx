@@ -18,6 +18,7 @@ import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
 import Users from "./pages/Users";
 import KnowledgeBase from "./pages/KnowledgeBase";
+import TelegramAuth from "./pages/TelegramAuth";
 import NotFound from "./pages/NotFound";
 import UpdatedHeader from "./components/UpdatedHeader";
 import ProtectedRoute from "./components/ProtectedRoute";
