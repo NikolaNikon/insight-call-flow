@@ -1,11 +1,13 @@
 
 import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
+import { Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { AuthProvider } from "@/hooks/useAuth";
+import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/AppSidebar";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Welcome from "./pages/Welcome";
@@ -17,7 +19,7 @@ import Settings from "./pages/Settings";
 import Users from "./pages/Users";
 import KnowledgeBase from "./pages/KnowledgeBase";
 import NotFound from "./pages/NotFound";
-import Header from "./components/Header";
+import UpdatedHeader from "./components/UpdatedHeader";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
@@ -87,20 +89,27 @@ const App = () => {
                     path="/*"
                     element={
                       <ProtectedRoute>
-                        <div className="min-h-screen bg-gray-50">
-                          <Header />
-                          <Routes>
-                            <Route path="/" element={<Index />} />
-                            <Route path="/analytics" element={<Analytics />} />
-                            <Route path="/calls" element={<Calls />} />
-                            <Route path="/search" element={<Search />} />
-                            <Route path="/reports" element={<Reports />} />
-                            <Route path="/settings" element={<Settings />} />
-                            <Route path="/users" element={<Users />} />
-                            <Route path="/knowledge" element={<KnowledgeBase />} />
-                            <Route path="*" element={<NotFound />} />
-                          </Routes>
-                        </div>
+                        <SidebarProvider>
+                          <div className="min-h-screen flex w-full">
+                            <AppSidebar />
+                            <SidebarInset>
+                              <UpdatedHeader />
+                              <main className="flex-1 p-6">
+                                <Routes>
+                                  <Route path="/" element={<Index />} />
+                                  <Route path="/analytics" element={<Analytics />} />
+                                  <Route path="/calls" element={<Calls />} />
+                                  <Route path="/search" element={<Search />} />
+                                  <Route path="/reports" element={<Reports />} />
+                                  <Route path="/settings" element={<Settings />} />
+                                  <Route path="/users" element={<Users />} />
+                                  <Route path="/knowledge-base" element={<KnowledgeBase />} />
+                                  <Route path="*" element={<NotFound />} />
+                                </Routes>
+                              </main>
+                            </SidebarInset>
+                          </div>
+                        </SidebarProvider>
                       </ProtectedRoute>
                     }
                   />
