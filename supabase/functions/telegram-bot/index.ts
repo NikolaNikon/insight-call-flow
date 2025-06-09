@@ -62,56 +62,102 @@ serve(async (req) => {
     const username = message.from.username || '';
 
     let responseMessage = '';
-    let replyMarkup = null;
 
-    switch (text) {
-      case '/start':
-        // Генерируем уникальный код для авторизации
-        const authCode = generateAuthCode();
-        const authUrl = `https://callcontrol.app/telegram-auth?code=${authCode}`;
+    // Обработка команд
+    if (text.startsWith('/start')) {
+      const parts = text.split(' ');
+      
+      if (parts.length > 1) {
+        // Есть session_code
+        const sessionCode = parts[1];
         
-        // Сохраняем код в базу (без user_id, так как пользователь еще не авторизован)
-        await supabaseClient
-          .from('telegram_auth_codes')
-          .insert({
-            code: authCode,
-            user_id: null // Будет заполнен при авторизации на сайте
-          });
-
-        responseMessage = `🤖 Добро пожаловать в CallControl!
-
-Для получения персональных уведомлений необходимо подключить ваш аккаунт.
-
-Нажмите кнопку ниже для авторизации:`;
-
-        replyMarkup = {
-          inline_keyboard: [[
-            {
-              text: "🔗 Подключить аккаунт",
-              url: authUrl
-            }
-          ]]
-        };
-        break;
-
-      case '/stop':
-        // Деактивируем пользователя
-        const { data: linkData } = await supabaseClient
-          .from('telegram_links')
-          .update({ active: false })
-          .eq('chat_id', chatId)
-          .select()
+        // Ищем активную сессию
+        const { data: session, error: sessionError } = await supabaseClient
+          .from('telegram_sessions')
+          .select('*')
+          .eq('session_code', sessionCode)
+          .eq('used', false)
+          .gte('expires_at', new Date().toISOString())
           .single();
 
-        if (linkData) {
-          responseMessage = "❌ Уведомления отключены. Используйте /start для повторного подключения.";
+        if (sessionError || !session) {
+          responseMessage = "❌ Неверный или истекший код подключения. Попробуйте сгенерировать новую ссылку в CallControl.";
         } else {
-          responseMessage = "❓ Аккаунт не найден. Используйте /start для подключения.";
-        }
-        break;
+          // Проверяем, есть ли уже активная связка для этого пользователя
+          const { data: existingLink } = await supabaseClient
+            .from('telegram_links')
+            .select('*')
+            .eq('user_id', session.user_id)
+            .eq('active', true)
+            .single();
 
-      case '/help':
-        responseMessage = `📋 Доступные команды:
+          if (existingLink) {
+            // Обновляем существующую связку
+            await supabaseClient
+              .from('telegram_links')
+              .update({
+                chat_id: chatId,
+                telegram_username: username,
+                first_name: firstName,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', existingLink.id);
+          } else {
+            // Создаем новую связку
+            await supabaseClient
+              .from('telegram_links')
+              .insert({
+                user_id: session.user_id,
+                chat_id: chatId,
+                telegram_username: username,
+                first_name: firstName,
+                active: true
+              });
+          }
+
+          // Помечаем сессию как использованную
+          await supabaseClient
+            .from('telegram_sessions')
+            .update({ used: true })
+            .eq('id', session.id);
+
+          responseMessage = `✅ Отлично! Ваш аккаунт CallControl успешно подключен к Telegram.
+
+🔔 Теперь вы будете получать:
+• Уведомления о новых звонках
+• Еженедельные отчеты
+• Важные системные сообщения
+
+Используйте /help для просмотра доступных команд.`;
+        }
+      } else {
+        // Обычный /start без параметров
+        responseMessage = `🤖 Добро пожаловать в CallControl!
+
+Для подключения вашего аккаунта:
+1. Откройте CallControl в браузере
+2. Перейдите в настройки → Интеграции
+3. Нажмите "Подключить Telegram бот"
+4. Перейдите по полученной ссылке
+
+Или используйте команду /help для дополнительной информации.`;
+      }
+    } else if (text === '/stop') {
+      // Деактивируем пользователя
+      const { data: linkData } = await supabaseClient
+        .from('telegram_links')
+        .update({ active: false })
+        .eq('chat_id', chatId)
+        .select()
+        .single();
+
+      if (linkData) {
+        responseMessage = "❌ Уведомления отключены. Используйте новую ссылку из CallControl для повторного подключения.";
+      } else {
+        responseMessage = "❓ Аккаунт не найден. Используйте ссылку из CallControl для подключения.";
+      }
+    } else if (text === '/help') {
+      responseMessage = `📋 Доступные команды:
 
 /start - Подключить аккаунт CallControl
 /stop - Отключить уведомления  
@@ -121,30 +167,28 @@ serve(async (req) => {
 🔔 После подключения вы будете получать:
 • Уведомления о новых звонках
 • Еженедельные отчеты
-• Важные системные сообщения`;
-        break;
+• Важные системные сообщения
 
-      case '/status':
-        const { data: statusLink } = await supabaseClient
-          .from('telegram_links')
-          .select('active, created_at, telegram_username')
-          .eq('chat_id', chatId)
-          .single();
+💡 Для подключения получите ссылку в CallControl:
+Настройки → Интеграции → Подключить Telegram бот`;
+    } else if (text === '/status') {
+      const { data: statusLink } = await supabaseClient
+        .from('telegram_links')
+        .select('active, created_at, telegram_username')
+        .eq('chat_id', chatId)
+        .single();
 
-        if (statusLink) {
-          const status = statusLink.active ? "✅ Активен" : "❌ Отключен";
-          const connectedDate = new Date(statusLink.created_at).toLocaleDateString('ru-RU');
-          responseMessage = `📊 Статус подключения: ${status}
+      if (statusLink) {
+        const status = statusLink.active ? "✅ Активен" : "❌ Отключен";
+        const connectedDate = new Date(statusLink.created_at).toLocaleDateString('ru-RU');
+        responseMessage = `📊 Статус подключения: ${status}
 📅 Подключен: ${connectedDate}
 👤 Username: @${statusLink.telegram_username || 'не указан'}`;
-        } else {
-          responseMessage = "❓ Аккаунт не подключен. Используйте /start для подключения.";
-        }
-        break;
-
-      default:
-        responseMessage = "❓ Неизвестная команда. Используйте /help для просмотра доступных команд.";
-        break;
+      } else {
+        responseMessage = "❓ Аккаунт не подключен. Получите ссылку в CallControl для подключения.";
+      }
+    } else {
+      responseMessage = "❓ Неизвестная команда. Используйте /help для просмотра доступных команд.";
     }
 
     // Отправляем ответ
@@ -156,8 +200,7 @@ serve(async (req) => {
         body: JSON.stringify({
           chat_id: chatId,
           text: responseMessage,
-          parse_mode: 'HTML',
-          reply_markup: replyMarkup
+          parse_mode: 'HTML'
         } as TelegramMessage),
       }
     );
@@ -181,12 +224,3 @@ serve(async (req) => {
     );
   }
 });
-
-function generateAuthCode(): string {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let result = '';
-  for (let i = 0; i < 8; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return result;
-}

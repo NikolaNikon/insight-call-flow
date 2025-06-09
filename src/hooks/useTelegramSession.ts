@@ -1,0 +1,78 @@
+
+import { useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+
+interface TelegramSessionResponse {
+  success: boolean;
+  session_code?: string;
+  telegram_url?: string;
+  expires_at?: string;
+  error?: string;
+}
+
+export const useTelegramSession = () => {
+  const [isGeneratingSession, setIsGeneratingSession] = useState(false);
+  const { toast } = useToast();
+
+  const startTelegramSession = async (): Promise<TelegramSessionResponse | null> => {
+    setIsGeneratingSession(true);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('telegram-start-session');
+
+      if (error) {
+        throw error;
+      }
+
+      if (!data.success) {
+        throw new Error(data.error || 'Неизвестная ошибка');
+      }
+
+      toast({
+        title: "Ссылка сгенерирована!",
+        description: "Нажмите на кнопку ниже для подключения Telegram бота",
+      });
+
+      return data;
+    } catch (error: any) {
+      const errorMessage = error.message || 'Ошибка при генерации ссылки';
+      
+      toast({
+        title: "Ошибка",
+        description: errorMessage,
+        variant: "destructive"
+      });
+
+      return null;
+    } finally {
+      setIsGeneratingSession(false);
+    }
+  };
+
+  const checkSessionStatus = async (sessionCode: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('telegram_sessions')
+        .select('used, expires_at')
+        .eq('session_code', sessionCode)
+        .single();
+
+      if (error) throw error;
+      
+      return {
+        used: data.used,
+        expired: new Date(data.expires_at) < new Date()
+      };
+    } catch (error) {
+      console.error('Error checking session status:', error);
+      return { used: false, expired: true };
+    }
+  };
+
+  return {
+    startTelegramSession,
+    checkSessionStatus,
+    isGeneratingSession
+  };
+};

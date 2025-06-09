@@ -1024,6 +1024,41 @@ export type Database = {
           },
         ]
       }
+      telegram_sessions: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          session_code: string
+          used: boolean
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          session_code: string
+          used?: boolean
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          session_code?: string
+          used?: boolean
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "telegram_sessions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       users: {
         Row: {
           created_at: string
@@ -1060,6 +1095,10 @@ export type Database = {
     }
     Functions: {
       cleanup_expired_telegram_codes: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      cleanup_expired_telegram_sessions: {
         Args: Record<PropertyKey, never>
         Returns: number
       }
