@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { AuthProvider } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Welcome from "./pages/Welcome";
@@ -61,52 +62,54 @@ const App = () => {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            {/* Маршрут для welcome/onboarding */}
-            <Route 
-              path="/welcome" 
-              element={!isOnboardingCompleted ? <Welcome /> : <Navigate to="/" replace />} 
-            />
-            
-            {/* Перенаправление на welcome если onboarding не завершён */}
-            {!isOnboardingCompleted && (
-              <Route path="*" element={<Navigate to="/welcome" replace />} />
-            )}
-            
-            {/* Основные маршруты приложения (после onboarding) */}
-            {isOnboardingCompleted && (
-              <>
-                <Route path="/auth" element={<Auth />} />
-                <Route
-                  path="/*"
-                  element={
-                    <ProtectedRoute>
-                      <div className="min-h-screen bg-gray-50">
-                        <Header />
-                        <Routes>
-                          <Route path="/" element={<Index />} />
-                          <Route path="/analytics" element={<Analytics />} />
-                          <Route path="/calls" element={<Calls />} />
-                          <Route path="/search" element={<Search />} />
-                          <Route path="/reports" element={<Reports />} />
-                          <Route path="/settings" element={<Settings />} />
-                          <Route path="/users" element={<Users />} />
-                          <Route path="/knowledge" element={<KnowledgeBase />} />
-                          <Route path="*" element={<NotFound />} />
-                        </Routes>
-                      </div>
-                    </ProtectedRoute>
-                  }
-                />
-              </>
-            )}
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              {/* Маршрут для welcome/onboarding */}
+              <Route 
+                path="/welcome" 
+                element={!isOnboardingCompleted ? <Welcome /> : <Navigate to="/" replace />} 
+              />
+              
+              {/* Перенаправление на welcome если onboarding не завершён */}
+              {!isOnboardingCompleted && (
+                <Route path="*" element={<Navigate to="/welcome" replace />} />
+              )}
+              
+              {/* Основные маршруты приложения (после onboarding) */}
+              {isOnboardingCompleted && (
+                <>
+                  <Route path="/auth" element={<Auth />} />
+                  <Route
+                    path="/*"
+                    element={
+                      <ProtectedRoute>
+                        <div className="min-h-screen bg-gray-50">
+                          <Header />
+                          <Routes>
+                            <Route path="/" element={<Index />} />
+                            <Route path="/analytics" element={<Analytics />} />
+                            <Route path="/calls" element={<Calls />} />
+                            <Route path="/search" element={<Search />} />
+                            <Route path="/reports" element={<Reports />} />
+                            <Route path="/settings" element={<Settings />} />
+                            <Route path="/users" element={<Users />} />
+                            <Route path="/knowledge" element={<KnowledgeBase />} />
+                            <Route path="*" element={<NotFound />} />
+                          </Routes>
+                        </div>
+                      </ProtectedRoute>
+                    }
+                  />
+                </>
+              )}
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 };
