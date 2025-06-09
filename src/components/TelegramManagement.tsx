@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Bot, Trash2, ExternalLink, Loader2, Clock, RefreshCw, AlertCircle } from 'lucide-react';
+import { Bot, Trash2, ExternalLink, Loader2, Clock, RefreshCw, AlertCircle, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { useTelegramSession } from '@/hooks/useTelegramSession';
 import { useToast } from '@/hooks/use-toast';
@@ -30,10 +30,16 @@ export const TelegramManagement = () => {
   const [pendingSession, setPendingSession] = useState<PendingSession | null>(null);
   const [timeLeft, setTimeLeft] = useState<number>(0);
   const [error, setError] = useState<string | null>(null);
+  const [connectionAttempts, setConnectionAttempts] = useState(0);
+  const [showTimeoutWarning, setShowTimeoutWarning] = useState(false);
   
   const { getTelegramLinks, deactivateTelegramLink } = useTelegramAuth();
   const { startTelegramSession, checkSessionStatus, isGeneratingSession } = useTelegramSession();
   const { toast } = useToast();
+
+  const MAX_CONNECTION_ATTEMPTS = 3;
+  const TIMEOUT_WARNING_THRESHOLD = 30; // 30 секунд
+  const SESSION_TIMEOUT = 600; // 10 минут
 
   useEffect(() => {
     loadTelegramLinks();
@@ -50,18 +56,18 @@ export const TelegramManagement = () => {
       
       setTimeLeft(secondsLeft);
       
+      // Показываем предупреждение о таймауте
+      if (secondsLeft <= TIMEOUT_WARNING_THRESHOLD && secondsLeft > 0) {
+        setShowTimeoutWarning(true);
+      }
+      
       if (secondsLeft <= 0) {
-        setPendingSession(null);
-        toast({
-          title: "Время истекло",
-          description: "Сессия подключения истекла. Попробуйте еще раз.",
-          variant: "destructive"
-        });
+        handleSessionTimeout();
       }
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [pendingSession, toast]);
+  }, [pendingSession]);
 
   // Проверка статуса сессии
   useEffect(() => {
@@ -72,19 +78,9 @@ export const TelegramManagement = () => {
         const status = await checkSessionStatus(pendingSession.session_code);
         
         if (status.used) {
-          setPendingSession(null);
-          await loadTelegramLinks();
-          toast({
-            title: "Успешно подключено!",
-            description: "Telegram бот успешно подключен к вашему аккаунту",
-          });
+          handleSuccessfulConnection();
         } else if (status.expired) {
-          setPendingSession(null);
-          toast({
-            title: "Сессия истекла",
-            description: "Время подключения истекло",
-            variant: "destructive"
-          });
+          handleSessionTimeout();
         }
       } catch (error) {
         console.error('Error checking session:', error);
@@ -92,7 +88,42 @@ export const TelegramManagement = () => {
     }, 2000);
 
     return () => clearInterval(checkInterval);
-  }, [pendingSession, checkSessionStatus, toast]);
+  }, [pendingSession, checkSessionStatus]);
+
+  const handleSessionTimeout = () => {
+    setPendingSession(null);
+    setShowTimeoutWarning(false);
+    setConnectionAttempts(prev => prev + 1);
+    
+    if (connectionAttempts < MAX_CONNECTION_ATTEMPTS - 1) {
+      toast({
+        title: "⏰ Время подключения истекло",
+        description: `Попробуйте еще раз. Осталось попыток: ${MAX_CONNECTION_ATTEMPTS - connectionAttempts - 1}`,
+        variant: "destructive"
+      });
+    } else {
+      toast({
+        title: "❌ Превышено количество попыток",
+        description: "Обратитесь к администратору или попробуйте позже",
+        variant: "destructive"
+      });
+      setError("Превышено максимальное количество попыток подключения");
+    }
+  };
+
+  const handleSuccessfulConnection = async () => {
+    setPendingSession(null);
+    setShowTimeoutWarning(false);
+    setConnectionAttempts(0);
+    setError(null);
+    
+    await loadTelegramLinks();
+    
+    toast({
+      title: "🎉 Успешно подключено!",
+      description: "Telegram бот успешно подключен к вашему аккаунту",
+    });
+  };
 
   const loadTelegramLinks = async () => {
     setLoading(true);
@@ -104,7 +135,7 @@ export const TelegramManagement = () => {
       console.error('Error loading telegram links:', error);
       setError('Не удалось загрузить список подключений');
       toast({
-        title: "Ошибка",
+        title: "❌ Ошибка загрузки",
         description: "Не удалось загрузить список подключений",
         variant: "destructive"
       });
@@ -117,12 +148,34 @@ export const TelegramManagement = () => {
     const success = await deactivateTelegramLink(linkId);
     if (success) {
       await loadTelegramLinks();
+      toast({
+        title: "✅ Отключено",
+        description: "Telegram уведомления успешно отключены",
+      });
     }
   };
 
   const handleConnectBot = async () => {
     try {
       setError(null);
+      setShowTimeoutWarning(false);
+      
+      // Проверяем лимит попыток
+      if (connectionAttempts >= MAX_CONNECTION_ATTEMPTS) {
+        setError("Превышено максимальное количество попыток подключения");
+        return;
+      }
+
+      // Проверяем существующие подключения
+      if (links.length > 0) {
+        toast({
+          title: "⚠️ Внимание",
+          description: "У вас уже есть активное подключение. Отключите его перед созданием нового.",
+          variant: "destructive"
+        });
+        return;
+      }
+
       const sessionData = await startTelegramSession();
       if (sessionData && sessionData.success) {
         setPendingSession({
@@ -132,11 +185,31 @@ export const TelegramManagement = () => {
         });
         
         // Автоматически открываем ссылку на Telegram
-        window.open(sessionData.telegram_url, '_blank');
+        const opened = window.open(sessionData.telegram_url, '_blank');
+        
+        // Проверяем, удалось ли открыть окно
+        if (!opened || opened.closed) {
+          toast({
+            title: "⚠️ Внимание",
+            description: "Не удалось автоматически открыть Telegram. Скопируйте ссылку вручную.",
+            variant: "destructive"
+          });
+        }
+
+        // Показываем инструкцию через 3 секунды
+        setTimeout(() => {
+          if (pendingSession) {
+            toast({
+              title: "📱 Инструкция",
+              description: "Перейдите в Telegram и нажмите кнопку 'START' для завершения подключения",
+            });
+          }
+        }, 3000);
       }
     } catch (error: any) {
       console.error('Error connecting bot:', error);
       setError(error.message || 'Ошибка при подключении бота');
+      setConnectionAttempts(prev => prev + 1);
     }
   };
 
@@ -144,6 +217,45 @@ export const TelegramManagement = () => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  };
+
+  const renderConnectionStatus = () => {
+    if (links.length > 0) {
+      return (
+        <Alert className="border-green-200 bg-green-50">
+          <CheckCircle className="h-4 w-4 text-green-600" />
+          <AlertDescription className="text-green-800">
+            ✅ Telegram успешно подключен к вашему аккаунту CallControl
+          </AlertDescription>
+        </Alert>
+      );
+    }
+
+    if (pendingSession) {
+      return (
+        <Alert className={`${showTimeoutWarning ? 'border-yellow-200 bg-yellow-50' : 'border-blue-200 bg-blue-50'}`}>
+          <Clock className={`h-4 w-4 ${showTimeoutWarning ? 'text-yellow-600' : 'text-blue-600'}`} />
+          <AlertDescription className={showTimeoutWarning ? 'text-yellow-800' : 'text-blue-800'}>
+            {showTimeoutWarning ? (
+              <>⏰ Время подключения скоро истечет! Завершите подключение в Telegram.</>
+            ) : (
+              <>🤖 Ожидаем, когда вы нажмёте /start в Telegram.</>
+            )}
+          </AlertDescription>
+        </Alert>
+      );
+    }
+
+    if (error) {
+      return (
+        <Alert variant="destructive">
+          <XCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      );
+    }
+
+    return null;
   };
 
   return (
@@ -158,12 +270,7 @@ export const TelegramManagement = () => {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {error && (
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
+        {renderConnectionStatus()}
 
         {loading ? (
           <div className="text-center py-4">
@@ -191,10 +298,10 @@ export const TelegramManagement = () => {
                 {links.map((link) => (
                   <div
                     key={link.id}
-                    className="flex items-center justify-between p-3 border rounded-lg"
+                    className="flex items-center justify-between p-3 border rounded-lg bg-green-50 border-green-200"
                   >
                     <div className="flex items-center gap-3">
-                      <Bot className="h-4 w-4 text-blue-600" />
+                      <Bot className="h-4 w-4 text-green-600" />
                       <div>
                         <div className="font-medium">
                           {link.first_name || 'Telegram User'}
@@ -210,8 +317,8 @@ export const TelegramManagement = () => {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Badge variant={link.active ? "default" : "secondary"}>
-                        {link.active ? "Активен" : "Отключен"}
+                      <Badge variant={link.active ? "default" : "secondary"} className="bg-green-100 text-green-700">
+                        {link.active ? "✅ Активен" : "❌ Отключен"}
                       </Badge>
                       {link.active && (
                         <Button
@@ -230,43 +337,75 @@ export const TelegramManagement = () => {
 
             {/* Ожидающая сессия */}
             {pendingSession && (
-              <div className="border-2 border-blue-200 rounded-lg p-4 bg-blue-50">
+              <div className={`border-2 rounded-lg p-4 ${
+                showTimeoutWarning ? 'border-yellow-200 bg-yellow-50' : 'border-blue-200 bg-blue-50'
+              }`}>
                 <div className="flex items-center gap-2 mb-3">
-                  <Clock className="h-4 w-4 text-blue-600" />
-                  <span className="font-medium text-blue-900">Ожидание подключения</span>
-                  <Badge variant="outline" className="text-blue-700 border-blue-300">
+                  <Clock className={`h-4 w-4 ${showTimeoutWarning ? 'text-yellow-600' : 'text-blue-600'}`} />
+                  <span className={`font-medium ${showTimeoutWarning ? 'text-yellow-900' : 'text-blue-900'}`}>
+                    Ожидание подключения
+                  </span>
+                  <Badge 
+                    variant="outline" 
+                    className={showTimeoutWarning ? 'text-yellow-700 border-yellow-300' : 'text-blue-700 border-blue-300'}
+                  >
                     {formatTime(timeLeft)}
                   </Badge>
                 </div>
-                <p className="text-sm text-blue-800 mb-3">
-                  Перейдите в Telegram и нажмите "START" для завершения подключения
+                <p className={`text-sm mb-3 ${showTimeoutWarning ? 'text-yellow-800' : 'text-blue-800'}`}>
+                  {showTimeoutWarning ? (
+                    '⏰ Поторопитесь! Перейдите в Telegram и нажмите "START"'
+                  ) : (
+                    '📱 Перейдите в Telegram и нажмите "START" для завершения подключения'
+                  )}
                 </p>
-                <Button
-                  onClick={() => window.open(pendingSession.telegram_url, '_blank')}
-                  variant="outline"
-                  size="sm"
-                  className="flex items-center gap-2"
-                >
-                  <ExternalLink className="h-4 w-4" />
-                  Открыть бота в Telegram
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => window.open(pendingSession.telegram_url, '_blank')}
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-2"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    Открыть бота в Telegram
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setPendingSession(null);
+                      setShowTimeoutWarning(false);
+                    }}
+                    variant="ghost"
+                    size="sm"
+                  >
+                    Отменить
+                  </Button>
+                </div>
               </div>
             )}
 
             {/* Кнопка подключения */}
-            <Button 
-              onClick={handleConnectBot} 
-              disabled={isGeneratingSession || !!pendingSession}
-              className="w-full flex items-center gap-2"
-            >
-              {isGeneratingSession && <Loader2 className="h-4 w-4 animate-spin" />}
-              {isGeneratingSession 
-                ? 'Генерация ссылки...' 
-                : pendingSession 
-                  ? 'Ожидание подключения...'
-                  : 'Подключить Telegram бот'
-              }
-            </Button>
+            {links.length === 0 && !pendingSession && (
+              <Button 
+                onClick={handleConnectBot} 
+                disabled={isGeneratingSession || connectionAttempts >= MAX_CONNECTION_ATTEMPTS}
+                className="w-full flex items-center gap-2"
+              >
+                {isGeneratingSession && <Loader2 className="h-4 w-4 animate-spin" />}
+                {isGeneratingSession 
+                  ? 'Генерация ссылки...' 
+                  : connectionAttempts >= MAX_CONNECTION_ATTEMPTS
+                    ? 'Превышен лимит попыток'
+                    : 'Подключить Telegram бот'
+                }
+              </Button>
+            )}
+
+            {/* Информация о попытках подключения */}
+            {connectionAttempts > 0 && connectionAttempts < MAX_CONNECTION_ATTEMPTS && (
+              <div className="text-center text-sm text-gray-500">
+                Попыток подключения: {connectionAttempts} из {MAX_CONNECTION_ATTEMPTS}
+              </div>
+            )}
           </>
         )}
 
@@ -275,9 +414,18 @@ export const TelegramManagement = () => {
           <ol className="list-decimal list-inside space-y-1 text-sm text-gray-600">
             <li>Нажмите "Подключить Telegram бот"</li>
             <li>Автоматически откроется чат с ботом</li>
-            <li>Нажмите "START" в боте</li>
+            <li>Нажмите "START" в боте в течение 10 минут</li>
             <li>Подключение будет активировано автоматически</li>
           </ol>
+
+          <div className="bg-blue-50 p-3 rounded-lg">
+            <h5 className="font-medium text-blue-900 mb-2">💡 Полезные советы:</h5>
+            <ul className="text-sm text-blue-700 space-y-1">
+              <li>• Если Telegram заблокирован, попробуйте с другой сети</li>
+              <li>• Один аккаунт CallControl = один Telegram</li>
+              <li>• При проблемах обновите страницу и попробуйте снова</li>
+            </ul>
+          </div>
         </div>
       </CardContent>
     </Card>
