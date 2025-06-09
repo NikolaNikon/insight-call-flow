@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -27,6 +28,26 @@ const App = () => {
     // Проверяем, завершён ли onboarding
     const completed = localStorage.getItem('onboarding_completed') === 'true';
     setIsOnboardingCompleted(completed);
+
+    // Слушаем изменения в localStorage для обновления состояния
+    const handleStorageChange = () => {
+      const completed = localStorage.getItem('onboarding_completed') === 'true';
+      setIsOnboardingCompleted(completed);
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Также слушаем кастомное событие для обновления в том же окне
+    const handleOnboardingComplete = () => {
+      setIsOnboardingCompleted(true);
+    };
+    
+    window.addEventListener('onboardingCompleted', handleOnboardingComplete);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('onboardingCompleted', handleOnboardingComplete);
+    };
   }, []);
 
   // Показываем загрузку пока проверяем статус onboarding

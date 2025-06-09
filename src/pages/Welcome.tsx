@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -50,6 +49,10 @@ const Welcome = () => {
     } else {
       // Завершение onboarding
       localStorage.setItem('onboarding_completed', 'true');
+      
+      // Уведомляем App.tsx об изменении через кастомное событие
+      window.dispatchEvent(new Event('onboardingCompleted'));
+      
       navigate('/');
     }
   };
@@ -62,6 +65,10 @@ const Welcome = () => {
 
   const handleSkipOnboarding = () => {
     localStorage.setItem('onboarding_completed', 'true');
+    
+    // Уведомляем App.tsx об изменении через кастомное событие
+    window.dispatchEvent(new Event('onboardingCompleted'));
+    
     navigate('/');
   };
 
