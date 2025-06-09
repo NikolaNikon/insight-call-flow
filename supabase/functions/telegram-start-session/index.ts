@@ -49,8 +49,8 @@ serve(async (req) => {
 
     console.log('User data retrieved:', userData.name, userData.role);
 
-    // Генерируем уникальный session_code
-    const sessionCode = generateSessionCode();
+    // Генерируем уникальный session_code с префиксом tg_
+    const sessionCode = generateSessionCodeWithPrefix();
     console.log('Generated session code:', sessionCode);
     
     // Очищаем старые сессии пользователя
@@ -83,7 +83,7 @@ serve(async (req) => {
     console.log('Session created successfully:', session.id);
 
     // Формируем ссылку на бота
-    const botUsername = 'callcontrol_tgbot'; // Замените на ваше имя бота
+    const botUsername = 'callcontrol_tgbot';
     const telegramUrl = `https://t.me/${botUsername}?start=${sessionCode}`;
 
     return new Response(
@@ -91,6 +91,7 @@ serve(async (req) => {
         success: true,
         session_code: sessionCode,
         telegram_url: telegramUrl,
+        url: telegramUrl, // для совместимости с существующим кодом
         expires_at: session.expires_at
       }),
       {
@@ -114,10 +115,10 @@ serve(async (req) => {
   }
 });
 
-function generateSessionCode(): string {
+function generateSessionCodeWithPrefix(): string {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let result = '';
-  for (let i = 0; i < 12; i++) {
+  let result = 'tg_';
+  for (let i = 0; i < 10; i++) {
     result += chars.charAt(Math.floor(Math.random() * chars.length));
   }
   return result;

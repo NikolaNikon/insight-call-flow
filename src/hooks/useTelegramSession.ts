@@ -8,6 +8,7 @@ interface TelegramSessionResponse {
   success: boolean;
   session_code?: string;
   telegram_url?: string;
+  url?: string;
   expires_at?: string;
   error?: string;
 }
@@ -45,7 +46,7 @@ export const useTelegramSession = () => {
       }
 
       toast({
-        title: "Ссылка сгенерирована!",
+        title: "✅ Ссылка сгенерирована!",
         description: "Нажмите на кнопку ниже для подключения Telegram бота",
       });
 
@@ -55,7 +56,7 @@ export const useTelegramSession = () => {
       console.error('Error in startTelegramSession:', error);
       
       toast({
-        title: "Ошибка",
+        title: "❌ Ошибка",
         description: errorMessage,
         variant: "destructive"
       });

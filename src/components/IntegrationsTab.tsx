@@ -1,6 +1,5 @@
 
 import React from 'react';
-import { TelegramIntegrationCard } from '@/components/TelegramIntegrationCard';
 import { TelegramManagement } from '@/components/TelegramManagement';
 import { TelegramWebhookManager } from '@/components/TelegramWebhookManager';
 import { CrmIntegrationCard } from '@/components/CrmIntegrationCard';
@@ -12,7 +11,6 @@ export const IntegrationsTab = () => {
       <TelegramWebhookManager />
       <TelegramManagement />
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <TelegramIntegrationCard />
         <CrmIntegrationCard />
         <ApiSettingsCard />
       </div>
