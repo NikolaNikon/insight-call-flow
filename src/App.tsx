@@ -86,34 +86,127 @@ const App = () => {
               {isOnboardingCompleted && (
                 <>
                   <Route path="/auth" element={<Auth />} />
-                  <Route
-                    path="/*"
-                    element={
-                      <ProtectedRoute>
-                        <SidebarProvider>
-                          <div className="min-h-screen flex w-full">
-                            <AppSidebar />
-                            <SidebarInset>
-                              <UpdatedHeader />
-                              <main className="flex-1 p-6">
-                                <Routes>
-                                  <Route path="/" element={<Index />} />
-                                  <Route path="/analytics" element={<Analytics />} />
-                                  <Route path="/calls" element={<Calls />} />
-                                  <Route path="/search" element={<Search />} />
-                                  <Route path="/reports" element={<Reports />} />
-                                  <Route path="/settings" element={<Settings />} />
-                                  <Route path="/users" element={<Users />} />
-                                  <Route path="/knowledge-base" element={<KnowledgeBase />} />
-                                  <Route path="*" element={<NotFound />} />
-                                </Routes>
-                              </main>
-                            </SidebarInset>
-                          </div>
-                        </SidebarProvider>
-                      </ProtectedRoute>
-                    }
-                  />
+                  <Route path="/" element={
+                    <ProtectedRoute>
+                      <SidebarProvider>
+                        <div className="min-h-screen flex w-full">
+                          <AppSidebar />
+                          <SidebarInset>
+                            <UpdatedHeader />
+                            <main className="flex-1 p-6">
+                              <Index />
+                            </main>
+                          </SidebarInset>
+                        </div>
+                      </SidebarProvider>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/analytics" element={
+                    <ProtectedRoute>
+                      <SidebarProvider>
+                        <div className="min-h-screen flex w-full">
+                          <AppSidebar />
+                          <SidebarInset>
+                            <UpdatedHeader />
+                            <main className="flex-1 p-6">
+                              <Analytics />
+                            </main>
+                          </SidebarInset>
+                        </div>
+                      </SidebarProvider>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/calls" element={
+                    <ProtectedRoute>
+                      <SidebarProvider>
+                        <div className="min-h-screen flex w-full">
+                          <AppSidebar />
+                          <SidebarInset>
+                            <UpdatedHeader />
+                            <main className="flex-1 p-6">
+                              <Calls />
+                            </main>
+                          </SidebarInset>
+                        </div>
+                      </SidebarProvider>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/search" element={
+                    <ProtectedRoute>
+                      <SidebarProvider>
+                        <div className="min-h-screen flex w-full">
+                          <AppSidebar />
+                          <SidebarInset>
+                            <UpdatedHeader />
+                            <main className="flex-1 p-6">
+                              <Search />
+                            </main>
+                          </SidebarInset>
+                        </div>
+                      </SidebarProvider>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/reports" element={
+                    <ProtectedRoute>
+                      <SidebarProvider>
+                        <div className="min-h-screen flex w-full">
+                          <AppSidebar />
+                          <SidebarInset>
+                            <UpdatedHeader />
+                            <main className="flex-1 p-6">
+                              <Reports />
+                            </main>
+                          </SidebarInset>
+                        </div>
+                      </SidebarProvider>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/settings" element={
+                    <ProtectedRoute>
+                      <SidebarProvider>
+                        <div className="min-h-screen flex w-full">
+                          <AppSidebar />
+                          <SidebarInset>
+                            <UpdatedHeader />
+                            <main className="flex-1 p-6">
+                              <Settings />
+                            </main>
+                          </SidebarInset>
+                        </div>
+                      </SidebarProvider>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/users" element={
+                    <ProtectedRoute>
+                      <SidebarProvider>
+                        <div className="min-h-screen flex w-full">
+                          <AppSidebar />
+                          <SidebarInset>
+                            <UpdatedHeader />
+                            <main className="flex-1 p-6">
+                              <Users />
+                            </main>
+                          </SidebarInset>
+                        </div>
+                      </SidebarProvider>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/knowledge-base" element={
+                    <ProtectedRoute>
+                      <SidebarProvider>
+                        <div className="min-h-screen flex w-full">
+                          <AppSidebar />
+                          <SidebarInset>
+                            <UpdatedHeader />
+                            <main className="flex-1 p-6">
+                              <KnowledgeBase />
+                            </main>
+                          </SidebarInset>
+                        </div>
+                      </SidebarProvider>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="*" element={<NotFound />} />
                 </>
               )}
             </Routes>
