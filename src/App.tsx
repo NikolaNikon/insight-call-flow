@@ -23,6 +23,7 @@ import Welcome from '@/pages/Welcome';
 import NotFound from '@/pages/NotFound';
 import KeywordTrackers from '@/pages/KeywordTrackers';
 import { useOrganization } from '@/hooks/useOrganization';
+import { AppShell } from '@/components/AppShell';
 import { Toaster } from '@/components/ui/toaster';
 import { useToast } from '@/hooks/use-toast';
 
@@ -55,7 +56,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/welcome" replace />;
   }
 
-  return <div className="min-h-screen bg-gray-50">{children}</div>;
+  return <AppShell>{children}</AppShell>;
 };
 
 function App() {

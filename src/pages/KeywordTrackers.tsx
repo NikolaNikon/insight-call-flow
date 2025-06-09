@@ -9,7 +9,7 @@ import { KeywordTrackerList } from '@/components/keyword-trackers/KeywordTracker
 import { KeywordTrackerModal } from '@/components/keyword-trackers/KeywordTrackerModal';
 import { useKeywordTrackersApi } from '@/hooks/useKeywordTrackersApi';
 
-export const KeywordTrackers = () => {
+const KeywordTrackers = () => {
   const [showModal, setShowModal] = useState(false);
   const [editingTracker, setEditingTracker] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -182,3 +182,5 @@ export const KeywordTrackers = () => {
     </div>
   );
 };
+
+export default KeywordTrackers;
