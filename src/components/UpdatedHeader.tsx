@@ -1,6 +1,5 @@
 
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
 import { LogOut, User } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -39,16 +38,11 @@ const UpdatedHeader = () => {
         </div>
         
         <div className="flex items-center gap-4">
-          <Badge variant="outline" className="text-green-600 border-green-200">
-            <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-            Система активна
-          </Badge>
-          
           <NotificationCenter />
           
           {user && (
             <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 text-sm text-gray-600">
+              <div className="flex items-center gap-2 text-sm text-gray-500">
                 <User className="h-4 w-4" />
                 <span>{user.email}</span>
               </div>

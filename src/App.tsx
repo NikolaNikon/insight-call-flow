@@ -17,6 +17,9 @@ import Search from "./pages/Search";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
 import Users from "./pages/Users";
+import Upload from "./pages/Upload";
+import Monitoring from "./pages/Monitoring";
+import Export from "./pages/Export";
 import KnowledgeBase from "./pages/KnowledgeBase";
 import TelegramAuth from "./pages/TelegramAuth";
 import NotFound from "./pages/NotFound";
@@ -63,6 +66,22 @@ const App = () => {
     );
   }
 
+  const LayoutWrapper = ({ children }: { children: React.ReactNode }) => (
+    <ProtectedRoute>
+      <SidebarProvider>
+        <div className="min-h-screen flex w-full">
+          <AppSidebar />
+          <SidebarInset>
+            <UpdatedHeader />
+            <main className="flex-1 p-6">
+              {children}
+            </main>
+          </SidebarInset>
+        </div>
+      </SidebarProvider>
+    </ProtectedRoute>
+  );
+
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
@@ -86,126 +105,17 @@ const App = () => {
               {isOnboardingCompleted && (
                 <>
                   <Route path="/auth" element={<Auth />} />
-                  <Route path="/" element={
-                    <ProtectedRoute>
-                      <SidebarProvider>
-                        <div className="min-h-screen flex w-full">
-                          <AppSidebar />
-                          <SidebarInset>
-                            <UpdatedHeader />
-                            <main className="flex-1 p-6">
-                              <Index />
-                            </main>
-                          </SidebarInset>
-                        </div>
-                      </SidebarProvider>
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/analytics" element={
-                    <ProtectedRoute>
-                      <SidebarProvider>
-                        <div className="min-h-screen flex w-full">
-                          <AppSidebar />
-                          <SidebarInset>
-                            <UpdatedHeader />
-                            <main className="flex-1 p-6">
-                              <Analytics />
-                            </main>
-                          </SidebarInset>
-                        </div>
-                      </SidebarProvider>
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/calls" element={
-                    <ProtectedRoute>
-                      <SidebarProvider>
-                        <div className="min-h-screen flex w-full">
-                          <AppSidebar />
-                          <SidebarInset>
-                            <UpdatedHeader />
-                            <main className="flex-1 p-6">
-                              <Calls />
-                            </main>
-                          </SidebarInset>
-                        </div>
-                      </SidebarProvider>
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/search" element={
-                    <ProtectedRoute>
-                      <SidebarProvider>
-                        <div className="min-h-screen flex w-full">
-                          <AppSidebar />
-                          <SidebarInset>
-                            <UpdatedHeader />
-                            <main className="flex-1 p-6">
-                              <Search />
-                            </main>
-                          </SidebarInset>
-                        </div>
-                      </SidebarProvider>
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/reports" element={
-                    <ProtectedRoute>
-                      <SidebarProvider>
-                        <div className="min-h-screen flex w-full">
-                          <AppSidebar />
-                          <SidebarInset>
-                            <UpdatedHeader />
-                            <main className="flex-1 p-6">
-                              <Reports />
-                            </main>
-                          </SidebarInset>
-                        </div>
-                      </SidebarProvider>
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/settings" element={
-                    <ProtectedRoute>
-                      <SidebarProvider>
-                        <div className="min-h-screen flex w-full">
-                          <AppSidebar />
-                          <SidebarInset>
-                            <UpdatedHeader />
-                            <main className="flex-1 p-6">
-                              <Settings />
-                            </main>
-                          </SidebarInset>
-                        </div>
-                      </SidebarProvider>
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/users" element={
-                    <ProtectedRoute>
-                      <SidebarProvider>
-                        <div className="min-h-screen flex w-full">
-                          <AppSidebar />
-                          <SidebarInset>
-                            <UpdatedHeader />
-                            <main className="flex-1 p-6">
-                              <Users />
-                            </main>
-                          </SidebarInset>
-                        </div>
-                      </SidebarProvider>
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/knowledge-base" element={
-                    <ProtectedRoute>
-                      <SidebarProvider>
-                        <div className="min-h-screen flex w-full">
-                          <AppSidebar />
-                          <SidebarInset>
-                            <UpdatedHeader />
-                            <main className="flex-1 p-6">
-                              <KnowledgeBase />
-                            </main>
-                          </SidebarInset>
-                        </div>
-                      </SidebarProvider>
-                    </ProtectedRoute>
-                  } />
+                  <Route path="/" element={<LayoutWrapper><Index /></LayoutWrapper>} />
+                  <Route path="/analytics" element={<LayoutWrapper><Analytics /></LayoutWrapper>} />
+                  <Route path="/calls" element={<LayoutWrapper><Calls /></LayoutWrapper>} />
+                  <Route path="/search" element={<LayoutWrapper><Search /></LayoutWrapper>} />
+                  <Route path="/upload" element={<LayoutWrapper><Upload /></LayoutWrapper>} />
+                  <Route path="/monitoring" element={<LayoutWrapper><Monitoring /></LayoutWrapper>} />
+                  <Route path="/export" element={<LayoutWrapper><Export /></LayoutWrapper>} />
+                  <Route path="/reports" element={<LayoutWrapper><Reports /></LayoutWrapper>} />
+                  <Route path="/settings" element={<LayoutWrapper><Settings /></LayoutWrapper>} />
+                  <Route path="/users" element={<LayoutWrapper><Users /></LayoutWrapper>} />
+                  <Route path="/knowledge-base" element={<LayoutWrapper><KnowledgeBase /></LayoutWrapper>} />
                   <Route path="*" element={<NotFound />} />
                 </>
               )}

@@ -1,5 +1,5 @@
 
-import { Calendar, BarChart3, Search, FileText, Settings, LayoutDashboard, BookOpen } from "lucide-react";
+import { Calendar, BarChart3, Search, FileText, Settings, LayoutDashboard, BookOpen, Upload, Monitor, Download } from "lucide-react";
 import { useLocation, Link } from "react-router-dom";
 import {
   Sidebar,
@@ -12,7 +12,6 @@ import {
   SidebarHeader,
   SidebarFooter,
 } from "@/components/ui/sidebar";
-import { Badge } from "@/components/ui/badge";
 
 const menuItems = [
   {
@@ -29,6 +28,21 @@ const menuItems = [
     title: "Аналитика",
     url: "/analytics",
     icon: BarChart3,
+  },
+  {
+    title: "Загрузка",
+    url: "/upload",
+    icon: Upload,
+  },
+  {
+    title: "Мониторинг",
+    url: "/monitoring",
+    icon: Monitor,
+  },
+  {
+    title: "Экспорт",
+    url: "/export",
+    icon: Download,
   },
   {
     title: "Отчёты",
@@ -87,12 +101,7 @@ export function AppSidebar() {
       </SidebarContent>
       
       <SidebarFooter className="p-4">
-        <div className="flex items-center gap-2">
-          <Badge variant="outline" className="text-green border-green/20">
-            <div className="w-2 h-2 bg-green rounded-full mr-2"></div>
-            Система активна
-          </Badge>
-        </div>
+        {/* Removed status badge as per cleanup plan */}
       </SidebarFooter>
     </Sidebar>
   );
