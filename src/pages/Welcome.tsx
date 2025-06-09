@@ -67,6 +67,7 @@ const Welcome = () => {
 
   const progressValue = ((currentStep + 1) / steps.length) * 100;
   const CurrentStepComponent = steps[currentStep].component;
+  const CurrentStepIcon = steps[currentStep].icon;
 
   if (currentStep === -1) {
     // Welcome screen
@@ -180,7 +181,7 @@ const Welcome = () => {
         <Card className="mb-8">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <steps[currentStep].icon className="h-6 w-6" />
+              <CurrentStepIcon className="h-6 w-6" />
               {steps[currentStep].title}
             </CardTitle>
             <CardDescription>
