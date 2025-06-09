@@ -8,6 +8,7 @@ import { CallsChart } from "@/components/CallsChart";
 import { AudioUploader } from "@/components/AudioUploader";
 import { ProcessingMonitor } from "@/components/ProcessingMonitor";
 import { ExportManager } from "@/components/ExportManager";
+import { Dashboard2 } from "@/components/dashboard/Dashboard2";
 import { useRealtimeUpdates } from "@/hooks/useRealtimeUpdates";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Settings, Users, HelpCircle, CheckCircle, ArrowRight } from "lucide-react";
@@ -159,13 +160,18 @@ const Index = () => {
       )}
 
       {/* Основной контент */}
-      <Tabs defaultValue="upload" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+      <Tabs defaultValue="dashboard2" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="dashboard2">Dashboard 2.0</TabsTrigger>
           <TabsTrigger value="upload">Загрузка</TabsTrigger>
           <TabsTrigger value="analytics">Аналитика</TabsTrigger>
           <TabsTrigger value="monitoring">Мониторинг</TabsTrigger>
           <TabsTrigger value="export">Экспорт</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="dashboard2" className="space-y-6">
+          <Dashboard2 />
+        </TabsContent>
 
         <TabsContent value="upload" className="space-y-6">
           <AudioUploader />
