@@ -23,24 +23,12 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      {/* Desktop Sidebar */}
-      <div className={`hidden lg:flex lg:flex-shrink-0 transition-all duration-300 ${
-        sidebarCollapsed ? 'lg:w-16' : 'lg:w-72'
-      }`}>
-        <AppSidebar 
-          isOpen={true} 
-          onClose={() => {}} 
-          collapsed={sidebarCollapsed}
-          onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
-        />
-      </div>
-
-      {/* Mobile Sidebar */}
+      {/* Единственный сайдбар, который адаптируется под размер экрана */}
       <AppSidebar 
         isOpen={sidebarOpen} 
         onClose={() => setSidebarOpen(false)} 
-        collapsed={false}
-        onToggleCollapse={() => {}}
+        collapsed={sidebarCollapsed}
+        onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
       />
       
       {/* Mobile Overlay */}

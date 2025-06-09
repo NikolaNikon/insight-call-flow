@@ -31,9 +31,11 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
 }) => {
   return (
     <aside
-      className={`fixed left-0 top-0 z-50 flex h-full flex-col border-r bg-background transition-all duration-300 ease-in-out lg:relative lg:translate-x-0 ${
-        isOpen ? "translate-x-0" : "-translate-x-full"
-      } ${collapsed ? "lg:w-16" : "lg:w-72"} w-72`}
+      className={`fixed left-0 top-0 z-50 flex h-full flex-col border-r bg-background transition-all duration-300 ease-in-out
+        lg:relative lg:translate-x-0 
+        ${isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"} 
+        ${collapsed ? "lg:w-16" : "lg:w-72"} 
+        w-72`}
     >
       <div className="flex items-center justify-between px-4 py-3">
         {!collapsed && <span className="font-bold text-2xl">CallControl</span>}
