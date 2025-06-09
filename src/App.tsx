@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import {
   BrowserRouter as Router,
@@ -6,27 +7,24 @@ import {
   Navigate
 } from 'react-router-dom';
 import { useUser } from '@supabase/auth-helpers-react';
-import { Index } from '@/pages/Index';
-import { Calls } from '@/pages/Calls';
-import { AnalyticsReports } from '@/pages/AnalyticsReports';
-import { KnowledgeBase } from '@/pages/KnowledgeBase';
-import { Search } from '@/pages/Search';
-import { Monitoring } from '@/pages/Monitoring';
-import { Upload } from '@/pages/Upload';
-import { Settings } from '@/pages/Settings';
-import { Users } from '@/pages/Users';
-import { Auth } from '@/pages/Auth';
-import { TelegramAuth } from '@/pages/TelegramAuth';
-import { TelegramTracker } from '@/pages/TelegramTracker';
-import { Welcome } from '@/pages/Welcome';
-import { NotFound } from '@/pages/NotFound';
-import { AppShell } from '@/components/AppShell';
+import Index from '@/pages/Index';
+import Calls from '@/pages/Calls';
+import AnalyticsReports from '@/pages/AnalyticsReports';
+import KnowledgeBase from '@/pages/KnowledgeBase';
+import Search from '@/pages/Search';
+import Monitoring from '@/pages/Monitoring';
+import Upload from '@/pages/Upload';
+import Settings from '@/pages/Settings';
+import Users from '@/pages/Users';
+import Auth from '@/pages/Auth';
+import TelegramAuth from '@/pages/TelegramAuth';
+import TelegramTracker from '@/pages/TelegramTracker';
+import Welcome from '@/pages/Welcome';
+import NotFound from '@/pages/NotFound';
+import KeywordTrackers from '@/pages/KeywordTrackers';
 import { useOrganization } from '@/hooks/useOrganization';
 import { Toaster } from '@/components/ui/toaster';
 import { useToast } from '@/hooks/use-toast';
-import { BarChart3, BookOpen, FileBarChart, Phone, Search as SearchIcon, Activity, Upload as UploadIcon, Users as UsersIcon, Settings as SettingsIcon } from 'lucide-react';
-import { SidebarLink } from '@/components/SidebarLink';
-import { KeywordTrackers } from '@/pages/KeywordTrackers';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const user = useUser();
@@ -41,7 +39,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
         description: "Обратитесь к администратору для добавления в организацию.",
         variant: "destructive",
       });
-      setHasCheckedOrg(true); // Ensure this effect runs only once
+      setHasCheckedOrg(true);
     }
   }, [user, organization, isLoading, toast, hasCheckedOrg]);
 
@@ -53,12 +51,11 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     return <div>Loading...</div>;
   }
 
-  // Если у пользователя нет организации, и мы уже проверили это, перенаправляем
   if (!organization && hasCheckedOrg) {
     return <Navigate to="/welcome" replace />;
   }
 
-  return <AppShell>{children}</AppShell>;
+  return <div className="min-h-screen bg-gray-50">{children}</div>;
 };
 
 function App() {

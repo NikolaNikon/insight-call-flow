@@ -1,3 +1,4 @@
+
 import React from "react";
 import {
   BarChart3,
@@ -11,31 +12,7 @@ import {
   Upload,
   Users,
 } from "lucide-react";
-import { NavLink } from "react-router-dom";
-
-interface SidebarLinkProps {
-  to: string;
-  icon: React.ReactNode;
-  text: string;
-}
-
-const SidebarLink: React.FC<SidebarLinkProps> = ({ to, icon, text }) => {
-  return (
-    <li>
-      <NavLink
-        to={to}
-        className={({ isActive }) =>
-          `flex items-center gap-2 rounded-md p-2 text-sm font-medium hover:bg-secondary ${
-            isActive ? "bg-secondary" : ""
-          }`
-        }
-      >
-        {icon}
-        {text}
-      </NavLink>
-    </li>
-  );
-};
+import { SidebarLink } from "./SidebarLink";
 
 interface AppSidebarProps {
   isOpen: boolean;
@@ -50,7 +27,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ isOpen, onClose }) => {
       }`}
     >
       <div className="flex items-center justify-between px-4 py-3">
-        <span className="font-bold text-2xl">Your Company</span>
+        <span className="font-bold text-2xl">CallControl</span>
         <button
           onClick={onClose}
           className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary hover:bg-secondary h-10 w-10 p-0"
@@ -131,7 +108,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ isOpen, onClose }) => {
 
       <div className="border-t p-4">
         <p className="text-sm text-muted-foreground">
-          Your Company © {new Date().getFullYear()}
+          CallControl © {new Date().getFullYear()}
         </p>
       </div>
     </aside>
