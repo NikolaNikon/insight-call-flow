@@ -1,36 +1,54 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 import { X } from 'lucide-react';
-import { useKeywordTrackers } from '@/hooks/useKeywordTrackers';
-import { useOrganization } from '@/hooks/useOrganization';
-import { useToast } from '@/hooks/use-toast';
+import { KeywordTrackerExtended, useKeywordTrackersApi } from '@/hooks/useKeywordTrackersApi';
 
-interface KeywordEditorModalProps {
+interface KeywordTrackerModalProps {
   open: boolean;
   onClose: () => void;
+  tracker?: KeywordTrackerExtended | null;
 }
 
-export const KeywordEditorModal: React.FC<KeywordEditorModalProps> = ({
+export const KeywordTrackerModal: React.FC<KeywordTrackerModalProps> = ({
   open,
-  onClose
+  onClose,
+  tracker
 }) => {
-  const { organization } = useOrganization();
-  const { createTracker, isCreating } = useKeywordTrackers();
-  const { toast } = useToast();
+  const { createTracker, updateTracker, isCreating, isUpdating } = useKeywordTrackersApi();
   
   const [name, setName] = useState('');
-  const [category, setCategory] = useState('Общие');
+  const [category, setCategory] = useState('');
   const [keywords, setKeywords] = useState<string[]>([]);
   const [currentKeyword, setCurrentKeyword] = useState('');
+  const [isActive, setIsActive] = useState(true);
+
+  const isEditing = !!tracker;
+  const isLoading = isCreating || isUpdating;
+
+  useEffect(() => {
+    if (tracker) {
+      setName(tracker.name);
+      setCategory(tracker.category);
+      setKeywords(tracker.keywords);
+      setIsActive(tracker.is_active);
+    } else {
+      setName('');
+      setCategory('Общие');
+      setKeywords([]);
+      setIsActive(true);
+    }
+  }, [tracker]);
 
   const handleAddKeyword = () => {
-    if (currentKeyword.trim() && !keywords.includes(currentKeyword.trim())) {
-      setKeywords([...keywords, currentKeyword.trim()]);
+    const trimmed = currentKeyword.trim();
+    if (trimmed && !keywords.includes(trimmed)) {
+      setKeywords([...keywords, trimmed]);
       setCurrentKeyword('');
     }
   };
@@ -47,49 +65,39 @@ export const KeywordEditorModal: React.FC<KeywordEditorModalProps> = ({
   };
 
   const handleSave = async () => {
-    if (!organization?.id || !name.trim() || keywords.length === 0) {
-      toast({
-        title: "Ошибка",
-        description: "Заполните название и добавьте хотя бы одно ключевое слово",
-        variant: "destructive"
-      });
+    if (!name.trim() || keywords.length === 0) {
       return;
     }
 
     try {
-      await createTracker({
-        org_id: organization.id,
+      const trackerData = {
         name: name.trim(),
         category: category.trim() || 'Общие',
         keywords,
-        is_active: true
-      });
+        is_active: isActive
+      };
 
-      toast({
-        title: "Успешно",
-        description: "Трекер ключевых слов создан"
-      });
+      if (isEditing && tracker) {
+        await updateTracker({
+          id: tracker.id,
+          ...trackerData
+        });
+      } else {
+        await createTracker(trackerData);
+      }
 
-      // Сброс формы
-      setName('');
-      setCategory('Общие');
-      setKeywords([]);
-      setCurrentKeyword('');
-      onClose();
+      handleClose();
     } catch (error) {
-      toast({
-        title: "Ошибка",
-        description: "Не удалось создать трекер",
-        variant: "destructive"
-      });
+      console.error('Failed to save tracker:', error);
     }
   };
 
   const handleClose = () => {
     setName('');
-    setCategory('Общие');
+    setCategory('');
     setKeywords([]);
     setCurrentKeyword('');
+    setIsActive(true);
     onClose();
   };
 
@@ -97,7 +105,9 @@ export const KeywordEditorModal: React.FC<KeywordEditorModalProps> = ({
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Создать трекер ключевых слов</DialogTitle>
+          <DialogTitle>
+            {isEditing ? 'Редактировать трекер' : 'Создать трекер ключевых слов'}
+          </DialogTitle>
         </DialogHeader>
         
         <div className="space-y-4">
@@ -158,12 +168,24 @@ export const KeywordEditorModal: React.FC<KeywordEditorModalProps> = ({
             </div>
           )}
 
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="is-active"
+              checked={isActive}
+              onCheckedChange={setIsActive}
+            />
+            <Label htmlFor="is-active">Активен</Label>
+          </div>
+
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={handleClose}>
               Отмена
             </Button>
-            <Button onClick={handleSave} disabled={isCreating}>
-              {isCreating ? 'Создание...' : 'Создать'}
+            <Button 
+              onClick={handleSave} 
+              disabled={isLoading || !name.trim() || keywords.length === 0}
+            >
+              {isLoading ? 'Сохранение...' : (isEditing ? 'Обновить' : 'Создать')}
             </Button>
           </div>
         </div>

@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from './useOrganization';
@@ -7,8 +6,10 @@ export interface KeywordTracker {
   id: string;
   org_id: string;
   name: string;
+  category: string;
   keywords: string[];
   is_active: boolean;
+  mentions_count?: number;
   created_at: string;
   updated_at: string;
 }
@@ -81,7 +82,9 @@ export const useKeywordTrackers = () => {
           keyword_trackers!inner(
             id,
             name,
-            keywords
+            keywords,
+            category,
+            mentions_count
           )
         `)
         .gte('detected_at', sevenDaysAgo.toISOString())
@@ -99,6 +102,7 @@ export const useKeywordTrackers = () => {
           acc.push({
             tracker_id: item.tracker_id,
             name: item.keyword_trackers.name,
+            category: item.keyword_trackers.category,
             keywords: item.keyword_trackers.keywords,
             total_matches: item.match_count,
             trend: 'stable' // TODO: Рассчитать тренд
@@ -124,9 +128,15 @@ export const useKeywordTrackers = () => {
 
   const createTrackerMutation = useMutation({
     mutationFn: async (tracker: Omit<KeywordTracker, 'id' | 'created_at' | 'updated_at'>) => {
+      const trackerData = {
+        ...tracker,
+        category: tracker.category || 'Общие',
+        mentions_count: 0
+      };
+
       const { data, error } = await supabase
         .from('keyword_trackers')
-        .insert(tracker)
+        .insert(trackerData)
         .select()
         .single();
 

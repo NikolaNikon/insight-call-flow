@@ -672,28 +672,34 @@ export type Database = {
       }
       keyword_trackers: {
         Row: {
+          category: string
           created_at: string | null
           id: string
           is_active: boolean | null
           keywords: Json
+          mentions_count: number | null
           name: string
           org_id: string | null
           updated_at: string | null
         }
         Insert: {
+          category?: string
           created_at?: string | null
           id?: string
           is_active?: boolean | null
           keywords?: Json
+          mentions_count?: number | null
           name: string
           org_id?: string | null
           updated_at?: string | null
         }
         Update: {
+          category?: string
           created_at?: string | null
           id?: string
           is_active?: boolean | null
           keywords?: Json
+          mentions_count?: number | null
           name?: string
           org_id?: string | null
           updated_at?: string | null

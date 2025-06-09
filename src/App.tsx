@@ -1,125 +1,127 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { useEffect, useState } from "react";
-import { AuthProvider } from "@/hooks/useAuth";
-import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/AppSidebar";
-import Index from "./pages/Index";
-import Auth from "./pages/Auth";
-import Welcome from "./pages/Welcome";
-import AnalyticsReports from "./pages/AnalyticsReports";
-import Calls from "./pages/Calls";
-import Search from "./pages/Search";
-import Settings from "./pages/Settings";
-import Users from "./pages/Users";
-import Upload from "./pages/Upload";
-import Monitoring from "./pages/Monitoring";
-import KnowledgeBase from "./pages/KnowledgeBase";
-import TelegramAuth from "./pages/TelegramAuth";
-import NotFound from "./pages/NotFound";
-import UpdatedHeader from "./components/UpdatedHeader";
-import ProtectedRoute from "./components/ProtectedRoute";
+import React, { useEffect, useState } from 'react';
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate
+} from 'react-router-dom';
+import { useUser } from '@supabase/auth-helpers-react';
+import { Index } from '@/pages/Index';
+import { Calls } from '@/pages/Calls';
+import { AnalyticsReports } from '@/pages/AnalyticsReports';
+import { KnowledgeBase } from '@/pages/KnowledgeBase';
+import { Search } from '@/pages/Search';
+import { Monitoring } from '@/pages/Monitoring';
+import { Upload } from '@/pages/Upload';
+import { Settings } from '@/pages/Settings';
+import { Users } from '@/pages/Users';
+import { Auth } from '@/pages/Auth';
+import { TelegramAuth } from '@/pages/TelegramAuth';
+import { TelegramTracker } from '@/pages/TelegramTracker';
+import { Welcome } from '@/pages/Welcome';
+import { NotFound } from '@/pages/NotFound';
+import { AppShell } from '@/components/AppShell';
+import { useOrganization } from '@/hooks/useOrganization';
+import { Toaster } from '@/components/ui/toaster';
+import { useToast } from '@/hooks/use-toast';
+import { BarChart3, BookOpen, FileBarChart, Phone, Search as SearchIcon, Activity, Upload as UploadIcon, Users as UsersIcon, Settings as SettingsIcon } from 'lucide-react';
+import { SidebarLink } from '@/components/SidebarLink';
+import { KeywordTrackers } from '@/pages/KeywordTrackers';
 
-const queryClient = new QueryClient();
-
-const App = () => {
-  const [isOnboardingCompleted, setIsOnboardingCompleted] = useState<boolean | null>(null);
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const user = useUser();
+  const { organization, isLoading } = useOrganization();
+  const { toast } = useToast();
+  const [hasCheckedOrg, setHasCheckedOrg] = useState(false);
 
   useEffect(() => {
-    // Проверяем, завершён ли onboarding
-    const completed = localStorage.getItem('onboarding_completed') === 'true';
-    setIsOnboardingCompleted(completed);
+    if (user && !organization && !isLoading && !hasCheckedOrg) {
+      toast({
+        title: "Организация не найдена",
+        description: "Обратитесь к администратору для добавления в организацию.",
+        variant: "destructive",
+      });
+      setHasCheckedOrg(true); // Ensure this effect runs only once
+    }
+  }, [user, organization, isLoading, toast, hasCheckedOrg]);
 
-    // Слушаем изменения в localStorage для обновления состояния
-    const handleStorageChange = () => {
-      const completed = localStorage.getItem('onboarding_completed') === 'true';
-      setIsOnboardingCompleted(completed);
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    
-    // Также слушаем кастомное событие для обновления в том же окне
-    const handleOnboardingComplete = () => {
-      setIsOnboardingCompleted(true);
-    };
-    
-    window.addEventListener('onboardingCompleted', handleOnboardingComplete);
-
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('onboardingCompleted', handleOnboardingComplete);
-    };
-  }, []);
-
-  // Показываем загрузку пока проверяем статус onboarding
-  if (isOnboardingCompleted === null) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-pulse text-gray-500">Загрузка...</div>
-      </div>
-    );
+  if (!user) {
+    return <Navigate to="/auth" replace />;
   }
 
-  const LayoutWrapper = ({ children }: { children: React.ReactNode }) => (
-    <ProtectedRoute>
-      <SidebarProvider>
-        <div className="min-h-screen flex w-full">
-          <AppSidebar />
-          <SidebarInset>
-            <UpdatedHeader />
-            <main className="flex-1 p-6">
-              {children}
-            </main>
-          </SidebarInset>
-        </div>
-      </SidebarProvider>
-    </ProtectedRoute>
-  );
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
 
-  return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              {/* Маршрут для welcome/onboarding */}
-              <Route 
-                path="/welcome" 
-                element={!isOnboardingCompleted ? <Welcome /> : <Navigate to="/" replace />} 
-              />
-              
-              {/* Перенаправление на welcome если onboarding не завершён */}
-              {!isOnboardingCompleted && (
-                <Route path="*" element={<Navigate to="/welcome" replace />} />
-              )}
-              
-              {/* Основные маршруты приложения (после onboarding) */}
-              {isOnboardingCompleted && (
-                <>
-                  <Route path="/auth" element={<Auth />} />
-                  <Route path="/" element={<LayoutWrapper><Index /></LayoutWrapper>} />
-                  <Route path="/analytics-reports" element={<LayoutWrapper><AnalyticsReports /></LayoutWrapper>} />
-                  <Route path="/calls" element={<LayoutWrapper><Calls /></LayoutWrapper>} />
-                  <Route path="/search" element={<LayoutWrapper><Search /></LayoutWrapper>} />
-                  <Route path="/upload" element={<LayoutWrapper><Upload /></LayoutWrapper>} />
-                  <Route path="/monitoring" element={<LayoutWrapper><Monitoring /></LayoutWrapper>} />
-                  <Route path="/settings" element={<LayoutWrapper><Settings /></LayoutWrapper>} />
-                  <Route path="/users" element={<LayoutWrapper><Users /></LayoutWrapper>} />
-                  <Route path="/knowledge-base" element={<LayoutWrapper><KnowledgeBase /></LayoutWrapper>} />
-                  <Route path="*" element={<NotFound />} />
-                </>
-              )}
-            </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
-      </AuthProvider>
-    </QueryClientProvider>
-  );
+  // Если у пользователя нет организации, и мы уже проверили это, перенаправляем
+  if (!organization && hasCheckedOrg) {
+    return <Navigate to="/welcome" replace />;
+  }
+
+  return <AppShell>{children}</AppShell>;
 };
+
+function App() {
+  return (
+    <>
+      <Router>
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/calls" element={
+            <ProtectedRoute>
+              <Calls />
+            </ProtectedRoute>
+          } />
+          <Route path="/keyword-trackers" element={
+            <ProtectedRoute>
+              <KeywordTrackers />
+            </ProtectedRoute>
+          } />
+          <Route path="/analytics" element={
+            <ProtectedRoute>
+              <AnalyticsReports />
+            </ProtectedRoute>
+          } />
+          <Route path="/knowledge-base" element={
+            <ProtectedRoute>
+              <KnowledgeBase />
+            </ProtectedRoute>
+          } />
+          <Route path="/search" element={
+            <ProtectedRoute>
+              <Search />
+            </ProtectedRoute>
+          } />
+          <Route path="/monitoring" element={
+            <ProtectedRoute>
+              <Monitoring />
+            </ProtectedRoute>
+          } />
+          <Route path="/upload" element={
+            <ProtectedRoute>
+              <Upload />
+            </ProtectedRoute>
+          } />
+          <Route path="/settings" element={
+            <ProtectedRoute>
+              <Settings />
+            </ProtectedRoute>
+          } />
+          <Route path="/users" element={
+            <ProtectedRoute>
+              <Users />
+            </ProtectedRoute>
+          } />
+          <Route path="/auth" element={<Auth />} />
+          <Route path="/telegram-auth" element={<TelegramAuth />} />
+          <Route path="/telegram-tracker" element={<TelegramTracker />} />
+          <Route path="/welcome" element={<Welcome />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </Router>
+      <Toaster />
+    </>
+  );
+}
 
 export default App;

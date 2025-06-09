@@ -1,98 +1,139 @@
-
-import { Calendar, BarChart3, Search, FileText, Settings, LayoutDashboard, BookOpen, Upload, Monitor, Download } from "lucide-react";
-import { useLocation, Link } from "react-router-dom";
+import React from "react";
 import {
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarHeader,
-  SidebarFooter,
-} from "@/components/ui/sidebar";
+  BarChart3,
+  BookOpen,
+  FileBarChart,
+  ListChecks,
+  Phone,
+  Search,
+  Settings,
+  Activity,
+  Upload,
+  Users,
+} from "lucide-react";
+import { NavLink } from "react-router-dom";
 
-const menuItems = [
-  {
-    title: "Дашборд",
-    url: "/",
-    icon: LayoutDashboard,
-  },
-  {
-    title: "Звонки",
-    url: "/calls",
-    icon: Search,
-  },
-  {
-    title: "📈 Аналитика и отчёты",
-    url: "/analytics-reports",
-    icon: BarChart3,
-  },
-  {
-    title: "Загрузка",
-    url: "/upload",
-    icon: Upload,
-  },
-  {
-    title: "Мониторинг",
-    url: "/monitoring",
-    icon: Monitor,
-  },
-  {
-    title: "База знаний",
-    url: "/knowledge-base",
-    icon: BookOpen,
-  },
-  {
-    title: "Настройки",
-    url: "/settings",
-    icon: Settings,
-  },
-];
-
-export function AppSidebar() {
-  const location = useLocation();
-
-  return (
-    <Sidebar>
-      <SidebarHeader className="p-6">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-            <Calendar className="h-4 w-4 text-white" />
-          </div>
-          <div>
-            <h1 className="text-lg font-bold text-graphite">CallControl</h1>
-            <p className="text-xs text-muted-foreground">Система аналитики</p>
-          </div>
-        </div>
-      </SidebarHeader>
-      
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {menuItems.map((item) => {
-                const isActive = location.pathname === item.url;
-                return (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild isActive={isActive}>
-                      <Link to={item.url} className="flex items-center gap-3">
-                        <item.icon className="h-4 w-4" />
-                        <span>{item.title}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
-      
-      <SidebarFooter className="p-4">
-        {/* Footer content if needed */}
-      </SidebarFooter>
-    </Sidebar>
-  );
+interface SidebarLinkProps {
+  to: string;
+  icon: React.ReactNode;
+  text: string;
 }
+
+const SidebarLink: React.FC<SidebarLinkProps> = ({ to, icon, text }) => {
+  return (
+    <li>
+      <NavLink
+        to={to}
+        className={({ isActive }) =>
+          `flex items-center gap-2 rounded-md p-2 text-sm font-medium hover:bg-secondary ${
+            isActive ? "bg-secondary" : ""
+          }`
+        }
+      >
+        {icon}
+        {text}
+      </NavLink>
+    </li>
+  );
+};
+
+interface AppSidebarProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export const AppSidebar: React.FC<AppSidebarProps> = ({ isOpen, onClose }) => {
+  return (
+    <aside
+      className={`fixed left-0 top-0 z-50 flex h-full w-72.5 flex-col border-r bg-background transition-transform duration-300 ease-in-out ${
+        isOpen ? "translate-x-0" : "-translate-x-full"
+      }`}
+    >
+      <div className="flex items-center justify-between px-4 py-3">
+        <span className="font-bold text-2xl">Your Company</span>
+        <button
+          onClick={onClose}
+          className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary hover:bg-secondary h-10 w-10 p-0"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="h-6 w-6"
+          >
+            <path d="M18 6 6 18" />
+            <path d="m6 6 12 12" />
+          </svg>
+          <span className="sr-only">Close sidebar</span>
+        </button>
+      </div>
+
+      <div className="flex-1 px-3 py-2">
+        <nav className="space-y-1">
+          <SidebarLink
+            to="/"
+            icon={<BarChart3 className="h-4 w-4" />}
+            text="Дашборд"
+          />
+          <SidebarLink
+            to="/calls"
+            icon={<Phone className="h-4 w-4" />}
+            text="Звонки"
+          />
+          <SidebarLink
+            to="/keyword-trackers"
+            icon={<Search className="h-4 w-4" />}
+            text="Ключевые слова"
+          />
+          <SidebarLink
+            to="/analytics"
+            icon={<FileBarChart className="h-4 w-4" />}
+            text="Аналитика"
+          />
+          <SidebarLink
+            to="/knowledge-base"
+            icon={<BookOpen className="h-4 w-4" />}
+            text="База знаний"
+          />
+          <SidebarLink
+            to="/search"
+            icon={<Search className="h-4 w-4" />}
+            text="Поиск"
+          />
+          <SidebarLink
+            to="/monitoring"
+            icon={<Activity className="h-4 w-4" />}
+            text="Мониторинг"
+          />
+          <SidebarLink
+            to="/upload"
+            icon={<Upload className="h-4 w-4" />}
+            text="Загрузка"
+          />
+          <SidebarLink
+            to="/users"
+            icon={<Users className="h-4 w-4" />}
+            text="Пользователи"
+          />
+          <SidebarLink
+            to="/settings"
+            icon={<Settings className="h-4 w-4" />}
+            text="Настройки"
+          />
+        </nav>
+      </div>
+
+      <div className="border-t p-4">
+        <p className="text-sm text-muted-foreground">
+          Your Company © {new Date().getFullYear()}
+        </p>
+      </div>
+    </aside>
+  );
+};
