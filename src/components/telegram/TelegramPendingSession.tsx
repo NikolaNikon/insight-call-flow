@@ -12,16 +12,16 @@ interface PendingSession {
 
 interface TelegramPendingSessionProps {
   pendingSession: PendingSession;
-  timeLeft: number;
-  showTimeoutWarning: boolean;
-  onCancel: () => void;
+  timeLeft?: number;
+  showTimeoutWarning?: boolean;
+  onCancel?: () => void;
 }
 
 export const TelegramPendingSession: React.FC<TelegramPendingSessionProps> = ({
   pendingSession,
-  timeLeft,
-  showTimeoutWarning,
-  onCancel
+  timeLeft = 300,
+  showTimeoutWarning = false,
+  onCancel = () => {}
 }) => {
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);

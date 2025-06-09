@@ -1,20 +1,20 @@
 
 import React from 'react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Bot, CheckCircle, Clock, XCircle, AlertTriangle } from 'lucide-react';
+import { Bot, CheckCircle, Clock, XCircle } from 'lucide-react';
 
 interface TelegramConnectionStatusProps {
-  isConnected: boolean;
-  isPending: boolean;
-  error: string | null;
-  showTimeoutWarning: boolean;
+  isConnected?: boolean;
+  isPending?: boolean;
+  error?: string | null;
+  showTimeoutWarning?: boolean;
 }
 
 export const TelegramConnectionStatus: React.FC<TelegramConnectionStatusProps> = ({
-  isConnected,
-  isPending,
-  error,
-  showTimeoutWarning
+  isConnected = false,
+  isPending = false,
+  error = null,
+  showTimeoutWarning = false
 }) => {
   if (isConnected) {
     return (

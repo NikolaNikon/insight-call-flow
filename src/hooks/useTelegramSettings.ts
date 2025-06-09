@@ -16,6 +16,13 @@ interface TelegramSettings {
   updated_at: string;
 }
 
+interface TelegramSettingsInput {
+  bot_token: string;
+  bot_username?: string;
+  webhook_url?: string;
+  is_active?: boolean;
+}
+
 export const useTelegramSettings = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -44,14 +51,18 @@ export const useTelegramSettings = () => {
   });
 
   const createOrUpdateSettings = useMutation({
-    mutationFn: async (settings: Partial<TelegramSettings>) => {
+    mutationFn: async (settings: TelegramSettingsInput) => {
       if (!organization?.id) throw new Error('No organization found');
+      if (!settings.bot_token) throw new Error('Bot token is required');
 
       const { data, error } = await supabase
         .from('telegram_settings')
         .upsert({
           org_id: organization.id,
-          ...settings
+          bot_token: settings.bot_token,
+          bot_username: settings.bot_username,
+          webhook_url: settings.webhook_url,
+          is_active: settings.is_active ?? true
         })
         .select()
         .single();

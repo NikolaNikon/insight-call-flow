@@ -39,14 +39,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 .single();
 
               if (!existingUser) {
-                await supabase
-                  .from('users')
-                  .insert({
-                    id: session.user.id,
-                    email: session.user.email || '',
-                    name: session.user.user_metadata?.name || 'Пользователь',
-                    role: 'viewer'
-                  });
+                // Получаем default organization для новых пользователей
+                const { data: defaultOrg } = await supabase
+                  .from('organizations')
+                  .select('id')
+                  .eq('subdomain', 'default')
+                  .single();
+
+                if (defaultOrg) {
+                  await supabase
+                    .from('users')
+                    .insert({
+                      id: session.user.id,
+                      email: session.user.email || '',
+                      name: session.user.user_metadata?.name || 'Пользователь',
+                      role: 'viewer',
+                      org_id: defaultOrg.id
+                    });
+                }
               }
             } catch (error) {
               console.error('Error creating user profile:', error);

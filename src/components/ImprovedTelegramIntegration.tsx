@@ -1,22 +1,45 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Loader2, Bot, ExternalLink, RefreshCw } from 'lucide-react';
+import { Loader2, Bot } from 'lucide-react';
 import { useTelegramSessionOrg } from '@/hooks/useTelegramSessionOrg';
 import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { TelegramConnectionStatus } from '@/components/telegram/TelegramConnectionStatus';
 import { TelegramPendingSession } from '@/components/telegram/TelegramPendingSession';
 import { TelegramActiveConnections } from '@/components/telegram/TelegramActiveConnections';
 import { useOrganization } from '@/hooks/useOrganization';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 export const ImprovedTelegramIntegration = () => {
   const [currentSessionCode, setCurrentSessionCode] = useState<string | null>(null);
   const [sessionData, setSessionData] = useState<any>(null);
   
   const { startTelegramSession, isGeneratingSession, organization } = useTelegramSessionOrg();
-  const { getTelegramLinks } = useTelegramAuth();
+  const { deactivateTelegramLink } = useTelegramAuth();
+
+  // Загружаем активные подключения Telegram для организации
+  const { data: telegramLinks = [], refetch: refetchLinks, isLoading: linksLoading } = useQuery({
+    queryKey: ['telegram-links', organization?.id],
+    queryFn: async () => {
+      if (!organization?.id) return [];
+
+      const { data, error } = await supabase
+        .from('telegram_links')
+        .select('*')
+        .eq('org_id', organization.id)
+        .eq('active', true);
+
+      if (error) {
+        console.error('Error fetching telegram links:', error);
+        return [];
+      }
+
+      return data || [];
+    },
+    enabled: !!organization?.id
+  });
 
   const handleStartConnection = async () => {
     const result = await startTelegramSession();
@@ -29,6 +52,14 @@ export const ImprovedTelegramIntegration = () => {
   const handleConnectionComplete = () => {
     setCurrentSessionCode(null);
     setSessionData(null);
+    refetchLinks();
+  };
+
+  const handleDeactivate = async (linkId: string) => {
+    const success = await deactivateTelegramLink(linkId);
+    if (success) {
+      refetchLinks();
+    }
   };
 
   if (!organization) {
@@ -43,6 +74,9 @@ export const ImprovedTelegramIntegration = () => {
       </Card>
     );
   }
+
+  const isConnected = telegramLinks.length > 0;
+  const isPending = !!currentSessionCode;
 
   return (
     <div className="space-y-6">
@@ -60,19 +94,32 @@ export const ImprovedTelegramIntegration = () => {
       </div>
 
       {/* Connection Status */}
-      <TelegramConnectionStatus />
+      <TelegramConnectionStatus
+        isConnected={isConnected}
+        isPending={isPending}
+        error={null}
+        showTimeoutWarning={false}
+      />
 
       {/* Active Connections */}
-      <TelegramActiveConnections />
+      <TelegramActiveConnections
+        links={telegramLinks}
+        onDeactivate={handleDeactivate}
+        onRefresh={refetchLinks}
+        loading={linksLoading}
+      />
 
       {/* Pending Session */}
       {currentSessionCode && sessionData && (
         <TelegramPendingSession
-          sessionCode={currentSessionCode}
-          telegramUrl={sessionData.telegram_url}
-          botUsername={sessionData.bot_username}
-          expiresAt={sessionData.expires_at}
-          onConnectionComplete={handleConnectionComplete}
+          pendingSession={{
+            session_code: currentSessionCode,
+            telegram_url: sessionData.telegram_url,
+            expires_at: sessionData.expires_at
+          }}
+          timeLeft={300} // 5 минут
+          showTimeoutWarning={false}
+          onCancel={handleConnectionComplete}
         />
       )}
 

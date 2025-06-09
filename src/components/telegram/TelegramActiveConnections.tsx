@@ -14,17 +14,17 @@ interface TelegramLink {
 }
 
 interface TelegramActiveConnectionsProps {
-  links: TelegramLink[];
-  onDeactivate: (linkId: string) => void;
-  onRefresh: () => void;
-  loading: boolean;
+  links?: TelegramLink[];
+  onDeactivate?: (linkId: string) => void;
+  onRefresh?: () => void;
+  loading?: boolean;
 }
 
 export const TelegramActiveConnections: React.FC<TelegramActiveConnectionsProps> = ({
-  links,
-  onDeactivate,
-  onRefresh,
-  loading
+  links = [],
+  onDeactivate = () => {},
+  onRefresh = () => {},
+  loading = false
 }) => {
   if (links.length === 0) return null;
 

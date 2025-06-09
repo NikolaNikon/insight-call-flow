@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useOrganization } from "@/hooks/useOrganization";
 
 interface CreateUserDialogProps {
   onUserCreated?: () => void;
@@ -23,9 +24,20 @@ export const CreateUserDialog = ({ onUserCreated }: CreateUserDialogProps) => {
     role: "viewer" as const
   });
   const { toast } = useToast();
+  const { organization } = useOrganization();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!organization?.id) {
+      toast({
+        variant: "destructive",
+        title: "Ошибка",
+        description: "Организация не найдена",
+      });
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -40,14 +52,15 @@ export const CreateUserDialog = ({ onUserCreated }: CreateUserDialogProps) => {
 
       if (authError) throw authError;
 
-      // Добавляем пользователя в таблицу users
+      // Добавляем пользователя в таблицу users с org_id
       const { error: userError } = await supabase
         .from('users')
         .insert({
           id: authUser.user.id,
           email: formData.email,
           name: formData.name,
-          role: formData.role
+          role: formData.role,
+          org_id: organization.id
         });
 
       if (userError) throw userError;
