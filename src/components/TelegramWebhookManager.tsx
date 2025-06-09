@@ -2,7 +2,6 @@
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Settings, CheckCircle, XCircle, AlertTriangle, Loader2, RefreshCw } from 'lucide-react';
 import { useTelegramWebhook } from '@/hooks/useTelegramWebhook';
@@ -24,7 +23,6 @@ export const TelegramWebhookManager = () => {
   } | null>(null);
 
   useEffect(() => {
-    // Проверяем статус при загрузке компонента
     checkWebhookStatus();
     checkBotStatus();
   }, []);
@@ -124,7 +122,6 @@ export const TelegramWebhookManager = () => {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Статус бота */}
         <div>
           <div className="flex items-center justify-between mb-2">
             <h4 className="font-medium text-sm">Статус бота:</h4>
@@ -140,7 +137,6 @@ export const TelegramWebhookManager = () => {
           {renderBotStatus()}
         </div>
 
-        {/* Статус webhook */}
         <div>
           <div className="flex items-center justify-between mb-2">
             <h4 className="font-medium text-sm">Статус Webhook:</h4>
@@ -156,7 +152,6 @@ export const TelegramWebhookManager = () => {
           {renderWebhookStatus()}
         </div>
 
-        {/* Детали webhook */}
         {webhookInfo && (
           <div className="bg-gray-50 p-3 rounded-lg space-y-2">
             <h5 className="font-medium text-sm">Детали Webhook:</h5>
@@ -173,7 +168,6 @@ export const TelegramWebhookManager = () => {
           </div>
         )}
 
-        {/* Кнопки управления */}
         <div className="flex gap-2">
           <Button 
             onClick={handleSetupWebhook}
@@ -195,7 +189,6 @@ export const TelegramWebhookManager = () => {
           )}
         </div>
 
-        {/* Инструкция */}
         <div className="bg-blue-50 p-3 rounded-lg">
           <h5 className="font-medium text-blue-900 mb-2">💡 Как это работает:</h5>
           <ul className="text-sm text-blue-700 space-y-1">
