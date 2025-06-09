@@ -28,6 +28,7 @@ export const UserManagementTab = () => {
 
   const getRoleColor = (role: string) => {
     switch (role) {
+      case 'superadmin': return 'bg-purple-100 text-purple-800';
       case 'admin': return 'bg-red-100 text-red-800';
       case 'manager': return 'bg-blue-100 text-blue-800';
       case 'operator': return 'bg-green-100 text-green-800';
@@ -38,6 +39,7 @@ export const UserManagementTab = () => {
 
   const getRoleText = (role: string) => {
     switch (role) {
+      case 'superadmin': return 'Суперадминистратор';
       case 'admin': return 'Администратор';
       case 'manager': return 'Менеджер';
       case 'operator': return 'Оператор';

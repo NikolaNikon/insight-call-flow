@@ -32,6 +32,7 @@ export const OnboardingStepUsers = ({ onComplete, isCompleted }: OnboardingStepU
   const { toast } = useToast();
 
   const roles = [
+    { value: 'superadmin', label: 'Суперадминистратор', description: 'Полный системный доступ' },
     { value: 'admin', label: 'Администратор', description: 'Полный доступ к системе' },
     { value: 'manager', label: 'Менеджер', description: 'Просмотр данных команды' },
     { value: 'operator', label: 'Оператор', description: 'Доступ к своим звонкам' },
@@ -89,6 +90,7 @@ export const OnboardingStepUsers = ({ onComplete, isCompleted }: OnboardingStepU
   const getRoleBadge = (role: string) => {
     const roleInfo = roles.find(r => r.value === role);
     const colors = {
+      superadmin: 'bg-purple-100 text-purple-700',
       admin: 'bg-red-100 text-red-700',
       manager: 'bg-blue-100 text-blue-700',
       operator: 'bg-green-100 text-green-700',

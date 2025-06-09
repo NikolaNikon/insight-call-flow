@@ -20,7 +20,7 @@ export const CreateUserDialog = ({ onUserCreated }: CreateUserDialogProps) => {
     name: "",
     email: "",
     password: "",
-    role: "viewer"
+    role: "viewer" as const
   });
   const { toast } = useToast();
 
@@ -144,12 +144,13 @@ export const CreateUserDialog = ({ onUserCreated }: CreateUserDialogProps) => {
             </Label>
             <Select 
               value={formData.role} 
-              onValueChange={(value) => setFormData(prev => ({ ...prev, role: value }))}
+              onValueChange={(value) => setFormData(prev => ({ ...prev, role: value as typeof formData.role }))}
             >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="superadmin">Суперадминистратор</SelectItem>
                 <SelectItem value="admin">Администратор</SelectItem>
                 <SelectItem value="manager">Менеджер</SelectItem>
                 <SelectItem value="operator">Оператор</SelectItem>
