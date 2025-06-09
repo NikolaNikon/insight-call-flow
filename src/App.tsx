@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -11,15 +10,13 @@ import { AppSidebar } from "@/components/AppSidebar";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Welcome from "./pages/Welcome";
-import Analytics from "./pages/Analytics";
+import AnalyticsReports from "./pages/AnalyticsReports";
 import Calls from "./pages/Calls";
 import Search from "./pages/Search";
-import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
 import Users from "./pages/Users";
 import Upload from "./pages/Upload";
 import Monitoring from "./pages/Monitoring";
-import Export from "./pages/Export";
 import KnowledgeBase from "./pages/KnowledgeBase";
 import TelegramAuth from "./pages/TelegramAuth";
 import NotFound from "./pages/NotFound";
@@ -106,13 +103,11 @@ const App = () => {
                 <>
                   <Route path="/auth" element={<Auth />} />
                   <Route path="/" element={<LayoutWrapper><Index /></LayoutWrapper>} />
-                  <Route path="/analytics" element={<LayoutWrapper><Analytics /></LayoutWrapper>} />
+                  <Route path="/analytics-reports" element={<LayoutWrapper><AnalyticsReports /></LayoutWrapper>} />
                   <Route path="/calls" element={<LayoutWrapper><Calls /></LayoutWrapper>} />
                   <Route path="/search" element={<LayoutWrapper><Search /></LayoutWrapper>} />
                   <Route path="/upload" element={<LayoutWrapper><Upload /></LayoutWrapper>} />
                   <Route path="/monitoring" element={<LayoutWrapper><Monitoring /></LayoutWrapper>} />
-                  <Route path="/export" element={<LayoutWrapper><Export /></LayoutWrapper>} />
-                  <Route path="/reports" element={<LayoutWrapper><Reports /></LayoutWrapper>} />
                   <Route path="/settings" element={<LayoutWrapper><Settings /></LayoutWrapper>} />
                   <Route path="/users" element={<LayoutWrapper><Users /></LayoutWrapper>} />
                   <Route path="/knowledge-base" element={<LayoutWrapper><KnowledgeBase /></LayoutWrapper>} />

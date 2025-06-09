@@ -25,8 +25,8 @@ const menuItems = [
     icon: Search,
   },
   {
-    title: "Аналитика",
-    url: "/analytics",
+    title: "📈 Аналитика и отчёты",
+    url: "/analytics-reports",
     icon: BarChart3,
   },
   {
@@ -38,16 +38,6 @@ const menuItems = [
     title: "Мониторинг",
     url: "/monitoring",
     icon: Monitor,
-  },
-  {
-    title: "Экспорт",
-    url: "/export",
-    icon: Download,
-  },
-  {
-    title: "Отчёты",
-    url: "/reports",
-    icon: FileText,
   },
   {
     title: "База знаний",
@@ -101,7 +91,7 @@ export function AppSidebar() {
       </SidebarContent>
       
       <SidebarFooter className="p-4">
-        {/* Removed status badge as per cleanup plan */}
+        {/* Footer content if needed */}
       </SidebarFooter>
     </Sidebar>
   );
