@@ -30,6 +30,23 @@ interface TelegramMessage {
   reply_markup?: any;
 }
 
+const greetingsByRole = {
+  admin: 'Вы будете получать:\n– Уведомления о тревожных звонках\n– Информацию об активности менеджеров\n– Системные оповещения о событиях в команде\n\nВсе под контролем. 🛠',
+  operator: 'Вы будете получать уведомления о входящих звонках, комментариях и тегах,\nсвязанных с вашими диалогами.\n\nХорошей работы и отличных звонков! ☎️',
+  observer: 'Вы будете получать:\n– Обзорные уведомления по тревожным звонкам\n– Сводки по качеству коммуникаций команды\n\nВы в курсе, но без лишнего шума. 👀',
+  manager: 'Вы будете получать:\n– Оповещения о звонках в вашей зоне ответственности\n– Комментарии и действия команды\n\nКонтроль и качество — в ваших руках! 💬'
+};
+
+const getRoleDisplayName = (role: string) => {
+  const roleNames: { [key: string]: string } = {
+    admin: 'Администратор',
+    operator: 'Оператор',
+    observer: 'Наблюдатель',
+    manager: 'Менеджер'
+  };
+  return roleNames[role] || role;
+};
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -138,19 +155,38 @@ serve(async (req) => {
               .update({ used: true })
               .eq('id', session.id);
 
-            responseMessage = `✅ Отлично! Ваш аккаунт CallControl успешно подключен к Telegram.
+            // Формируем персонализированное приветствие
+            const userName = session.user_name || firstName;
+            const userRole = session.user_role || 'user';
+            const roleDisplayName = getRoleDisplayName(userRole);
+            const roleGreeting = greetingsByRole[userRole as keyof typeof greetingsByRole] || greetingsByRole.operator;
 
-🔔 Теперь вы будете получать:
-• Уведомления о новых звонках
-• Еженедельные отчеты
-• Важные системные сообщения
+            responseMessage = `Привет, ${userName}! 👋
+✅ Telegram подключён к вашему аккаунту CallControl (роль: ${roleDisplayName}).
+
+${roleGreeting}
 
 Используйте /help для просмотра доступных команд.`;
           }
         }
       } else {
         // Обычный /start без параметров
-        responseMessage = `🤖 Добро пожаловать в CallControl!
+        // Проверяем, есть ли уже подключение
+        const { data: existingConnection } = await supabaseClient
+          .from('telegram_links')
+          .select('*, users!inner(name, role)')
+          .eq('chat_id', chatId)
+          .eq('active', true)
+          .maybeSingle();
+
+        if (existingConnection) {
+          const roleDisplayName = getRoleDisplayName(existingConnection.users.role);
+          responseMessage = `✅ Вы уже подключены. Роль: ${roleDisplayName}.
+Уведомления включены. При необходимости введите /stop.
+
+Используйте /help для просмотра команд.`;
+        } else {
+          responseMessage = `🤖 Добро пожаловать в CallControl!
 
 Для подключения вашего аккаунта:
 1. Откройте CallControl в браузере
@@ -159,6 +195,7 @@ serve(async (req) => {
 4. Перейдите по полученной ссылке
 
 Или используйте команду /help для дополнительной информации.`;
+        }
       }
     } else if (text === '/stop') {
       // Деактивируем пользователя
@@ -192,16 +229,19 @@ serve(async (req) => {
     } else if (text === '/status') {
       const { data: statusLink } = await supabaseClient
         .from('telegram_links')
-        .select('active, created_at, telegram_username')
+        .select('active, created_at, telegram_username, users!inner(name, role)')
         .eq('chat_id', chatId)
         .maybeSingle();
 
       if (statusLink) {
         const status = statusLink.active ? "✅ Активен" : "❌ Отключен";
         const connectedDate = new Date(statusLink.created_at).toLocaleDateString('ru-RU');
+        const roleDisplayName = getRoleDisplayName(statusLink.users.role);
         responseMessage = `📊 Статус подключения: ${status}
 📅 Подключен: ${connectedDate}
-👤 Username: @${statusLink.telegram_username || 'не указан'}`;
+👤 Username: @${statusLink.telegram_username || 'не указан'}
+🎭 Роль: ${roleDisplayName}
+👋 Имя: ${statusLink.users.name}`;
       } else {
         responseMessage = "❓ Аккаунт не подключен. Получите ссылку в CallControl для подключения.";
       }
