@@ -44,6 +44,26 @@ export const useKeywordTrackers = () => {
     enabled: !!organization?.id
   });
 
+  // Отдельный запрос для проверки существования трекеров
+  const { data: hasTrackers } = useQuery({
+    queryKey: ['has-keyword-trackers', organization?.id],
+    queryFn: async () => {
+      if (!organization?.id) return false;
+
+      const { data, error } = await supabase
+        .from('keyword_trackers')
+        .select('id')
+        .eq('org_id', organization.id)
+        .eq('is_active', true)
+        .limit(1);
+
+      if (error) throw error;
+      console.log('Has trackers check:', data?.length > 0);
+      return data && data.length > 0;
+    },
+    enabled: !!organization?.id
+  });
+
   const { data: topTrackers } = useQuery({
     queryKey: ['top-keyword-trackers', organization?.id],
     queryFn: async () => {
@@ -87,9 +107,19 @@ export const useKeywordTrackers = () => {
         return acc;
       }, []);
 
+      console.log('Top trackers data:', aggregated);
       return aggregated.slice(0, 3);
     },
     enabled: !!organization?.id
+  });
+
+  // Логирование состояний
+  console.log('Trackers hook state:', {
+    organizationId: organization?.id,
+    trackersCount: trackers?.length || 0,
+    hasTrackers,
+    topTrackersCount: topTrackers?.length || 0,
+    isLoading
   });
 
   const createTrackerMutation = useMutation({
@@ -105,6 +135,7 @@ export const useKeywordTrackers = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['keyword-trackers'] });
+      queryClient.invalidateQueries({ queryKey: ['has-keyword-trackers'] });
       queryClient.invalidateQueries({ queryKey: ['top-keyword-trackers'] });
     }
   });
@@ -123,6 +154,7 @@ export const useKeywordTrackers = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['keyword-trackers'] });
+      queryClient.invalidateQueries({ queryKey: ['has-keyword-trackers'] });
       queryClient.invalidateQueries({ queryKey: ['top-keyword-trackers'] });
     }
   });
@@ -138,6 +170,7 @@ export const useKeywordTrackers = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['keyword-trackers'] });
+      queryClient.invalidateQueries({ queryKey: ['has-keyword-trackers'] });
       queryClient.invalidateQueries({ queryKey: ['top-keyword-trackers'] });
     }
   });
@@ -145,6 +178,7 @@ export const useKeywordTrackers = () => {
   return {
     trackers,
     topTrackers,
+    hasTrackers,
     isLoading,
     createTracker: createTrackerMutation.mutateAsync,
     updateTracker: updateTrackerMutation.mutateAsync,

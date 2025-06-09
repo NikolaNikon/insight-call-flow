@@ -8,7 +8,7 @@ import { useKeywordTrackers } from '@/hooks/useKeywordTrackers';
 import { KeywordEditorModal } from './KeywordEditorModal';
 
 export const KeywordTrackerCard = () => {
-  const { topTrackers, isLoading } = useKeywordTrackers();
+  const { topTrackers, hasTrackers, isLoading } = useKeywordTrackers();
   const [showModal, setShowModal] = useState(false);
 
   const getTrendIcon = (trend: string) => {
@@ -42,7 +42,8 @@ export const KeywordTrackerCard = () => {
     );
   }
 
-  if (!topTrackers || topTrackers.length === 0) {
+  // Показываем empty state только если нет ни одного трекера
+  if (!hasTrackers) {
     return (
       <Card className="col-span-1 border-dashed border-2 border-amber-200">
         <CardHeader>
@@ -59,6 +60,54 @@ export const KeywordTrackerCard = () => {
     );
   }
 
+  // Если трекеры есть, но нет статистики
+  if (!topTrackers || topTrackers.length === 0) {
+    return (
+      <>
+        <Card className="col-span-1">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>🧠 Ключевые слова в разговорах</CardTitle>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowModal(true)}
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <p className="text-sm text-gray-600">
+                Трекеры настроены, но пока нет данных о совпадениях.
+              </p>
+              
+              <div className="text-center py-4">
+                <p className="text-gray-500 text-sm mb-3">
+                  Совпадения появятся после обработки новых звонков
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowModal(true)}
+                  className="w-full"
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Добавить трекер
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <KeywordEditorModal
+          open={showModal}
+          onClose={() => setShowModal(false)}
+        />
+      </>
+    );
+  }
+
+  // Если есть и трекеры, и статистика
   return (
     <>
       <Card className="col-span-1">
