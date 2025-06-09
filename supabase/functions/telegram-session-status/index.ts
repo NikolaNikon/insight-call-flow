@@ -25,12 +25,23 @@ serve(async (req) => {
       throw new Error('Session code is required');
     }
 
-    console.log('Checking status for session code:', sessionCode);
+    console.log('Checking enhanced status for session code:', sessionCode);
 
-    // Проверяем сессию
+    // Проверяем сессию с дополнительными данными пользователя
     const { data: session, error: sessionError } = await supabaseClient
       .from('telegram_sessions')
-      .select('user_id, used, expires_at, user_name, user_role')
+      .select(`
+        user_id, 
+        used, 
+        expires_at, 
+        user_name, 
+        user_role,
+        users!inner(
+          name,
+          role,
+          email
+        )
+      `)
       .eq('session_code', sessionCode)
       .single();
 
@@ -47,11 +58,17 @@ serve(async (req) => {
       );
     }
 
-    // Если сессия использована, проверяем подключение
+    // Если сессия использована, проверяем подключение с расширенными данными
     if (session.used) {
       const { data: link, error: linkError } = await supabaseClient
         .from('telegram_links')
-        .select('telegram_username, first_name, active')
+        .select(`
+          telegram_username, 
+          first_name, 
+          active,
+          created_at,
+          chat_id
+        `)
         .eq('user_id', session.user_id)
         .eq('active', true)
         .single();
@@ -69,14 +86,17 @@ serve(async (req) => {
         );
       }
 
-      // Возвращаем информацию о подключении
+      // Возвращаем расширенную информацию о подключении
       return new Response(
         JSON.stringify({
           connected: true,
+          first_name: link.first_name || session.user_name || session.users.name,
           username: link.telegram_username,
-          first_name: link.first_name,
-          role: session.user_role,
-          user_name: session.user_name
+          connected_at: link.created_at,
+          role: session.user_role || session.users.role,
+          user_name: session.user_name || session.users.name,
+          chat_id: link.chat_id,
+          status: 'active'
         }),
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -91,7 +111,9 @@ serve(async (req) => {
       JSON.stringify({
         connected: false,
         pending: !isExpired,
-        expired: isExpired
+        expired: isExpired,
+        user_name: session.user_name || session.users.name,
+        role: session.user_role || session.users.role
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -99,7 +121,7 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Error in telegram-session-status:', error);
+    console.error('Error in enhanced telegram-session-status:', error);
     return new Response(
       JSON.stringify({
         connected: false,

@@ -1,0 +1,101 @@
+
+import React, { useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Bot, Phone, Settings, ChevronDown } from 'lucide-react';
+import { ImprovedTelegramIntegration } from '@/components/ImprovedTelegramIntegration';
+import { TelfinSettings } from '@/components/TelfinSettings';
+import { TelfinOAuthSettings } from '@/components/TelfinOAuthSettings';
+import { useUserRole } from '@/hooks/useUserRole';
+
+export const SimplifiedIntegrationsTab = () => {
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const { isAdmin } = useUserRole();
+
+  return (
+    <div className="space-y-6">
+      {/* Telegram Integration */}
+      <Card className="bg-white border-0 shadow-sm">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-graphite">
+            <Bot className="h-5 w-5 text-blue-600" />
+            Telegram уведомления
+          </CardTitle>
+          <CardDescription>
+            Получайте уведомления о звонках и отчёты прямо в Telegram
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ImprovedTelegramIntegration />
+        </CardContent>
+      </Card>
+
+      {/* Telfin Integration */}
+      <Card className="bg-white border-0 shadow-sm">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-graphite">
+            <Phone className="h-5 w-5 text-green-600" />
+            Интеграция с Телфин
+          </CardTitle>
+          <CardDescription>
+            Настройка подключения к системе телефонии Телфин для получения аудиозаписей
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="space-y-4">
+            <h4 className="font-medium text-sm">Базовая интеграция (HTTP Basic Auth)</h4>
+            <TelfinSettings />
+          </div>
+          
+          <div className="border-t pt-6 space-y-4">
+            <h4 className="font-medium text-sm">OAuth 2.0 интеграция (рекомендуется)</h4>
+            <TelfinOAuthSettings />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Advanced Settings for Admins */}
+      {isAdmin && (
+        <Collapsible open={showAdvanced} onOpenChange={setShowAdvanced}>
+          <CollapsibleTrigger asChild>
+            <Button variant="outline" className="w-full flex items-center gap-2">
+              <Settings className="h-4 w-4" />
+              Расширенные настройки
+              <ChevronDown className={`h-4 w-4 transition-transform ${showAdvanced ? 'rotate-180' : ''}`} />
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="space-y-4 mt-4">
+            <Card className="border-orange-200 bg-orange-50">
+              <CardHeader>
+                <CardTitle className="text-orange-800 text-base">Режим разработчика</CardTitle>
+                <CardDescription className="text-orange-700">
+                  Дополнительные настройки для администраторов и разработчиков
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="text-sm text-orange-700">
+                  <p>• Webhook управление</p>
+                  <p>• Отладочная информация</p>
+                  <p>• API настройки</p>
+                  <p>• CRM интеграции</p>
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => {
+                    // Можно добавить переход к полным настройкам
+                    window.location.href = '/settings?mode=advanced';
+                  }}
+                  className="border-orange-300 text-orange-700 hover:bg-orange-100"
+                >
+                  Открыть расширенные настройки
+                </Button>
+              </CardContent>
+            </Card>
+          </CollapsibleContent>
+        </Collapsible>
+      )}
+    </div>
+  );
+};

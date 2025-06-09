@@ -4,8 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SettingsHeader } from "@/components/SettingsHeader";
 import { UserManagementTab } from "@/components/UserManagementTab";
 import { SystemSettingsTab } from "@/components/SystemSettingsTab";
-import { IntegrationsTab } from "@/components/IntegrationsTab";
-import { TelfinTab } from "@/components/TelfinTab";
+import { SimplifiedIntegrationsTab } from "@/components/SimplifiedIntegrationsTab";
 import { SecurityTab } from "@/components/SecurityTab";
 
 const Settings = () => {
@@ -15,11 +14,10 @@ const Settings = () => {
         <SettingsHeader />
 
         <Tabs defaultValue="users" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="users">Пользователи</TabsTrigger>
             <TabsTrigger value="system">Система</TabsTrigger>
             <TabsTrigger value="integrations">Интеграции</TabsTrigger>
-            <TabsTrigger value="telfin">Телфин</TabsTrigger>
             <TabsTrigger value="security">Безопасность</TabsTrigger>
           </TabsList>
 
@@ -32,11 +30,7 @@ const Settings = () => {
           </TabsContent>
 
           <TabsContent value="integrations" className="space-y-6">
-            <IntegrationsTab />
-          </TabsContent>
-
-          <TabsContent value="telfin" className="space-y-6">
-            <TelfinTab />
+            <SimplifiedIntegrationsTab />
           </TabsContent>
 
           <TabsContent value="security" className="space-y-6">
