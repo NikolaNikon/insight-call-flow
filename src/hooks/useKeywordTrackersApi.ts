@@ -20,6 +20,9 @@ interface UseKeywordTrackersApiProps {
   include_stats?: boolean;
 }
 
+const SUPABASE_URL = "https://pngbgnmajdpkzcrcfmkg.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBuZ2Jnbm1hamRwa3pjcmNmbWtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ3OTE0MTYsImV4cCI6MjA2MDM2NzQxNn0.gP6XGb8eOwVuwuzSRF04xRbazTFeFMxJk-nGlvBoTAQ";
+
 export const useKeywordTrackersApi = (props: UseKeywordTrackersApiProps = {}) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -27,8 +30,8 @@ export const useKeywordTrackersApi = (props: UseKeywordTrackersApiProps = {}) =>
   // Fetch trackers with API
   const { data: trackers, isLoading, refetch } = useQuery({
     queryKey: ['keyword-trackers-api', props.category, props.include_stats],
-    queryFn: async () => {
-      const url = new URL(`${supabase.supabaseUrl}/functions/v1/keyword-trackers-api`);
+    queryFn: async (): Promise<KeywordTrackerExtended[]> => {
+      const url = new URL(`${SUPABASE_URL}/functions/v1/keyword-trackers-api`);
       
       if (props.category) {
         url.searchParams.append('category', props.category);
@@ -44,7 +47,7 @@ export const useKeywordTrackersApi = (props: UseKeywordTrackersApiProps = {}) =>
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
-          'apikey': supabase.supabaseKey,
+          'apikey': SUPABASE_ANON_KEY,
           'Content-Type': 'application/json',
         },
       });
@@ -53,7 +56,7 @@ export const useKeywordTrackersApi = (props: UseKeywordTrackersApiProps = {}) =>
         throw new Error(`Failed to fetch trackers: ${response.statusText}`);
       }
 
-      return response.json() as KeywordTrackerExtended[];
+      return await response.json() as KeywordTrackerExtended[];
     }
   });
 
@@ -70,11 +73,11 @@ export const useKeywordTrackersApi = (props: UseKeywordTrackersApiProps = {}) =>
       const { data: session } = await supabase.auth.getSession();
       const token = session?.session?.access_token;
 
-      const response = await fetch(`${supabase.supabaseUrl}/functions/v1/keyword-trackers-api`, {
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/keyword-trackers-api`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
-          'apikey': supabase.supabaseKey,
+          'apikey': SUPABASE_ANON_KEY,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(trackerData),
@@ -84,7 +87,7 @@ export const useKeywordTrackersApi = (props: UseKeywordTrackersApiProps = {}) =>
         throw new Error(`Failed to create tracker: ${response.statusText}`);
       }
 
-      return response.json();
+      return await response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['keyword-trackers-api'] });
@@ -109,11 +112,11 @@ export const useKeywordTrackersApi = (props: UseKeywordTrackersApiProps = {}) =>
       const { data: session } = await supabase.auth.getSession();
       const token = session?.session?.access_token;
 
-      const response = await fetch(`${supabase.supabaseUrl}/functions/v1/keyword-trackers-api/${id}`, {
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/keyword-trackers-api/${id}`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
-          'apikey': supabase.supabaseKey,
+          'apikey': SUPABASE_ANON_KEY,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(updates),
@@ -123,7 +126,7 @@ export const useKeywordTrackersApi = (props: UseKeywordTrackersApiProps = {}) =>
         throw new Error(`Failed to update tracker: ${response.statusText}`);
       }
 
-      return response.json();
+      return await response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['keyword-trackers-api'] });
@@ -148,11 +151,11 @@ export const useKeywordTrackersApi = (props: UseKeywordTrackersApiProps = {}) =>
       const { data: session } = await supabase.auth.getSession();
       const token = session?.session?.access_token;
 
-      const response = await fetch(`${supabase.supabaseUrl}/functions/v1/keyword-trackers-api/${id}`, {
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/keyword-trackers-api/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
-          'apikey': supabase.supabaseKey,
+          'apikey': SUPABASE_ANON_KEY,
           'Content-Type': 'application/json',
         },
       });
@@ -161,7 +164,7 @@ export const useKeywordTrackersApi = (props: UseKeywordTrackersApiProps = {}) =>
         throw new Error(`Failed to delete tracker: ${response.statusText}`);
       }
 
-      return response.json();
+      return await response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['keyword-trackers-api'] });
@@ -186,11 +189,11 @@ export const useKeywordTrackersApi = (props: UseKeywordTrackersApiProps = {}) =>
       const { data: session } = await supabase.auth.getSession();
       const token = session?.session?.access_token;
 
-      const response = await fetch(`${supabase.supabaseUrl}/functions/v1/keyword-trackers-api/${id}/recalculate`, {
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/keyword-trackers-api/${id}/recalculate`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
-          'apikey': supabase.supabaseKey,
+          'apikey': SUPABASE_ANON_KEY,
           'Content-Type': 'application/json',
         },
       });
@@ -199,7 +202,7 @@ export const useKeywordTrackersApi = (props: UseKeywordTrackersApiProps = {}) =>
         throw new Error(`Failed to recalculate mentions: ${response.statusText}`);
       }
 
-      return response.json();
+      return await response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['keyword-trackers-api'] });
