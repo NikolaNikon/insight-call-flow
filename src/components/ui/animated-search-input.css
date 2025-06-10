@@ -35,7 +35,8 @@
   height: 56px;
   border-radius: 10px;
   color: hsl(var(--foreground));
-  padding-inline: 59px;
+  padding-left: 59px;
+  padding-right: 20px;
   font-size: 18px;
   transition: all 0.3s ease;
 }

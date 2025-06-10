@@ -20,60 +20,81 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let mounted = true;
+
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
+        if (!mounted) return;
+        
+        try {
+          setSession(session);
+          setUser(session?.user ?? null);
+          setLoading(false);
 
-        // Create user profile if it doesn't exist
-        if (session?.user && event === 'SIGNED_IN') {
-          // Use setTimeout to prevent blocking and ensure proper cleanup
-          setTimeout(async () => {
-            try {
-              const { data: existingUser } = await supabase
-                .from('users')
-                .select('id')
-                .eq('id', session.user.id)
-                .single();
-
-              if (!existingUser) {
-                // Получаем default organization для новых пользователей
-                const { data: defaultOrg } = await supabase
-                  .from('organizations')
+          // Create user profile if it doesn't exist
+          if (session?.user && event === 'SIGNED_IN') {
+            // Use setTimeout to prevent blocking and ensure proper cleanup
+            setTimeout(async () => {
+              if (!mounted) return;
+              
+              try {
+                const { data: existingUser } = await supabase
+                  .from('users')
                   .select('id')
-                  .eq('subdomain', 'default')
+                  .eq('id', session.user.id)
                   .single();
 
-                if (defaultOrg) {
-                  await supabase
-                    .from('users')
-                    .insert({
-                      id: session.user.id,
-                      email: session.user.email || '',
-                      name: session.user.user_metadata?.name || 'Пользователь',
-                      role: 'viewer',
-                      org_id: defaultOrg.id
-                    });
+                if (!existingUser && mounted) {
+                  // Получаем default organization для новых пользователей
+                  const { data: defaultOrg } = await supabase
+                    .from('organizations')
+                    .select('id')
+                    .eq('subdomain', 'default')
+                    .single();
+
+                  if (defaultOrg && mounted) {
+                    await supabase
+                      .from('users')
+                      .insert({
+                        id: session.user.id,
+                        email: session.user.email || '',
+                        name: session.user.user_metadata?.name || 'Пользователь',
+                        role: 'viewer',
+                        org_id: defaultOrg.id
+                      });
+                  }
                 }
+              } catch (error) {
+                console.error('Error creating user profile:', error);
               }
-            } catch (error) {
-              console.error('Error creating user profile:', error);
-            }
-          }, 0);
+            }, 0);
+          }
+        } catch (error) {
+          console.error('Auth state change error:', error);
+          setLoading(false);
         }
       }
     );
 
     // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (!mounted) return;
+      
+      if (error) {
+        console.error('Error getting session:', error);
+      }
+      
       setSession(session);
       setUser(session?.user ?? null);
+      setLoading(false);
+    }).catch((error) => {
+      console.error('Error in getSession:', error);
       setLoading(false);
     });
 
     return () => {
+      mounted = false;
       subscription.unsubscribe();
     };
   }, []);
