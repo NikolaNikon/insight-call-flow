@@ -10,11 +10,8 @@ export const useOrganization = () => {
     queryKey: ['current-organization', user?.id],
     queryFn: async () => {
       if (!user) {
-        console.log('useOrganization: No user, returning null');
         return null;
       }
-
-      console.log('useOrganization: Fetching organization for user:', user.id);
 
       const { data: userData, error: userError } = await supabase
         .from('users')
@@ -36,7 +33,6 @@ export const useOrganization = () => {
         return null;
       }
 
-      console.log('useOrganization: Found organization:', userData?.organizations?.name);
       return userData?.organizations || null;
     },
     enabled: !!user

@@ -22,14 +22,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     let mounted = true;
 
-    console.log('AuthProvider: Setting up auth state listener');
-
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (!mounted) return;
-        
-        console.log('Auth state change:', { event, userId: session?.user?.id });
         
         try {
           setSession(session);
@@ -38,8 +34,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
           // Create user profile if it doesn't exist
           if (session?.user && event === 'SIGNED_IN') {
-            console.log('User signed in, checking/creating profile');
-            
             // Use setTimeout to prevent blocking and ensure proper cleanup
             setTimeout(async () => {
               if (!mounted) return;
@@ -52,13 +46,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                   .single();
 
                 if (checkError && checkError.code !== 'PGRST116') { // PGRST116 = no rows found
-                  console.error('Error checking user profile:', checkError);
                   return;
                 }
 
                 if (!existingUser && mounted) {
-                  console.log('Creating new user profile');
-                  
                   // Получаем default organization для новых пользователей
                   const { data: defaultOrg, error: orgError } = await supabase
                     .from('organizations')
@@ -67,7 +58,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                     .single();
 
                   if (orgError) {
-                    console.error('Error fetching default organization:', orgError);
                     return;
                   }
 
@@ -84,8 +74,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
                     if (insertError) {
                       console.error('Error creating user profile:', insertError);
-                    } else {
-                      console.log('User profile created successfully');
                     }
                   }
                 }
@@ -102,14 +90,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     );
 
     // Get initial session
-    console.log('AuthProvider: Getting initial session');
     supabase.auth.getSession().then(({ data: { session }, error }) => {
       if (!mounted) return;
       
       if (error) {
         console.error('Error getting session:', error);
-      } else {
-        console.log('Initial session:', { userId: session?.user?.id });
       }
       
       setSession(session);
@@ -121,27 +106,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
 
     return () => {
-      console.log('AuthProvider: Cleaning up');
       mounted = false;
       subscription.unsubscribe();
     };
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    console.log('Attempting sign in for:', email);
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
     if (error) {
-      console.error('Sign in error:', error);
       throw error;
     }
-    console.log('Sign in successful');
   };
 
   const signUp = async (email: string, password: string, name: string) => {
-    console.log('Attempting sign up for:', email);
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -152,20 +132,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       },
     });
     if (error) {
-      console.error('Sign up error:', error);
       throw error;
     }
-    console.log('Sign up successful');
   };
 
   const signOut = async () => {
-    console.log('Attempting sign out');
     const { error } = await supabase.auth.signOut();
     if (error) {
-      console.error('Sign out error:', error);
       throw error;
     }
-    console.log('Sign out successful');
   };
 
   return (
