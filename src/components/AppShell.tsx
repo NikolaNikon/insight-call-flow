@@ -8,6 +8,8 @@ interface AppShellProps {
 }
 
 export const AppShell: React.FC<AppShellProps> = ({ children }) => {
+  console.log('AppShell rendering...');
+  
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
@@ -23,6 +25,11 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
+      {/* Отладочная информация для AppShell */}
+      <div className="fixed top-0 right-0 z-50 p-2 bg-purple-100 text-xs text-purple-800 border border-purple-200">
+        AppShell Active
+      </div>
+
       {/* Единственный сайдбар, который адаптируется под размер экрана */}
       <AppSidebar 
         isOpen={sidebarOpen} 

@@ -12,13 +12,23 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
+  console.log('ProtectedRoute rendering...');
+  
   const user = useUser();
   const { organization, isLoading } = useOrganization();
   const { toast } = useToast();
   const [hasCheckedOrg, setHasCheckedOrg] = useState(false);
 
+  console.log('ProtectedRoute state:', {
+    user: user?.email || 'No user',
+    organization: organization?.name || 'No organization',
+    isLoading,
+    hasCheckedOrg
+  });
+
   useEffect(() => {
     if (user && !organization && !isLoading && !hasCheckedOrg) {
+      console.log('Showing organization not found toast');
       toast({
         title: "Организация не найдена",
         description: "Обратитесь к администратору для добавления в организацию.",
@@ -29,10 +39,12 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   }, [user, organization, isLoading, toast, hasCheckedOrg]);
 
   if (!user) {
+    console.log('No user, redirecting to auth');
     return <Navigate to="/auth" replace />;
   }
 
   if (isLoading) {
+    console.log('Loading organization...');
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="flex items-center gap-2">
@@ -44,9 +56,11 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   }
 
   if (!organization && hasCheckedOrg) {
+    console.log('No organization found, redirecting to welcome');
     return <Navigate to="/welcome" replace />;
   }
 
+  console.log('ProtectedRoute rendering children with AppShell');
   return <AppShell>{children}</AppShell>;
 };
 

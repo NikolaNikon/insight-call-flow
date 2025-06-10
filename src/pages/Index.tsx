@@ -8,6 +8,8 @@ import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 
 const Index = () => {
+  console.log('Index component rendering...');
+  
   // Подключаем real-time обновления
   useRealtimeUpdates();
   const navigate = useNavigate();
@@ -19,6 +21,7 @@ const Index = () => {
   });
 
   useEffect(() => {
+    console.log('Index useEffect running...');
     // Проверяем статус настроек
     const telfinConfigured = localStorage.getItem('telfin_hostname') && 
                             localStorage.getItem('telfin_username') && 
@@ -29,24 +32,42 @@ const Index = () => {
     
     const usersConfigured = localStorage.getItem('onboarding_users');
 
-    setSetupStatus({
+    const status = {
       telfin: !!telfinConfigured,
       telegram: !!telegramConfigured,
       users: !!usersConfigured
-    });
+    };
+
+    console.log('Setup status:', status);
+    setSetupStatus(status);
   }, []);
 
   const allConfigured = setupStatus.telfin && setupStatus.telegram && setupStatus.users;
+  console.log('All configured:', allConfigured);
 
   const handleContinueSetup = () => {
+    console.log('Continue setup clicked');
     // Сбрасываем onboarding и возвращаем на welcome
     localStorage.removeItem('onboarding_completed');
     window.dispatchEvent(new Event('onboardingCompleted'));
     navigate('/welcome');
   };
 
+  console.log('Index component rendering with setup status:', setupStatus);
+
   return (
     <div className="space-y-6">
+      {/* Отладочная информация */}
+      <Card className="border-blue-200 bg-blue-50">
+        <CardContent className="py-4">
+          <div className="text-sm text-blue-800">
+            <div>Debug Info:</div>
+            <div>Setup Status: {JSON.stringify(setupStatus)}</div>
+            <div>All Configured: {allConfigured ? 'Yes' : 'No'}</div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Компактное сообщение о настройке (если что-то не настроено) */}
       {!allConfigured && (
         <Card className="border-amber-200 bg-amber-50">
