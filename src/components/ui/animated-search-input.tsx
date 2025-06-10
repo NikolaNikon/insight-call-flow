@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Search } from 'lucide-react';
-import './animated-search-input.css';
+import './animated-search-input/index.css';
 
 interface AnimatedSearchInputProps {
   placeholder?: string;

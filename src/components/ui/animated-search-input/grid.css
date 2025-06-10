@@ -1,0 +1,14 @@
+
+/* Grid background animation */
+
+.grid {
+  height: 800px;
+  width: 800px;
+  background-image: linear-gradient(to right, hsl(var(--muted-foreground)) 1px, transparent 1px),
+    linear-gradient(to bottom, hsl(var(--muted-foreground)) 1px, transparent 1px);
+  background-size: 1rem 1rem;
+  background-position: center center;
+  position: absolute;
+  z-index: -1;
+  filter: blur(1px);
+}
