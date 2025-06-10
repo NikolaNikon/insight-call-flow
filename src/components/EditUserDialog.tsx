@@ -9,11 +9,13 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, Edit } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
+type UserRole = "superadmin" | "admin" | "manager" | "operator" | "viewer";
+
 interface User {
   id: string;
   name: string;
   email: string;
-  role: string;
+  role: UserRole;
 }
 
 interface EditUserDialogProps {
@@ -27,7 +29,7 @@ export const EditUserDialog = ({ user, onUserUpdated }: EditUserDialogProps) => 
   const [formData, setFormData] = useState({
     name: user.name,
     email: user.email,
-    role: user.role
+    role: user.role as UserRole
   });
   const { toast } = useToast();
 
@@ -116,7 +118,7 @@ export const EditUserDialog = ({ user, onUserUpdated }: EditUserDialogProps) => 
             </Label>
             <Select 
               value={formData.role} 
-              onValueChange={(value) => setFormData(prev => ({ ...prev, role: value }))}
+              onValueChange={(value: UserRole) => setFormData(prev => ({ ...prev, role: value }))}
             >
               <SelectTrigger>
                 <SelectValue />
