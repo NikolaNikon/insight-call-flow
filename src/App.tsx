@@ -6,7 +6,6 @@ import {
   Route,
   Navigate
 } from 'react-router-dom';
-import { useUser } from '@supabase/auth-helpers-react';
 import Index from '@/pages/Index';
 import Calls from '@/pages/Calls';
 import AnalyticsReports from '@/pages/AnalyticsReports';

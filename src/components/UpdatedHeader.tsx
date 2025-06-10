@@ -18,6 +18,7 @@ const UpdatedHeader = () => {
         description: 'Вы успешно вышли из системы.',
       });
     } catch (error) {
+      console.error('Sign out error:', error);
       toast({
         variant: 'destructive',
         title: 'Ошибка',

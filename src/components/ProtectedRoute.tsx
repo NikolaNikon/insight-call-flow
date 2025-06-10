@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
-import { useUser } from '@supabase/auth-helpers-react';
+import { useAuth } from '@/hooks/useAuth';
 import { useOrganization } from '@/hooks/useOrganization';
 import { AppShell } from '@/components/AppShell';
 import { useToast } from '@/hooks/use-toast';
@@ -12,13 +12,23 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
-  const user = useUser();
-  const { organization, isLoading } = useOrganization();
+  const { user, loading: authLoading } = useAuth();
+  const { organization, isLoading: orgLoading } = useOrganization();
   const { toast } = useToast();
   const [hasCheckedOrg, setHasCheckedOrg] = useState(false);
 
+  // Отладочные логи
+  console.log('ProtectedRoute state:', {
+    user: user?.id,
+    authLoading,
+    organization: organization?.id,
+    orgLoading,
+    hasCheckedOrg
+  });
+
   useEffect(() => {
-    if (user && !organization && !isLoading && !hasCheckedOrg) {
+    if (user && !organization && !orgLoading && !hasCheckedOrg) {
+      console.log('User without organization detected, showing toast');
       toast({
         title: "Организация не найдена",
         description: "Обратитесь к администратору для добавления в организацию.",
@@ -26,27 +36,47 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
       });
       setHasCheckedOrg(true);
     }
-  }, [user, organization, isLoading, toast, hasCheckedOrg]);
+  }, [user, organization, orgLoading, toast, hasCheckedOrg]);
 
-  if (!user) {
-    return <Navigate to="/auth" replace />;
-  }
-
-  if (isLoading) {
+  // Показываем загрузку пока авторизация проверяется
+  if (authLoading) {
+    console.log('Showing auth loading state');
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="flex items-center gap-2">
           <Loader2 className="h-6 w-6 animate-spin" />
-          <span>Загрузка...</span>
+          <span>Проверка авторизации...</span>
         </div>
       </div>
     );
   }
 
+  // Если пользователь не авторизован
+  if (!user) {
+    console.log('User not authenticated, redirecting to auth');
+    return <Navigate to="/auth" replace />;
+  }
+
+  // Показываем загрузку пока организация загружается
+  if (orgLoading) {
+    console.log('Showing org loading state');
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="flex items-center gap-2">
+          <Loader2 className="h-6 w-6 animate-spin" />
+          <span>Загрузка организации...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Если у пользователя нет организации
   if (!organization && hasCheckedOrg) {
+    console.log('User has no organization, redirecting to welcome');
     return <Navigate to="/welcome" replace />;
   }
 
+  console.log('Rendering protected content');
   return <AppShell>{children}</AppShell>;
 };
 

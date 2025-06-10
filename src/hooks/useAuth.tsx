@@ -22,10 +22,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     let mounted = true;
 
+    console.log('AuthProvider: Setting up auth state listener');
+
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         if (!mounted) return;
+        
+        console.log('Auth state change:', { event, userId: session?.user?.id });
         
         try {
           setSession(session);
@@ -34,27 +38,41 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
           // Create user profile if it doesn't exist
           if (session?.user && event === 'SIGNED_IN') {
+            console.log('User signed in, checking/creating profile');
+            
             // Use setTimeout to prevent blocking and ensure proper cleanup
             setTimeout(async () => {
               if (!mounted) return;
               
               try {
-                const { data: existingUser } = await supabase
+                const { data: existingUser, error: checkError } = await supabase
                   .from('users')
                   .select('id')
                   .eq('id', session.user.id)
                   .single();
 
+                if (checkError && checkError.code !== 'PGRST116') { // PGRST116 = no rows found
+                  console.error('Error checking user profile:', checkError);
+                  return;
+                }
+
                 if (!existingUser && mounted) {
+                  console.log('Creating new user profile');
+                  
                   // Получаем default organization для новых пользователей
-                  const { data: defaultOrg } = await supabase
+                  const { data: defaultOrg, error: orgError } = await supabase
                     .from('organizations')
                     .select('id')
                     .eq('subdomain', 'default')
                     .single();
 
+                  if (orgError) {
+                    console.error('Error fetching default organization:', orgError);
+                    return;
+                  }
+
                   if (defaultOrg && mounted) {
-                    await supabase
+                    const { error: insertError } = await supabase
                       .from('users')
                       .insert({
                         id: session.user.id,
@@ -63,10 +81,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                         role: 'viewer',
                         org_id: defaultOrg.id
                       });
+
+                    if (insertError) {
+                      console.error('Error creating user profile:', insertError);
+                    } else {
+                      console.log('User profile created successfully');
+                    }
                   }
                 }
               } catch (error) {
-                console.error('Error creating user profile:', error);
+                console.error('Error in user profile creation:', error);
               }
             }, 0);
           }
@@ -78,11 +102,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     );
 
     // Get initial session
+    console.log('AuthProvider: Getting initial session');
     supabase.auth.getSession().then(({ data: { session }, error }) => {
       if (!mounted) return;
       
       if (error) {
         console.error('Error getting session:', error);
+      } else {
+        console.log('Initial session:', { userId: session?.user?.id });
       }
       
       setSession(session);
@@ -94,20 +121,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
 
     return () => {
+      console.log('AuthProvider: Cleaning up');
       mounted = false;
       subscription.unsubscribe();
     };
   }, []);
 
   const signIn = async (email: string, password: string) => {
+    console.log('Attempting sign in for:', email);
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
-    if (error) throw error;
+    if (error) {
+      console.error('Sign in error:', error);
+      throw error;
+    }
+    console.log('Sign in successful');
   };
 
   const signUp = async (email: string, password: string, name: string) => {
+    console.log('Attempting sign up for:', email);
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -117,12 +151,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         },
       },
     });
-    if (error) throw error;
+    if (error) {
+      console.error('Sign up error:', error);
+      throw error;
+    }
+    console.log('Sign up successful');
   };
 
   const signOut = async () => {
+    console.log('Attempting sign out');
     const { error } = await supabase.auth.signOut();
-    if (error) throw error;
+    if (error) {
+      console.error('Sign out error:', error);
+      throw error;
+    }
+    console.log('Sign out successful');
   };
 
   return (
