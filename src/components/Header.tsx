@@ -1,9 +1,10 @@
 
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
-import { LogOut, User, Menu } from 'lucide-react';
+import { User, Menu } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
+import AnimatedLogoutButton from './AnimatedLogoutButton';
 
 interface HeaderProps {
   onMenuClick?: () => void;
@@ -59,15 +60,7 @@ const Header = ({ onMenuClick }: HeaderProps) => {
                 <User className="h-4 w-4" />
                 <span>{user.email}</span>
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleSignOut}
-                className="gap-2"
-              >
-                <LogOut className="h-4 w-4" />
-                Выйти
-              </Button>
+              <AnimatedLogoutButton onClick={handleSignOut} />
             </div>
           )}
         </div>
