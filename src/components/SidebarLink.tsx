@@ -16,7 +16,7 @@ export const SidebarLink: React.FC<SidebarLinkProps> = ({
   collapsed = false 
 }) => {
   return (
-    <li>
+    <li className="list-none">
       <NavLink
         to={to}
         className={({ isActive }) =>
