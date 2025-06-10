@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Clock, CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { Clock, CheckCircle, XCircle, Loader2, Activity } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -97,7 +97,7 @@ export const ProcessingMonitor = () => {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Loader2 className="h-5 w-5 text-blue-600" />
+            <Activity className="h-5 w-5 text-gray-500" />
             Мониторинг обработки
           </CardTitle>
         </CardHeader>
@@ -114,7 +114,7 @@ export const ProcessingMonitor = () => {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Loader2 className="h-5 w-5 text-blue-600" />
+          <Loader2 className="h-5 w-5 text-blue-600 animate-spin" />
           Мониторинг обработки ({processingCalls.length})
         </CardTitle>
       </CardHeader>
