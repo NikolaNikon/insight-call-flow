@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,16 +15,9 @@ const Auth = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
-  const { user, signIn, signUp } = useAuth();
+  const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-
-  // Если пользователь уже авторизован, перенаправляем на главную
-  useEffect(() => {
-    if (user) {
-      navigate('/');
-    }
-  }, [user, navigate]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,8 +29,8 @@ const Auth = () => {
         title: 'Успешно!',
         description: 'Вы вошли в систему.',
       });
+      navigate('/');
     } catch (error: any) {
-      console.error('Sign in error:', error);
       toast({
         variant: 'destructive',
         title: 'Ошибка входа',
@@ -59,7 +52,6 @@ const Auth = () => {
         description: 'Проверьте email для подтверждения аккаунта.',
       });
     } catch (error: any) {
-      console.error('Sign up error:', error);
       toast({
         variant: 'destructive',
         title: 'Ошибка регистрации',
@@ -95,7 +87,7 @@ const Auth = () => {
                 <TabsTrigger value="signup">Регистрация</TabsTrigger>
               </TabsList>
               
-              <TabsContent value="signin" className="space-y-4">
+              <TabsContent value="signin">
                 <form onSubmit={handleSignIn} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="signin-email">Email</Label>
@@ -106,7 +98,6 @@ const Auth = () => {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
-                      disabled={isLoading}
                     />
                   </div>
                   <div className="space-y-2">
@@ -114,11 +105,9 @@ const Auth = () => {
                     <Input
                       id="signin-password"
                       type="password"
-                      placeholder="Введите пароль"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
-                      disabled={isLoading}
                     />
                   </div>
                   <Button
@@ -132,7 +121,7 @@ const Auth = () => {
                 </form>
               </TabsContent>
               
-              <TabsContent value="signup" className="space-y-4">
+              <TabsContent value="signup">
                 <form onSubmit={handleSignUp} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="signup-name">Имя</Label>
@@ -143,7 +132,6 @@ const Auth = () => {
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       required
-                      disabled={isLoading}
                     />
                   </div>
                   <div className="space-y-2">
@@ -155,7 +143,6 @@ const Auth = () => {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
-                      disabled={isLoading}
                     />
                   </div>
                   <div className="space-y-2">
@@ -163,12 +150,10 @@ const Auth = () => {
                     <Input
                       id="signup-password"
                       type="password"
-                      placeholder="Минимум 6 символов"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
                       minLength={6}
-                      disabled={isLoading}
                     />
                   </div>
                   <Button

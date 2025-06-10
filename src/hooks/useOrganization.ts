@@ -1,17 +1,14 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
 
 export const useOrganization = () => {
-  const { user } = useAuth();
-
-  const { data: organization, isLoading, error } = useQuery({
-    queryKey: ['current-organization', user?.id],
+  const { data: organization, isLoading } = useQuery({
+    queryKey: ['current-organization'],
     queryFn: async () => {
-      if (!user) {
-        return null;
-      }
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) return null;
 
       const { data: userData, error: userError } = await supabase
         .from('users')
@@ -35,12 +32,11 @@ export const useOrganization = () => {
 
       return userData?.organizations || null;
     },
-    enabled: !!user
+    enabled: true
   });
 
   return {
     organization,
-    isLoading,
-    error
+    isLoading
   };
 };

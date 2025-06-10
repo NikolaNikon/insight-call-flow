@@ -2,11 +2,11 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Filter } from 'lucide-react';
+import { Plus, Search, Filter, MoreHorizontal, Edit, Power, Trash2 } from 'lucide-react';
 import { KeywordTrackerList } from '@/components/keyword-trackers/KeywordTrackerList';
 import { KeywordTrackerModal } from '@/components/keyword-trackers/KeywordTrackerModal';
-import { AnimatedSearchInput } from '@/components/ui/animated-search-input';
 import { useKeywordTrackersApi } from '@/hooks/useKeywordTrackersApi';
 
 const KeywordTrackers = () => {
@@ -82,15 +82,17 @@ const KeywordTrackers = () => {
         </Button>
       </div>
 
-      {/* Search and Filters */}
+      {/* Filters and Search */}
       <Card>
         <CardContent className="p-4">
           <div className="flex gap-4 items-center">
-            <div className="flex-1">
-              <AnimatedSearchInput
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
                 placeholder="Поиск трекеров и ключевых слов..."
                 value={searchTerm}
-                onChange={setSearchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
               />
             </div>
             <div className="flex gap-2">
