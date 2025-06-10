@@ -1,10 +1,10 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Users, Edit, Trash2, Building2 } from 'lucide-react';
+import { Users, Trash2, Building2 } from 'lucide-react';
 import { CreateUserDialog } from '@/components/CreateUserDialog';
+import { EditUserDialog } from '@/components/EditUserDialog';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -146,10 +146,7 @@ export const UserManagementTab = () => {
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <Button size="sm" variant="outline" className="gap-2">
-                    <Edit className="h-3 w-3" />
-                    Редактировать
-                  </Button>
+                  <EditUserDialog user={user} onUserUpdated={refetchUsers} />
                   <Button 
                     size="sm" 
                     variant="outline" 
