@@ -43,9 +43,9 @@ export const NsmSelectorModal: React.FC<NsmSelectorModalProps> = ({
         <div className="space-y-6">
           <div className="space-y-2">
             <Label>Текущая метрика</Label>
-            <div className="p-3 bg-gray-50 rounded-lg">
+            <div className="p-3 bg-muted rounded-lg">
               <p className="font-medium">Средняя оценка звонков</p>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-muted-foreground">
                 Показывает качество работы команды на основе оценок звонков
               </p>
             </div>
@@ -63,7 +63,7 @@ export const NsmSelectorModal: React.FC<NsmSelectorModalProps> = ({
               onChange={(e) => setTargetValue(e.target.value)}
               placeholder="5.0"
             />
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-muted-foreground">
               Укажите целевое значение от 1 до 10
             </p>
           </div>

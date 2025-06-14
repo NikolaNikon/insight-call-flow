@@ -45,12 +45,12 @@ const Index = () => {
   return (
     <div className="space-y-6">
       {!allConfigured && (
-        <Card className="border-theme-yellow-text bg-theme-yellow-bg">
+        <Card className="border-theme-yellow-text/50 bg-theme-yellow-bg text-theme-yellow-text">
           <CardContent className="py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span>🔧</span>
-                <span className="text-sm text-theme-yellow-text">
+                <span className="text-sm font-medium">
                   Не всё подключено. Вы можете закончить настройку в любое время.
                 </span>
               </div>

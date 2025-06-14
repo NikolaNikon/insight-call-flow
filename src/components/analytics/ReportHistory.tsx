@@ -57,22 +57,22 @@ export const ReportHistory = () => {
     return matchesSearch && matchesStatus;
   });
 
-  const getStatusColor = (status: string) => {
+  const getStatusBadgeClass = (status: string) => {
     switch (status) {
-      case 'ready': return 'bg-green-100 text-green-800 border-green-200';
-      case 'processing': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'error': return 'bg-red-100 text-red-800 border-red-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'ready': return 'bg-theme-green-bg text-theme-green-text border-transparent';
+      case 'processing': return 'bg-theme-yellow-bg text-theme-yellow-text border-transparent';
+      case 'error': return 'bg-theme-red-bg text-theme-red-text border-transparent';
+      default: return 'bg-theme-gray-bg text-theme-gray-text border-transparent';
     }
   };
 
   return (
-    <Card className="bg-white border-0 shadow-sm">
+    <Card>
       <CardContent className="p-6">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">История отчетов</h3>
-            <p className="text-sm text-gray-600">
+            <h3 className="text-lg font-semibold text-foreground mb-2">История отчетов</h3>
+            <p className="text-sm text-muted-foreground">
               Созданные отчеты и их статус
             </p>
           </div>
@@ -92,7 +92,7 @@ export const ReportHistory = () => {
           {/* Search and Filters */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="relative">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Поиск отчетов..."
                 value={searchTerm}
@@ -117,18 +117,18 @@ export const ReportHistory = () => {
           {/* Reports List */}
           <div className="space-y-4">
             {filteredReports.length > 0 ? filteredReports.map((report) => (
-              <div key={report.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+              <div key={report.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
-                    <FileText className="h-5 w-5 text-gray-500" />
-                    <span className="font-medium text-gray-900">{report.name}</span>
-                    <Badge className={getStatusColor(report.status)}>
+                    <FileText className="h-5 w-5 text-muted-foreground" />
+                    <span className="font-medium text-foreground">{report.name}</span>
+                    <Badge className={getStatusBadgeClass(report.status)}>
                       {report.status === 'ready' ? 'Готов' : 
                        report.status === 'processing' ? 'Обработка' : 'Ошибка'}
                     </Badge>
                   </div>
-                  <p className="text-sm text-gray-600 mb-2">{report.description}</p>
-                  <div className="text-sm text-gray-500 space-x-4">
+                  <p className="text-sm text-muted-foreground mb-2">{report.description}</p>
+                  <div className="text-sm text-muted-foreground space-x-4">
                     <span>Тип: {report.type}</span>
                     <span>Создан: {report.created}</span>
                     <span>Автор: {report.manager}</span>
@@ -148,7 +148,7 @@ export const ReportHistory = () => {
                     </>
                   )}
                   {report.status === 'processing' && (
-                    <Badge variant="outline" className="text-yellow-600 border-yellow-200">
+                    <Badge variant="outline" className="text-theme-yellow-text border-theme-yellow-text/50 bg-theme-yellow-bg">
                       <Clock className="h-3 w-3 mr-1" />
                       Обработка...
                     </Badge>
@@ -157,11 +157,11 @@ export const ReportHistory = () => {
               </div>
             )) : (
               <div className="text-center py-8">
-                <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h4 className="text-lg font-medium text-gray-900 mb-2">
+                <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h4 className="text-lg font-medium text-foreground mb-2">
                   У вас пока нет отчётов
                 </h4>
-                <p className="text-gray-600 mb-4">
+                <p className="text-muted-foreground mb-4">
                   Создайте первый отчёт, выбрав период и формат
                 </p>
                 <Button variant="outline" className="gap-2">

@@ -34,9 +34,9 @@ export const KeywordTrackerCard = () => {
   if (!trackers || trackers.length === 0) {
     return (
       <>
-        <Card className="col-span-1 border-dashed border-2 border-theme-yellow-text bg-theme-yellow-bg">
+        <Card className="col-span-1 border-dashed border-2 border-theme-yellow-text/50 bg-theme-yellow-bg text-theme-yellow-text">
           <CardHeader>
-            <CardTitle className="text-theme-yellow-text">🧠 Ключевые слова в разговорах</CardTitle>
+            <CardTitle>🧠 Ключевые слова в разговорах</CardTitle>
           </CardHeader>
           <CardContent className="text-center py-8">
             <p className="text-theme-yellow-text/70 mb-4">Трекеры не настроены</p>
@@ -70,7 +70,7 @@ export const KeywordTrackerCard = () => {
               variant="ghost"
               size="sm"
               onClick={() => setShowModal(true)}
-              className="hover:bg-theme-gray-bg"
+              className="hover:bg-muted"
             >
               <Plus className="h-4 w-4" />
             </Button>
@@ -120,7 +120,7 @@ export const KeywordTrackerCard = () => {
             variant="ghost"
             size="sm"
             onClick={() => setShowModal(true)}
-            className="hover:bg-theme-gray-bg"
+            className="hover:bg-muted"
           >
             <Plus className="h-4 w-4" />
           </Button>
@@ -140,7 +140,7 @@ export const KeywordTrackerCard = () => {
                     </span>
                     <Badge 
                       variant="outline" 
-                      className="text-xs bg-theme-gray-bg text-theme-gray-text border-theme-gray-text"
+                      className="text-xs bg-theme-gray-bg text-theme-gray-text border-theme-gray-text/50"
                     >
                       {tracker.category}
                     </Badge>
@@ -148,7 +148,7 @@ export const KeywordTrackerCard = () => {
                   <div className="flex items-center gap-2">
                     <Badge 
                       variant="secondary" 
-                      className="flex items-center gap-1 bg-theme-blue-bg text-theme-blue-text"
+                      className="flex items-center gap-1 bg-theme-blue-bg text-theme-blue-text border-transparent"
                     >
                       {tracker.mentions_count || 0}
                       <Minus className="h-3 w-3" />

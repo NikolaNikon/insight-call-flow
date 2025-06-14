@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { TrendingUp, TrendingDown, Settings } from 'lucide-react';
 import { useOrgMetrics } from '@/hooks/useOrgMetrics';
 import { NsmSelectorModal } from './NsmSelectorModal';
+import { cn } from '@/lib/utils';
 
 export const NsmSummaryCard = () => {
   const { nsmMetric, initializeNSM, isLoading } = useOrgMetrics();
@@ -38,7 +39,7 @@ export const NsmSummaryCard = () => {
 
   if (!nsmMetric) {
     return (
-      <Card className="col-span-2 border-dashed border-2 border-theme-yellow-text bg-theme-yellow-bg">
+      <Card className="col-span-2 border-dashed border-2 border-theme-yellow-text/50 bg-theme-yellow-bg text-theme-yellow-text">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             🔷 Главная метрика команды
@@ -46,7 +47,7 @@ export const NsmSummaryCard = () => {
         </CardHeader>
         <CardContent className="text-center py-8">
           <p className="text-muted-foreground mb-4">Метрика не выбрана</p>
-          <Button onClick={handleSetupNSM} className="bg-theme-orange-text hover:bg-theme-orange-text/90 text-theme-orange-bg">
+          <Button onClick={handleSetupNSM} className="bg-theme-orange-text text-theme-orange-bg hover:bg-theme-orange-text/90">
             Выбрать NSM
           </Button>
         </CardContent>
@@ -84,12 +85,12 @@ export const NsmSummaryCard = () => {
                 {currentValue.toFixed(1)} ★
               </div>
               <Badge
-                variant={isPositiveTrend ? "default" : "destructive"}
-                className={`flex items-center gap-1 ${
+                className={cn(
+                  'flex items-center gap-1 border-transparent',
                   isPositiveTrend 
-                    ? 'bg-theme-green-bg text-theme-green-text border-theme-green-text' 
-                    : 'bg-theme-red-bg text-theme-red-text border-theme-red-text'
-                }`}
+                    ? 'bg-theme-green-bg text-theme-green-text' 
+                    : 'bg-theme-red-bg text-theme-red-text'
+                )}
               >
                 {isPositiveTrend ? (
                   <TrendingUp className="h-3 w-3" />
@@ -105,7 +106,7 @@ export const NsmSummaryCard = () => {
                 <span>Средняя оценка звонков</span>
                 <span>{percentage}% от цели</span>
               </div>
-              <div className="w-full bg-theme-gray-bg rounded-full h-2">
+              <div className="w-full bg-theme-blue-text/20 rounded-full h-2">
                 <div
                   className="bg-theme-blue-text h-2 rounded-full transition-all duration-300"
                   style={{ width: `${Math.min(percentage, 100)}%` }}

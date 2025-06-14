@@ -28,28 +28,28 @@ export const ReportCreator = () => {
   };
 
   return (
-    <Card className="bg-white border-0 shadow-sm">
+    <Card>
       <CardContent className="p-6">
         <div className="flex items-center gap-2 mb-2">
-          <Plus className="h-5 w-5 text-blue-600" />
-          <h3 className="text-lg font-semibold text-gray-900">Создание нового отчета</h3>
+          <Plus className="h-5 w-5 text-primary" />
+          <h3 className="text-lg font-semibold text-foreground">Создание нового отчета</h3>
           <Tooltip>
             <TooltipTrigger>
-              <HelpCircle className="h-4 w-4 text-gray-400" />
+              <HelpCircle className="h-4 w-4 text-muted-foreground" />
             </TooltipTrigger>
             <TooltipContent>
               <p>Что включено в отчёт: звонки, метрики, оценки менеджеров, анализ настроений</p>
             </TooltipContent>
           </Tooltip>
         </div>
-        <p className="text-sm text-gray-600 mb-6">
+        <p className="text-sm text-muted-foreground mb-6">
           Настройте параметры для генерации отчета
         </p>
         
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
-              <label className="text-sm font-medium text-gray-700 mb-2 block">
+              <label className="text-sm font-medium text-foreground mb-2 block">
                 Формат отчета
               </label>
               <Select>
@@ -65,7 +65,7 @@ export const ReportCreator = () => {
             </div>
 
             <div>
-              <label className="text-sm font-medium text-gray-700 mb-2 block">
+              <label className="text-sm font-medium text-foreground mb-2 block">
                 Период
               </label>
               <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
@@ -82,7 +82,7 @@ export const ReportCreator = () => {
             </div>
 
             <div>
-              <label className="text-sm font-medium text-gray-700 mb-2 block">
+              <label className="text-sm font-medium text-foreground mb-2 block">
                 Название отчета
               </label>
               <Input placeholder="Введите название отчета" />
@@ -90,9 +90,9 @@ export const ReportCreator = () => {
           </div>
 
           {selectedPeriod === "custom" && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-muted rounded-lg">
               <div>
-                <label className="text-sm font-medium text-gray-700 mb-2 block">
+                <label className="text-sm font-medium text-foreground mb-2 block">
                   Дата начала
                 </label>
                 <Popover>
@@ -114,7 +114,7 @@ export const ReportCreator = () => {
               </div>
 
               <div>
-                <label className="text-sm font-medium text-gray-700 mb-2 block">
+                <label className="text-sm font-medium text-foreground mb-2 block">
                   Дата окончания
                 </label>
                 <Popover>
@@ -138,7 +138,7 @@ export const ReportCreator = () => {
           )}
 
           <div className="flex gap-3">
-            <Button onClick={handleCreateReport} className="gap-2 bg-blue-600 hover:bg-blue-700">
+            <Button onClick={handleCreateReport} className="gap-2">
               <FileText className="h-4 w-4" />
               Создать отчет
             </Button>

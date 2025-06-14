@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -85,7 +84,7 @@ export const KeywordTrackerList: React.FC<KeywordTrackerListProps> = ({
                     </div>
                     
                     <div className="mb-3">
-                      <span className="text-sm text-gray-600">Ключевые слова: </span>
+                      <span className="text-sm text-muted-foreground">Ключевые слова: </span>
                       <div className="flex flex-wrap gap-1 mt-1">
                         {tracker.keywords.slice(0, 3).map((keyword, index) => (
                           <Badge key={index} variant="outline" className="text-xs">
@@ -100,7 +99,7 @@ export const KeywordTrackerList: React.FC<KeywordTrackerListProps> = ({
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-4 text-sm text-gray-600">
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
                       <span>
                         Упоминаний: <strong>{tracker.mentions_count || 0}</strong>
                       </span>
@@ -131,7 +130,7 @@ export const KeywordTrackerList: React.FC<KeywordTrackerListProps> = ({
                       </DropdownMenuItem>
                       <DropdownMenuItem 
                         onClick={() => handleDelete(tracker)}
-                        className="text-red-600"
+                        className="text-destructive focus:bg-destructive focus:text-destructive-foreground"
                       >
                         <Trash2 className="h-4 w-4 mr-2" />
                         Удалить
