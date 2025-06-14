@@ -1,4 +1,3 @@
-
 import { useAuth } from '@/hooks/useAuth';
 import { Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -55,10 +54,7 @@ const Header = ({ onMenuClick }: HeaderProps) => {
               <Menu className="h-4 w-4" />
             </Button>
           )}
-          <div>
-            <h1 className="text-3xl font-bold text-foreground mb-2">{pageTitle}</h1>
-            <p className="text-muted-foreground">Система контроля и аналитики звонков менеджеров</p>
-          </div>
+          <h1 className="text-3xl font-bold text-foreground">{pageTitle}</h1>
         </div>
         <div className="flex items-center gap-4">
           <ThemeToggle />
