@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Bot, Info } from 'lucide-react';
+import { Loader2, Info } from 'lucide-react';
 import { useTelegramSession } from '@/hooks/useTelegramSession';
 import { useTelegramAuth } from '@/hooks/useTelegramAuth';
-import { TelegramConnectionStatus } from '@/components/telegram/TelegramConnectionStatus';
 import { TelegramActiveConnections } from '@/components/telegram/TelegramActiveConnections';
 import { useOrganization } from '@/hooks/useOrganization';
 import { useQuery } from '@tanstack/react-query';
@@ -59,6 +58,11 @@ export const ImprovedTelegramIntegration = () => {
     refetchLinks();
   };
 
+  const handleCancelPending = () => {
+    setCurrentSessionCode(null);
+    setSessionData(null);
+  };
+
   const handleDeactivate = async (linkId: string) => {
     const success = await deactivateTelegramLink(linkId);
     if (success) {
@@ -83,78 +87,75 @@ export const ImprovedTelegramIntegration = () => {
   const isPending = !!currentSessionCode;
 
   return (
-    <div className="space-y-6">
-      {/* Connection Status */}
-      <TelegramConnectionStatus
-        isConnected={isConnected}
-        isPending={isPending}
-        error={null}
-        showTimeoutWarning={false}
-      />
-
-      {/* Active Connections */}
-      <TelegramActiveConnections
-        links={telegramLinks}
-        onDeactivate={handleDeactivate}
-        onRefresh={refetchLinks}
-        loading={linksLoading}
-      />
-
-      {/* Pending Session Replaced with Status Checker */}
-      {isPending && sessionData && (
+    <div className="space-y-4">
+      {linksLoading ? (
+        <div className="flex items-center justify-center gap-2 p-4 text-gray-500">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <span>Загрузка подключений...</span>
+        </div>
+      ) : isConnected ? (
+        <TelegramActiveConnections
+          links={telegramLinks}
+          onDeactivate={handleDeactivate}
+          onRefresh={refetchLinks}
+          loading={linksLoading}
+        />
+      ) : isPending && sessionData ? (
         <TelegramStatusChecker
           sessionCode={currentSessionCode}
           telegramUrl={sessionData.telegram_url}
           onConnected={handleConnectionComplete}
-          onCancel={handleConnectionComplete}
+          onCancel={handleCancelPending}
           pollingEnabled={true}
         />
-      )}
-
-      {/* Connect Button */}
-      {!currentSessionCode && (
-        <div className="flex gap-3">
-          <Button
-            onClick={handleStartConnection}
-            disabled={isGeneratingSession}
-            className="flex-1"
-          >
-            {isGeneratingSession ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Генерация ссылки...
-              </>
-            ) : (
-              <>
-                <Bot className="mr-2 h-4 w-4" />
-                Подключить Telegram
-              </>
-            )}
-          </Button>
-        </div>
-      )}
-
-      {/* Help Text */}
-      <HoverCard>
-        <HoverCardTrigger asChild>
-          <Button variant="link" className="p-0 h-auto text-sm text-gray-600 flex items-center gap-1">
-            <Info className="h-4 w-4" />
-            Как это работает?
-          </Button>
-        </HoverCardTrigger>
-        <HoverCardContent className="w-80">
-          <div className="space-y-2">
-            <p className="font-medium text-sm">Инструкция по подключению:</p>
-            <ol className="list-decimal list-inside space-y-1 text-xs text-gray-700">
-              <li>Нажмите "Подключить Telegram" для генерации персональной ссылки</li>
-              <li>Перейдите по ссылке или нажмите на неё - откроется Telegram</li>
-              <li>Нажмите "Запустить бота" или отправьте команду /start</li>
-              <li>Подтвердите подключение в появившемся диалоге</li>
-              <li>Готово! Теперь вы будете получать уведомления о звонках</li>
-            </ol>
+      ) : (
+        <>
+          <div className="flex items-center justify-between rounded-lg border bg-slate-50 p-4">
+            <div>
+              <p className="font-medium">Подключить Telegram</p>
+              <p className="text-sm text-gray-500">
+                Получайте уведомления о звонках и отчеты.
+              </p>
+            </div>
+            <Button
+              onClick={handleStartConnection}
+              disabled={isGeneratingSession}
+              size="sm"
+            >
+              {isGeneratingSession ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Генерация...
+                </>
+              ) : (
+                'Подключить'
+              )}
+            </Button>
           </div>
-        </HoverCardContent>
-      </HoverCard>
+          <HoverCard>
+            <HoverCardTrigger asChild>
+              <Button
+                variant="link"
+                className="flex h-auto items-center gap-1 p-0 text-sm text-gray-600"
+              >
+                <Info className="h-4 w-4" />
+                Как это работает?
+              </Button>
+            </HoverCardTrigger>
+            <HoverCardContent className="w-80">
+              <div className="space-y-2">
+                <p className="text-sm font-medium">Инструкция по подключению:</p>
+                <ol className="list-inside list-decimal space-y-1 text-xs text-gray-700">
+                  <li>Нажмите "Подключить" для генерации ссылки.</li>
+                  <li>Перейдите по ссылке, откроется Telegram.</li>
+                  <li>Нажмите "Запустить" или отправьте команду /start.</li>
+                  <li>Готово! Теперь вы будете получать уведомления.</li>
+                </ol>
+              </div>
+            </HoverCardContent>
+          </HoverCard>
+        </>
+      )}
     </div>
   );
 };
