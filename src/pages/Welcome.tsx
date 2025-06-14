@@ -3,14 +3,38 @@ import React, { useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useUserRole } from '@/hooks/useUserRole';
-import { useOnboardingSteps } from '@/hooks/useOnboardingSteps';
-import { WelcomeScreen } from '@/components/onboarding/WelcomeScreen';
-import { OnboardingProgress } from '@/components/onboarding/OnboardingProgress';
 
-// The refactored Welcome page
+// Early exit for loading and superadmin
 const Welcome = () => {
   const navigate = useNavigate();
   const { isSuperAdmin, isLoading } = useUserRole();
+
+  // Show loader while loading
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <Loader2 className="animate-spin h-8 w-8 text-blue-500" />
+      </div>
+    );
+  }
+
+  // Redirect superadmins, no onboarding
+  useEffect(() => {
+    if (isSuperAdmin) {
+      navigate("/", { replace: true });
+    }
+  }, [isSuperAdmin, navigate]);
+  if (isSuperAdmin) {
+    return null;
+  }
+
+  // Only import/use onboarding logic/components when not superadmin and not loading
+  // (avoids extra hook calls on superadmin renders)
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { useOnboardingSteps } = require('@/hooks/useOnboardingSteps');
+  const { WelcomeScreen } = require('@/components/onboarding/WelcomeScreen');
+  const { OnboardingProgress } = require('@/components/onboarding/OnboardingProgress');
+
   const {
     steps,
     currentStep,
@@ -22,24 +46,6 @@ const Welcome = () => {
     setCompletedSteps
   } = useOnboardingSteps();
 
-  // Show loader while role is loading
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Loader2 className="animate-spin h-8 w-8 text-blue-500" />
-      </div>
-    );
-  }
-
-  // Superadmins skip the onboarding flow entirely
-  useEffect(() => {
-    if (!isLoading && isSuperAdmin) {
-      navigate("/", { replace: true });
-    }
-  }, [isSuperAdmin, isLoading, navigate]);
-  if (!isLoading && isSuperAdmin) return null;
-
-  // Step navigation logic
   const handleNext = () => {
     if (currentStep < steps.length - 1) {
       next();
@@ -57,7 +63,6 @@ const Welcome = () => {
   };
   const handleCompleteStep = () => completeStep(currentStep);
 
-  // Welcome screen mode
   if (currentStep === -1) {
     return (
       <WelcomeScreen
@@ -68,7 +73,6 @@ const Welcome = () => {
     );
   }
 
-  // Onboarding steps navigation UI
   return (
     <OnboardingProgress
       steps={steps}
@@ -83,3 +87,4 @@ const Welcome = () => {
 };
 
 export default Welcome;
+
