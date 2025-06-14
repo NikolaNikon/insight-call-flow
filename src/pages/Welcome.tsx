@@ -8,10 +8,11 @@ import { WelcomeScreen } from '@/components/onboarding/WelcomeScreen';
 import { OnboardingProgress } from '@/components/onboarding/OnboardingProgress';
 
 const Welcome = () => {
+  // All hooks MUST be called unconditionally at the top of the function, 
+  // never inside conditions or after returns. This prevents React hook order errors.
   const navigate = useNavigate();
   const { isSuperAdmin, isLoading } = useUserRole();
 
-  // Always call onboarding state hooks, but logic below prevents them from rendering
   const {
     steps,
     currentStep,
@@ -23,7 +24,7 @@ const Welcome = () => {
     setCompletedSteps
   } = useOnboardingSteps();
 
-  // Show loader while role is loading
+  // Early return for loading, to avoid rendering bodies while loading
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -32,7 +33,7 @@ const Welcome = () => {
     );
   }
 
-  // Redirect superadmins, no onboarding
+  // SuperAdmins are redirected to root
   useEffect(() => {
     if (isSuperAdmin) {
       navigate("/", { replace: true });
