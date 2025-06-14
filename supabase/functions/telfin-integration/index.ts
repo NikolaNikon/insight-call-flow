@@ -1,5 +1,5 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -7,13 +7,15 @@ const corsHeaders = {
 };
 
 interface TelfinRequest {
-  action: 'get_audio_url' | 'download_audio' | 'download_audio_with_oauth';
+  action: 'get_audio_url' | 'download_audio' | 'download_audio_with_oauth' | 'save_call_history';
   clientId: string;
   recordUuid: string;
   hostname?: string;
   username?: string;
   password?: string;
   accessToken?: string;
+  calls?: any[];
+  orgId?: string;
 }
 
 interface TelfinStorageUrlResponse {
@@ -27,7 +29,7 @@ serve(async (req) => {
   }
 
   try {
-    const { action, clientId, recordUuid, hostname, username, password, accessToken }: TelfinRequest = await req.json();
+    const { action, clientId, recordUuid, hostname, username, password, accessToken, calls, orgId }: TelfinRequest = await req.json();
 
     console.log('Telfin integration request:', { action, clientId, recordUuid, hostname });
 
@@ -148,6 +150,46 @@ serve(async (req) => {
           audioData: base64Audio,
           contentType: response.headers.get('content-type') || 'audio/mpeg'
         }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      case 'save_call_history': {
+        if (!calls || !orgId) {
+          throw new Error('calls and orgId are required for save_call_history action');
+        }
+
+        const supabaseAdmin = createClient(
+          Deno.env.get('SUPABASE_URL')!,
+          Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+        );
+
+        const callsToUpsert = calls.map(call => ({
+          call_id: call.id,
+          org_id: orgId,
+          extension_id: call.extension_id,
+          caller_number: call.caller_id_number,
+          called_number: call.called_did_number,
+          start_time: call.start_time ? new Date(call.start_time * 1000).toISOString() : null,
+          end_time: call.end_time ? new Date(call.end_time * 1000).toISOString() : null,
+          duration: call.duration,
+          has_record: call.has_record,
+          record_url: call.record_uuid,
+          status: call.disposition,
+          raw_payload: call,
+          processing_status: 'pending',
+        }));
+
+        const { data, error } = await supabaseAdmin
+          .from('telfin_calls')
+          .upsert(callsToUpsert, { onConflict: 'call_id', ignoreDuplicates: false });
+
+        if (error) {
+          console.error('Error upserting telfin calls:', error);
+          throw error;
+        }
+
+        return new Response(JSON.stringify({ success: true, saved_count: callsToUpsert.length }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }

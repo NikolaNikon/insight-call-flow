@@ -192,6 +192,43 @@ export class TelfinOAuthAPI {
   }
 
   /**
+   * Получение истории звонков
+   */
+  async getCallHistory(dateFrom: string, dateTo: string): Promise<any[]> {
+    await this.ensureValidToken();
+    
+    const params = new URLSearchParams({
+      date_from: dateFrom,
+      date_to: dateTo,
+      limit: '1000'
+    });
+    
+    // В API Телфина для истории звонков обычно требуется ID клиента
+    // @ts-ignore
+    const userInfo = await this.getUserInfo();
+    const url = `https://${this.config.hostname}/api/ver1.0/client/${userInfo.client_id}/call_history/?${params.toString()}`;
+    
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${this.accessToken}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data.records || []; // Предполагаем, что звонки находятся в массиве 'records'
+    } catch (error) {
+      console.error('Error getting call history:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Получение аудиофайла с использованием OAuth токена
    */
   async getAudioFileWithOAuth(clientId: string, recordUuid: string): Promise<Blob> {

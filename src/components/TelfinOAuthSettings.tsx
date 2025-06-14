@@ -47,6 +47,7 @@ export const TelfinOAuthSettings = () => {
             handleStartOAuth={telfin.handleStartOAuth}
             testConnection={telfin.testConnection}
             handleLogout={telfin.handleLogout}
+            handleSyncCallHistory={telfin.handleSyncCallHistory}
           />
         </TabsContent>
       </Tabs>

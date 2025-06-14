@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { TestTube, ExternalLink, CheckCircle, XCircle } from 'lucide-react';
+import { TestTube, ExternalLink, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
 
 interface TelfinStatusDisplayProps {
   isAuthorized: boolean;
@@ -11,6 +11,7 @@ interface TelfinStatusDisplayProps {
   handleStartOAuth: () => void;
   testConnection: () => void;
   handleLogout: () => void;
+  handleSyncCallHistory: () => void;
 }
 
 export const TelfinStatusDisplay: React.FC<TelfinStatusDisplayProps> = ({
@@ -20,6 +21,7 @@ export const TelfinStatusDisplay: React.FC<TelfinStatusDisplayProps> = ({
   handleStartOAuth,
   testConnection,
   handleLogout,
+  handleSyncCallHistory,
 }) => {
   return (
     <div className="space-y-4 pt-4">
@@ -52,7 +54,7 @@ export const TelfinStatusDisplay: React.FC<TelfinStatusDisplayProps> = ({
         </div>
       )}
 
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         {!isAuthorized ? (
           <Button onClick={handleStartOAuth} className="gap-2" disabled={isLoading}>
             <ExternalLink className="h-4 w-4" />
@@ -64,7 +66,11 @@ export const TelfinStatusDisplay: React.FC<TelfinStatusDisplayProps> = ({
               <TestTube className="h-4 w-4" />
               {isLoading ? 'Тестируем...' : 'Тест подключения'}
             </Button>
-            <Button onClick={handleLogout} variant="destructive" className="gap-2">
+             <Button onClick={handleSyncCallHistory} variant="outline" className="gap-2" disabled={isLoading}>
+              <RefreshCw className="h-4 w-4" />
+              {isLoading ? 'Синхронизация...' : 'Синхронизировать звонки'}
+            </Button>
+            <Button onClick={handleLogout} variant="destructive" className="gap-2" disabled={isLoading}>
               <XCircle className="h-4 w-4" />
               Отозвать доступ
             </Button>

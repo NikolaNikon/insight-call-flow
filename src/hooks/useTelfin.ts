@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -54,6 +53,7 @@ export const useTelfin = () => {
   const [userInfo, setUserInfo] = useState<any>(null);
   const [apiInstance, setApiInstance] = useState<TelfinOAuthAPI | null>(null);
   const [isCallbackLoading, setIsCallbackLoading] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   const { data: connection, isLoading: isLoadingConnection } = useQuery({
     queryKey: ['telfin_connection', orgId],
@@ -222,6 +222,56 @@ export const useTelfin = () => {
     }
   };
 
+  const handleSyncCallHistory = async () => {
+    if (!apiInstance || !orgId) {
+      toast({ title: "Ошибка", description: "API не инициализировано или не выбрана организация.", variant: "destructive" });
+      return;
+    }
+    setIsSyncing(true);
+    try {
+      const dateTo = new Date();
+      const dateFrom = new Date();
+      dateFrom.setDate(dateTo.getDate() - 7); // Синхронизация за последние 7 дней
+
+      const dateToString = dateTo.toISOString().split('T')[0];
+      const dateFromString = dateFrom.toISOString().split('T')[0];
+
+      toast({ title: "Синхронизация запущена", description: `Загрузка истории звонков с ${dateFromString} по ${dateToString}`});
+
+      const callHistory = await apiInstance.getCallHistory(dateFromString, dateToString);
+
+      if (callHistory.length === 0) {
+        toast({ title: "Нет новых звонков", description: "За выбранный период нет звонков для синхронизации." });
+        setIsSyncing(false);
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke('telfin-integration', {
+        body: {
+          action: 'save_call_history',
+          calls: callHistory,
+          orgId: orgId,
+        },
+      });
+
+      if (error) throw error;
+      
+      const result = data;
+      if (!result.success) {
+        throw new Error(result.error || 'Ошибка при сохранении истории звонков.');
+      }
+      
+      queryClient.invalidateQueries({ queryKey: ['telfin_calls', orgId] });
+      toast({ title: "Синхронизация завершена", description: `Найдено и сохранено звонков: ${result.saved_count}.` });
+
+    } catch (error: any) {
+      console.error('Error syncing call history:', error);
+      toast({ title: "Ошибка синхронизации", description: error.message, variant: "destructive" });
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   const testConnection = async () => {
     if (!isAuthorized || !apiInstance) {
         toast({ title: "Ошибка", description: "Сначала авторизуйтесь", variant: "destructive" });
@@ -243,10 +293,11 @@ export const useTelfin = () => {
     setConfig: setLocalConfig,
     isAuthorized,
     userInfo,
-    isLoading: isLoadingConnection || saveMutation.isPending || isCallbackLoading,
+    isLoading: isLoadingConnection || saveMutation.isPending || isCallbackLoading || isSyncing,
     handleSaveConfig,
     handleStartOAuth,
     testConnection,
     handleLogout,
+    handleSyncCallHistory,
   }
 }

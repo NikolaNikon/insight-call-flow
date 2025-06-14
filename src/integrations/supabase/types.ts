@@ -1465,6 +1465,7 @@ export type Database = {
           id: string
           org_id: string
           processing_status: string | null
+          raw_payload: Json | null
           record_url: string | null
           start_time: string | null
           status: string | null
@@ -1482,6 +1483,7 @@ export type Database = {
           id?: string
           org_id: string
           processing_status?: string | null
+          raw_payload?: Json | null
           record_url?: string | null
           start_time?: string | null
           status?: string | null
@@ -1499,6 +1501,7 @@ export type Database = {
           id?: string
           org_id?: string
           processing_status?: string | null
+          raw_payload?: Json | null
           record_url?: string | null
           start_time?: string | null
           status?: string | null
