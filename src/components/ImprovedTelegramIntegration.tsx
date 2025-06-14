@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, Bot } from 'lucide-react';
-import { useTelegramSessionOrg } from '@/hooks/useTelegramSessionOrg';
+import { useTelegramSession } from '@/hooks/useTelegramSession';
 import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { TelegramConnectionStatus } from '@/components/telegram/TelegramConnectionStatus';
 import { TelegramPendingSession } from '@/components/telegram/TelegramPendingSession';
@@ -16,7 +16,8 @@ export const ImprovedTelegramIntegration = () => {
   const [currentSessionCode, setCurrentSessionCode] = useState<string | null>(null);
   const [sessionData, setSessionData] = useState<any>(null);
   
-  const { startTelegramSession, isGeneratingSession, organization } = useTelegramSessionOrg();
+  const { organization } = useOrganization();
+  const { startTelegramSession, isGeneratingSession } = useTelegramSession();
   const { deactivateTelegramLink } = useTelegramAuth();
 
   // Загружаем активные подключения Telegram для организации
@@ -89,7 +90,7 @@ export const ImprovedTelegramIntegration = () => {
           </span>
         </div>
         <p className="text-xs text-blue-600">
-          Все уведомления будут отправляться через бота вашей организации
+          Все уведомления будут отправляться через основного бота CallControl
         </p>
       </div>
 
