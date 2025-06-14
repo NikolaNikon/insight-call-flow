@@ -35,7 +35,8 @@ export const useTelfinSync = (apiInstance: TelfinClientCredentialsAPI | null, or
 
       toast({ title: "Синхронизация запущена", description: `Загрузка истории звонков с ${dateFromString} по ${dateToString}`});
 
-      const callHistory = await apiInstance.getCallHistory(dateFromString, dateToString);
+      // Передаем userInfo в getCallHistory
+      const callHistory = await apiInstance.getCallHistory(dateFromString, dateToString, userInfo);
 
       if (callHistory.length > 0) {
         const { data, error } = await supabase.functions.invoke('telfin-integration', {

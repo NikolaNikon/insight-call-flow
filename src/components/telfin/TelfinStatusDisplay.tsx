@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -92,9 +91,12 @@ export const TelfinStatusDisplay: React.FC<TelfinStatusDisplayProps> = ({
         </p>
       )}
 
-      {/* Добавляем компонент диагностики */}
+      {/* Добавляем компонент диагностики с userInfo */}
       {isAuthorized && (
-        <TelfinApiDiagnostics accessToken={userInfo ? 'token-available' : null} />
+        <TelfinApiDiagnostics 
+          accessToken={userInfo ? 'token-available' : null} 
+          userInfo={userInfo} 
+        />
       )}
     </div>
   );

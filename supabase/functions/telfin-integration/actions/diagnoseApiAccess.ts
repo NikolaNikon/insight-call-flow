@@ -2,104 +2,135 @@
 import { API_HOST, corsHeaders } from '../utils.ts';
 import { TelfinRequest } from '../types.ts';
 
+// Endpoint'ы для диагностики основанные на реальной документации
+const DIAGNOSTIC_ENDPOINTS = [
+  {
+    path: '/api/ver1.0/client/{client_id}/call_history/',
+    method: 'GET',
+    description: 'История звонков клиента',
+    category: 'cdr',
+    requiresClientId: true,
+  },
+  {
+    path: '/api/ver1.0/client/{client_id}/calls/',
+    method: 'GET', 
+    description: 'Список звонков клиента',
+    category: 'cdr',
+    requiresClientId: true,
+  },
+  {
+    path: '/api/ver1.0/client/{client_id}/cdr/',
+    method: 'GET',
+    description: 'CDR записи клиента',
+    category: 'cdr',
+    requiresClientId: true,
+  },
+  {
+    path: '/api/ver1.0/client/{client_id}/calls/stats/',
+    method: 'GET',
+    description: 'Статистика звонков клиента',
+    category: 'cdr',
+    requiresClientId: true,
+  },
+  // Добавляем endpoint'ы, которые не требуют client_id для сравнения
+  {
+    path: '/api/ver1.0/clients/',
+    method: 'GET',
+    description: 'Список клиентов',
+    category: 'client_info',
+    requiresClientId: false,
+  },
+  {
+    path: '/api/ver1.0/permissions/',
+    method: 'GET',
+    description: 'Права доступа',
+    category: 'permissions',
+    requiresClientId: false,
+  },
+];
+
 export async function handleDiagnoseApiAccess(body: TelfinRequest): Promise<Response> {
   console.log('Executing action: diagnose_api_access');
-  const { accessToken } = body;
+  const { accessToken, telfinClientId } = body;
   
   if (!accessToken) {
     throw new Error('accessToken is required for diagnose_api_access');
   }
 
-  const diagnosticEndpoints = [
-    // Базовые endpoint'ы
-    { path: '/api/ver1.0/user/', method: 'GET', description: 'Информация о пользователе' },
-    { path: '/api/ver1.0/client/', method: 'GET', description: 'Информация о клиенте' },
-    
-    // CDR/записи звонков
-    { path: '/api/ver1.0/cdr/', method: 'GET', description: 'CDR данные (GET)' },
-    { path: '/api/ver1.0/cdr/search', method: 'POST', description: 'Поиск CDR (POST)' },
-    { path: '/api/ver1.0/calls/', method: 'GET', description: 'Звонки (GET)' },
-    { path: '/api/ver1.0/calls/search', method: 'POST', description: 'Поиск звонков (POST)' },
-    { path: '/api/ver1.0/calls/list', method: 'POST', description: 'Список звонков (POST)' },
-    { path: '/api/ver1.0/records', method: 'GET', description: 'Записи звонков' },
-    { path: '/api/ver1.0/call_records', method: 'GET', description: 'Записи разговоров' },
-    
-    // Права доступа
-    { path: '/api/ver1.0/permissions', method: 'GET', description: 'Права доступа приложения' },
-    { path: '/api/ver1.0/oauth/permissions', method: 'GET', description: 'OAuth права' },
-    { path: '/api/ver1.0/app/permissions', method: 'GET', description: 'Права приложения' },
-  ];
+  const results: any[] = [];
+  let accessibleEndpoints = 0;
+  let cdrEndpointsAccessible = 0;
+  const cdrEndpointsTotal = DIAGNOSTIC_ENDPOINTS.filter(ep => ep.category === 'cdr').length;
 
-  const results = [];
-  
-  for (const endpoint of diagnosticEndpoints) {
-    const url = `https://${API_HOST}${endpoint.path}`;
-    const headers: Record<string, string> = {
-      'Authorization': `Bearer ${accessToken}`,
-      'User-Agent': 'CallControl/1.0.0',
-    };
+  console.log(`[DiagnoseAPI] Starting diagnosis with client_id: ${telfinClientId || 'not provided'}`);
 
-    if (endpoint.method === 'POST') {
-      headers['Content-Type'] = 'application/json';
-      headers['Accept'] = 'application/json';
+  for (const endpoint of DIAGNOSTIC_ENDPOINTS) {
+    let testPath = endpoint.path;
+    let skipTest = false;
+
+    // Заменяем {client_id} если требуется
+    if (endpoint.requiresClientId) {
+      if (!telfinClientId) {
+        results.push({
+          endpoint: endpoint.path,
+          method: endpoint.method,
+          description: endpoint.description,
+          accessible: false,
+          errorType: 'missing_client_id',
+          status: 0,
+        });
+        skipTest = true;
+      } else {
+        testPath = endpoint.path.replace('{client_id}', telfinClientId);
+      }
     }
 
-    console.log(`[ApiDiagnostic] Testing ${endpoint.method} ${url}`);
+    if (skipTest) continue;
+
+    const url = `https://${API_HOST}${testPath}`;
+    const headers = {
+      'Authorization': `Bearer ${accessToken}`,
+      'Accept': 'application/json',
+      'User-Agent': 'CallControl-Diagnostics/1.0.0',
+    };
+
+    console.log(`[DiagnoseAPI] Testing ${endpoint.method} ${testPath}`);
 
     try {
-      const requestOptions: RequestInit = {
+      const response = await fetch(url, {
         method: endpoint.method,
         headers,
-      };
+      });
 
-      // Для POST запросов добавляем тестовые данные
-      if (endpoint.method === 'POST') {
-        const testData = {
-          date_from: '2025-06-01',
-          date_to: '2025-06-14',
-          limit: 10
-        };
-        requestOptions.body = JSON.stringify(testData);
-      }
-
-      const response = await fetch(url, requestOptions);
-      const responseText = await response.text();
-
-      let parsedData = null;
-      let isJson = false;
-      
-      try {
-        parsedData = JSON.parse(responseText);
-        isJson = true;
-      } catch {
-        // Не JSON ответ
-      }
-
-      const result = {
+      const result: any = {
         endpoint: endpoint.path,
         method: endpoint.method,
         description: endpoint.description,
         status: response.status,
-        statusText: response.statusText,
         accessible: response.ok,
-        isJson,
-        responseSize: responseText.length,
-        contentType: response.headers.get('content-type'),
       };
 
-      if (response.ok && isJson && parsedData) {
-        result.dataStructure = Object.keys(parsedData);
-        if (Array.isArray(parsedData)) {
-          result.isArray = true;
-          result.arrayLength = parsedData.length;
+      if (response.ok) {
+        accessibleEndpoints++;
+        if (endpoint.category === 'cdr') {
+          cdrEndpointsAccessible++;
         }
-        if (parsedData.records && Array.isArray(parsedData.records)) {
-          result.hasRecordsArray = true;
-          result.recordsCount = parsedData.records.length;
+
+        try {
+          const data = await response.json();
+          result.dataStructure = Object.keys(data);
+          result.isArray = Array.isArray(data);
+          if (result.isArray) {
+            result.arrayLength = data.length;
+          }
+          if (data.results && Array.isArray(data.results)) {
+            result.hasRecordsArray = true;
+            result.recordsCount = data.results.length;
+          }
+        } catch (jsonError) {
+          result.jsonParseError = 'Response is not valid JSON';
         }
-      } else if (!response.ok) {
-        result.errorSample = responseText.substring(0, 200);
-        
+      } else {
         // Определяем тип ошибки
         if (response.status === 401) {
           result.errorType = 'authentication';
@@ -107,97 +138,94 @@ export async function handleDiagnoseApiAccess(body: TelfinRequest): Promise<Resp
           result.errorType = 'authorization';
         } else if (response.status === 404) {
           result.errorType = 'not_found';
-        } else if (response.status >= 500) {
-          result.errorType = 'server_error';
+        } else {
+          result.errorType = 'other';
+        }
+
+        try {
+          const errorText = await response.text();
+          result.errorSample = errorText.substring(0, 200);
+        } catch (textError) {
+          result.errorSample = 'Could not read error response';
         }
       }
 
       results.push(result);
-
     } catch (error) {
-      console.error(`[ApiDiagnostic] Error testing ${endpoint.path}:`, error);
+      console.error(`[DiagnoseAPI] Network error for ${endpoint.path}:`, error);
       results.push({
         endpoint: endpoint.path,
         method: endpoint.method,
         description: endpoint.description,
-        status: 0,
         accessible: false,
-        error: error instanceof Error ? error.message : String(error),
-        errorType: 'network_error'
+        networkError: error instanceof Error ? error.message : String(error),
+        status: 0,
       });
     }
   }
 
-  // Анализируем результаты
-  const accessibleEndpoints = results.filter(r => r.accessible);
-  const cdrEndpoints = results.filter(r => 
-    r.endpoint.includes('cdr') || 
-    r.endpoint.includes('call') || 
-    r.endpoint.includes('record')
-  );
-  const accessibleCdrEndpoints = cdrEndpoints.filter(r => r.accessible);
-  
-  const authErrors = results.filter(r => r.errorType === 'authentication' || r.errorType === 'authorization');
-  const notFoundErrors = results.filter(r => r.errorType === 'not_found');
+  // Анализируем результаты и создаем рекомендации
+  const recommendations: any[] = [];
+  const accessibleCdrEndpoints = results.filter(r => r.accessible && DIAGNOSTIC_ENDPOINTS.find(ep => ep.path === r.endpoint)?.category === 'cdr');
 
-  const analysis = {
-    totalEndpoints: results.length,
-    accessibleEndpoints: accessibleEndpoints.length,
-    cdrEndpointsTotal: cdrEndpoints.length,
-    cdrEndpointsAccessible: accessibleCdrEndpoints.length,
-    authenticationIssues: authErrors.length,
-    notFoundIssues: notFoundErrors.length,
-    recommendations: []
-  };
-
-  // Генерируем рекомендации
-  if (authErrors.length > 0) {
-    analysis.recommendations.push({
-      type: 'access_rights',
-      message: 'Обнаружены проблемы с правами доступа. Проверьте уровень доступа приложения в настройках Telphin.',
-      action: 'Измените уровень доступа с "Call API" на "All" в настройках приложения.'
-    });
-  }
-
-  if (accessibleCdrEndpoints.length === 0) {
-    analysis.recommendations.push({
-      type: 'cdr_access',
-      message: 'Нет доступа ни к одному endpoint\'у для получения данных о звонках.',
-      action: 'Используйте интерактивный обозреватель API для поиска правильных endpoint\'ов.'
-    });
-  } else {
-    analysis.recommendations.push({
+  if (accessibleCdrEndpoints.length > 0) {
+    recommendations.push({
       type: 'success',
-      message: `Найдено ${accessibleCdrEndpoints.length} доступных endpoint(ов) для работы с данными о звонках.`,
-      accessibleEndpoints: accessibleCdrEndpoints.map(e => ({
-        endpoint: e.endpoint,
-        method: e.method,
-        description: e.description
-      }))
+      message: `Найдено ${accessibleCdrEndpoints.length} рабочих CDR endpoint'ов!`,
+      accessibleEndpoints: accessibleCdrEndpoints.map(r => ({
+        endpoint: r.endpoint,
+        method: r.method,
+        description: r.description,
+      })),
     });
   }
 
-  if (notFoundErrors.length > results.length * 0.8) {
-    analysis.recommendations.push({
-      type: 'api_version',
-      message: 'Большинство endpoint\'ов возвращают 404. Возможно, используется неправильная версия API.',
-      action: 'Проверьте документацию API и используйте интерактивный обозреватель для определения правильных путей.'
+  if (cdrEndpointsAccessible === 0) {
+    const missingClientId = results.filter(r => r.errorType === 'missing_client_id').length;
+    if (missingClientId > 0) {
+      recommendations.push({
+        type: 'missing_client_id',
+        message: 'Для доступа к CDR endpoint\'ам требуется client_id из информации о пользователе.',
+        action: 'Убедитесь, что получена информация о пользователе через getUserInfo().',
+      });
+    } else {
+      recommendations.push({
+        type: 'access_rights',
+        message: 'CDR endpoint\'ы недоступны. Проверьте права доступа приложения.',
+        action: 'Убедитесь, что уровень доступа приложения установлен на "All" вместо "Call API".',
+      });
+    }
+  }
+
+  if (accessibleEndpoints === 0) {
+    recommendations.push({
+      type: 'critical',
+      message: 'Ни один endpoint не доступен. Проверьте токен авторизации.',
+      action: 'Пересоздайте токен доступа или проверьте настройки приложения.',
     });
   }
 
-  return new Response(JSON.stringify({
-    success: true,
-    timestamp: new Date().toISOString(),
-    apiHost: API_HOST,
-    explorerUrl: `https://${API_HOST}/api/ver1.0/client_api_explorer/`,
-    analysis,
-    detailedResults: results,
-    nextSteps: [
-      'Используйте интерактивный обозреватель API для тестирования endpoint\'ов',
-      'Проверьте права доступа приложения в настройках Telphin',
-      'Если проблемы продолжаются, обратитесь в службу поддержки Telphin'
-    ]
-  }), {
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-  });
+  return new Response(
+    JSON.stringify({
+      success: true,
+      analysis: {
+        totalEndpoints: DIAGNOSTIC_ENDPOINTS.length,
+        accessibleEndpoints,
+        cdrEndpointsTotal,
+        cdrEndpointsAccessible,
+        recommendations,
+      },
+      detailedResults: results,
+      explorerUrl: `https://${API_HOST}/api/ver1.0/client_api_explorer/`,
+      nextSteps: [
+        'Используйте доступные endpoint\'ы для получения данных',
+        'Проверьте права доступа приложения в настройках Телфин',
+        'При необходимости обратитесь в поддержку Телфин',
+        'Используйте интерактивный API Explorer для дополнительного тестирования',
+      ],
+    }),
+    {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    }
+  );
 }

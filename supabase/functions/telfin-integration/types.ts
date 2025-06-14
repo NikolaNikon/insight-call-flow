@@ -10,6 +10,7 @@ export interface TelfinRequest {
   telfinCall?: any;
   dateFrom?: string;
   dateTo?: string;
+  telfinClientId?: string; // Добавляем client_id из userInfo
 }
 
 export interface TelfinStorageUrlResponse {

@@ -126,7 +126,7 @@ export class TelfinClientCredentialsAPI {
   /**
    * Получение истории звонков через Edge Function
    */
-  async getCallHistory(dateFrom: string, dateTo: string): Promise<any[]> {
+  async getCallHistory(dateFrom: string, dateTo: string, clientInfo?: TelfinClientInfo): Promise<any[]> {
     await this.ensureValidToken();
     
     try {
@@ -136,6 +136,7 @@ export class TelfinClientCredentialsAPI {
           accessToken: this.accessToken,
           dateFrom,
           dateTo,
+          telfinClientId: clientInfo?.client_id, // Передаем client_id
         },
       });
 
@@ -143,6 +144,13 @@ export class TelfinClientCredentialsAPI {
       if (!data.success) throw new Error(data.error);
 
       const responseData = data.data;
+      // Поддерживаем разные структуры ответа
+      if (responseData.results && Array.isArray(responseData.results)) {
+        return responseData.results;
+      }
+      if (responseData.data && Array.isArray(responseData.data)) {
+        return responseData.data;
+      }
       return responseData.records || responseData || [];
     } catch (error: any) {
       console.error('Error getting call history:', error);

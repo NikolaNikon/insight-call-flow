@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,6 +6,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { ChevronDown, ChevronRight, TestTube, ExternalLink, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { TelfinClientInfo } from '@/services/telfinOAuthApi';
 
 interface ApiDiagnosticResult {
   endpoint: string;
@@ -48,9 +48,10 @@ interface DiagnosticData {
 
 interface TelfinApiDiagnosticsProps {
   accessToken: string | null;
+  userInfo?: TelfinClientInfo | null;
 }
 
-export const TelfinApiDiagnostics: React.FC<TelfinApiDiagnosticsProps> = ({ accessToken }) => {
+export const TelfinApiDiagnostics: React.FC<TelfinApiDiagnosticsProps> = ({ accessToken, userInfo }) => {
   const [isRunning, setIsRunning] = useState(false);
   const [diagnosticData, setDiagnosticData] = useState<DiagnosticData | null>(null);
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
@@ -72,6 +73,7 @@ export const TelfinApiDiagnostics: React.FC<TelfinApiDiagnosticsProps> = ({ acce
         body: {
           action: 'diagnose_api_access',
           accessToken: accessToken,
+          telfinClientId: userInfo?.client_id,
         },
       });
 
@@ -154,6 +156,11 @@ export const TelfinApiDiagnostics: React.FC<TelfinApiDiagnosticsProps> = ({ acce
           <TestTube className="h-5 w-5" />
           Диагностика API доступа
         </CardTitle>
+        {userInfo && (
+          <p className="text-sm text-gray-600">
+            Client ID: <code className="bg-gray-100 px-1 rounded">{userInfo.client_id}</code>
+          </p>
+        )}
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex gap-2">
@@ -175,6 +182,15 @@ export const TelfinApiDiagnostics: React.FC<TelfinApiDiagnosticsProps> = ({ acce
             </Button>
           )}
         </div>
+
+        {!userInfo && (
+          <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <p className="text-sm text-yellow-800">
+              ⚠️ Для полной диагностики CDR endpoint'ов необходима информация о клиенте. 
+              Сначала подключитесь к API.
+            </p>
+          </div>
+        )}
 
         {diagnosticData && (
           <div className="space-y-4">
