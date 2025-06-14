@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -81,19 +80,6 @@ export const ImprovedTelegramIntegration = () => {
 
   return (
     <div className="space-y-6">
-      {/* Organization Context */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <div className="flex items-center gap-2 mb-2">
-          <Bot className="h-4 w-4 text-blue-600" />
-          <span className="text-sm font-medium text-blue-800">
-            Подключение для организации: {organization.name}
-          </span>
-        </div>
-        <p className="text-xs text-blue-600">
-          Все уведомления будут отправляться через основного бота CallControl
-        </p>
-      </div>
-
       {/* Connection Status */}
       <TelegramConnectionStatus
         isConnected={isConnected}
