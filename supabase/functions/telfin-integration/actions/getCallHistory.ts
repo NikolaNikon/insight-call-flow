@@ -15,19 +15,32 @@ export async function handleGetCallHistory(body: TelfinRequest): Promise<Respons
     limit: '1000'
   });
   const url = `https://${API_HOST}/api/ver1.0/client/cdr/?${params.toString()}`;
+  console.log('Requesting call history from Telfin URL:', url);
   
   const response = await fetch(url, {
     method: 'GET',
     headers: { 'Authorization': `Bearer ${accessToken}` }
   });
 
-  const responseData = await response.json();
+  const responseForText = response.clone();
+
   if (!response.ok) {
-     console.error('Telfin Call History API Error:', response.status, responseData);
-     throw new Error(`HTTP error! Status: ${response.status}`);
+     const errorText = await responseForText.text();
+     console.error(`Telfin Call History API returned non-OK status: ${response.status}`);
+     console.error('Telfin Call History API Error Response:', errorText);
+     throw new Error(`HTTP error! Status: ${response.status}. Response: ${errorText.substring(0, 500)}`);
   }
   
-  return new Response(JSON.stringify({ success: true, data: responseData }), {
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-  });
+  try {
+    const responseData = await response.json();
+    return new Response(JSON.stringify({ success: true, data: responseData }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  } catch (jsonError) {
+    const errorText = await responseForText.text();
+    console.error('Failed to parse JSON from Telfin Call History API.');
+    console.error('Response Text:', errorText);
+    throw new Error(`Failed to parse JSON. Telfin API returned: ${errorText.substring(0, 500)}`);
+  }
 }
+
