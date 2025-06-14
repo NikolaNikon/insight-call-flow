@@ -1,4 +1,3 @@
-
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { TelegramUser } from './types.ts';
 import { greetingsByRole, getRoleDisplayName, getFriendlyName } from './greetings.ts';
@@ -43,7 +42,6 @@ export const handleStartCommand = async (
         .from('telegram_links')
         .select('user_id')
         .eq('chat_id', chatId)
-        .eq('active', true)
         .maybeSingle();
 
       if (existingLink && existingLink.user_id !== session.user_id) {
@@ -56,20 +54,22 @@ export const handleStartCommand = async (
         .update({ active: false })
         .eq('user_id', session.user_id);
 
-      // 4. Создаем новую связь с org_id
+      // 4. Создаем или обновляем связь с org_id
       const { error: newLinkError } = await supabaseClient
         .from('telegram_links')
-        .insert({
+        .upsert({
           user_id: session.user_id,
           org_id: session.org_id,
           chat_id: chatId,
           telegram_username: user.username,
           first_name: user.first_name,
           active: true,
+        }, {
+          onConflict: 'chat_id'
         });
       
       if (newLinkError) {
-        console.error('Error creating telegram link:', newLinkError);
+        console.error('Error creating/updating telegram link:', newLinkError);
         return "❌ Ошибка при подключении. Попробуйте еще раз или обратитесь к администратору.";
       }
 
