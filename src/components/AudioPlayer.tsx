@@ -2,18 +2,15 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { Play, Pause, SkipBack, SkipForward, Volume2, Download, ExternalLink } from "lucide-react";
+import { Play, Pause, SkipBack, SkipForward, Volume2, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useTelfinIntegration } from "@/hooks/useTelfinIntegration";
 
 interface AudioPlayerProps {
   audioFileUrl: string;
   callId?: string;
-  telfinClientId?: string;
-  telfinRecordUuid?: string;
 }
 
-export const AudioPlayer = ({ audioFileUrl, callId, telfinClientId, telfinRecordUuid }: AudioPlayerProps) => {
+export const AudioPlayer = ({ audioFileUrl, callId }: AudioPlayerProps) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -22,7 +19,6 @@ export const AudioPlayer = ({ audioFileUrl, callId, telfinClientId, telfinRecord
   const [currentAudioUrl, setCurrentAudioUrl] = useState(audioFileUrl);
   const audioRef = useRef<HTMLAudioElement>(null);
   const { toast } = useToast();
-  const { getAudioUrl, downloadAudio } = useTelfinIntegration();
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -135,27 +131,6 @@ export const AudioPlayer = ({ audioFileUrl, callId, telfinClientId, telfinRecord
     }
   };
 
-  const loadFromTelfin = async () => {
-    if (!telfinClientId || !telfinRecordUuid) {
-      toast({
-        title: "Ошибка",
-        description: "Не указаны данные для загрузки из Телфин",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      const telfinUrl = await getAudioUrl(telfinClientId, telfinRecordUuid);
-      if (telfinUrl) {
-        setCurrentAudioUrl(telfinUrl);
-        setIsLoading(true);
-      }
-    } catch (error) {
-      console.error('Error loading from Telfin:', error);
-    }
-  };
-
   const formatTime = (time: number) => {
     if (isNaN(time)) return "0:00";
     const minutes = Math.floor(time / 60);
@@ -184,12 +159,6 @@ export const AudioPlayer = ({ audioFileUrl, callId, telfinClientId, telfinRecord
         <Button size="sm" variant="outline" onClick={downloadAudioFile}>
           <Download className="h-4 w-4" />
         </Button>
-
-        {(telfinClientId && telfinRecordUuid) && (
-          <Button size="sm" variant="outline" onClick={loadFromTelfin} title="Загрузить из Телфин">
-            <ExternalLink className="h-4 w-4" />
-          </Button>
-        )}
       </div>
 
       {/* Таймлайн */}
