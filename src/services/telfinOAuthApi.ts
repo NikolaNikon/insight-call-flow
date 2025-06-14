@@ -43,7 +43,7 @@ export class TelfinClientCredentialsAPI {
    * Получение токена доступа по client_credentials
    */
   async getAccessToken(): Promise<TelfinTokenResponse> {
-    const url = `https://${OAUTH_HOST}/api/ver1.0/oauth/token`;
+    const url = `https://${OAUTH_HOST}/oauth/token`;
     
     const body = new URLSearchParams({
       grant_type: 'client_credentials',
