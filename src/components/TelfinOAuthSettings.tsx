@@ -1,7 +1,9 @@
+
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TelfinConfigForm } from './telfin/TelfinConfigForm';
 import { TelfinStatusDisplay } from './telfin/TelfinStatusDisplay';
+import { TelfinCallsList } from './telfin/TelfinCallsList';
 import { useTelfin } from '@/hooks/useTelfin';
 import { useOrganization } from '@/hooks/useOrganization';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -27,9 +29,10 @@ export const TelfinOAuthSettings = () => {
   return (
     <>
       <Tabs defaultValue="config" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="config">Настройки</TabsTrigger>
           <TabsTrigger value="status">Статус</TabsTrigger>
+          <TabsTrigger value="calls">Звонки</TabsTrigger>
         </TabsList>
         
         <TabsContent value="config">
@@ -53,11 +56,18 @@ export const TelfinOAuthSettings = () => {
             isAdmin={isAdmin}
           />
         </TabsContent>
+
+        <TabsContent value="calls">
+          <TelfinCallsList />
+        </TabsContent>
       </Tabs>
 
       <div className="text-sm text-gray-600 bg-blue-50 p-3 rounded-lg mt-4">
         <strong>Схема Client Credentials:</strong> Для интеграции необходимо создать приложение 
         типа "trusted" в личном кабинете Телфин и указать полученные Application ID и Secret.
+        <br /><br />
+        <strong>Важно:</strong> Для доступа к данным о звонках (CDR) убедитесь, что уровень доступа 
+        приложения установлен на "All" вместо "Call API". Используйте диагностику API для проверки доступности endpoint'ов.
       </div>
     </>
   );

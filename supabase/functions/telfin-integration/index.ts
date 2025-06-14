@@ -10,6 +10,7 @@ import { handleGetAudioUrl } from './actions/getAudioUrl.ts';
 import { handleDownloadAudioWithOauth } from './actions/downloadAudio.ts';
 import { handleSaveCallHistory } from './actions/saveCallHistory.ts';
 import { handleProcessCallRecord } from './actions/processCallRecord.ts';
+import { handleDiagnoseApiAccess } from './actions/diagnoseApiAccess.ts';
 
 const actionHandlers: { [key: string]: (body: TelfinRequest) => Promise<Response> } = {
   'get_access_token': handleGetAccessToken,
@@ -19,6 +20,7 @@ const actionHandlers: { [key: string]: (body: TelfinRequest) => Promise<Response
   'download_audio_with_oauth': handleDownloadAudioWithOauth,
   'save_call_history': handleSaveCallHistory,
   'process_call_record_and_create_call': handleProcessCallRecord,
+  'diagnose_api_access': handleDiagnoseApiAccess,
 };
 
 serve(async (req) => {

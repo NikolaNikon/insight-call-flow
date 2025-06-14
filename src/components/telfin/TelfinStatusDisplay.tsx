@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { TestTube, Plug, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
 import { TelfinClientInfo } from '@/services/telfinOAuthApi';
+import { TelfinApiDiagnostics } from './TelfinApiDiagnostics';
 
 interface TelfinStatusDisplayProps {
   isAuthorized: boolean;
@@ -79,6 +80,7 @@ export const TelfinStatusDisplay: React.FC<TelfinStatusDisplayProps> = ({
           </>
         )}
       </div>
+      
       {!isAdmin && isAuthorized && (
         <p className="text-xs text-gray-500 mt-2">
           Управление интеграцией и синхронизация доступны только администраторам.
@@ -88,6 +90,11 @@ export const TelfinStatusDisplay: React.FC<TelfinStatusDisplayProps> = ({
         <p className="text-xs text-gray-500 mt-2">
           Интеграция не настроена. Обратитесь к администратору для подключения.
         </p>
+      )}
+
+      {/* Добавляем компонент диагностики */}
+      {isAuthorized && (
+        <TelfinApiDiagnostics accessToken={userInfo ? 'token-available' : null} />
       )}
     </div>
   );

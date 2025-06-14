@@ -2,60 +2,187 @@
 import { API_HOST, corsHeaders } from '../utils.ts';
 import { TelfinRequest } from '../types.ts';
 
-const ENDPOINTS: string[] = [
+// Новые endpoint'ы основанные на документации RingMe API
+const CDR_ENDPOINTS: string[] = [
+  '/api/ver1.0/cdr/search',
+  '/api/ver1.0/calls/search',
+  '/api/ver1.0/calls/list',
+  '/api/ver1.0/records',
+  '/api/ver1.0/call_records',
+];
+
+// Fallback endpoint'ы (старые)
+const FALLBACK_ENDPOINTS: string[] = [
   '/api/ver1.0/user/cdr/',
   '/api/ver1.0/client/cdr/',
   '/api/ver1.0/cdr/',
   '/api/ver1.0/calls/',
 ];
 
+interface CallHistoryParams {
+  date_from?: string;
+  date_to?: string;
+  date_start?: string;
+  date_end?: string;
+  start_date?: string;
+  end_date?: string;
+  from_date?: string;
+  to_date?: string;
+  limit?: number;
+  offset?: number;
+}
+
 export async function handleGetCallHistory(body: TelfinRequest): Promise<Response> {
   console.log('Executing action: get_call_history');
   const { accessToken, dateFrom, dateTo } = body;
+  
   if (!accessToken || !dateFrom || !dateTo) {
     throw new Error('accessToken, dateFrom, and dateTo are required for get_call_history');
   }
 
-  // Попробуем разные варианты параметров
-  const paramVariants = [
-    // Вариант 1: Оригинальные параметры
-    new URLSearchParams({
-      date_start: dateFrom,
-      date_end: dateTo,
-      limit: '1000'
-    }),
-    // Вариант 2: Параметры без подчеркивания
-    new URLSearchParams({
-      datestart: dateFrom,
-      dateend: dateTo,
-      limit: '1000'
-    }),
-    // Вариант 3: Другие названия
-    new URLSearchParams({
-      from: dateFrom,
-      to: dateTo,
-      limit: '1000'
-    }),
-    // Вариант 4: Только дата без лимита
-    new URLSearchParams({
-      date_start: dateFrom,
-      date_end: dateTo
-    })
+  // Различные варианты параметров для разных API версий
+  const paramVariants: CallHistoryParams[] = [
+    // Вариант 1: Стандартные параметры
+    { date_from: dateFrom, date_to: dateTo, limit: 1000 },
+    // Вариант 2: Альтернативные названия
+    { date_start: dateFrom, date_end: dateTo, limit: 1000 },
+    // Вариант 3: Другие варианты названий
+    { start_date: dateFrom, end_date: dateTo, limit: 1000 },
+    // Вариант 4: Еще один формат
+    { from_date: dateFrom, to_date: dateTo, limit: 1000 },
+    // Вариант 5: Без лимита
+    { date_from: dateFrom, date_to: dateTo },
   ];
 
   let lastError: string = '';
-  
-  for (const path of ENDPOINTS) {
+  let diagnosticInfo: any[] = [];
+
+  // Сначала пробуем новые endpoint'ы с JSON в теле запроса (POST)
+  for (const path of CDR_ENDPOINTS) {
     for (let paramIndex = 0; paramIndex < paramVariants.length; paramIndex++) {
       const params = paramVariants[paramIndex];
-      const url = `https://${API_HOST}${path}?${params.toString()}`;
+      const url = `https://${API_HOST}${path}`;
+      
       const headers: Record<string, string> = {
         'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
         'User-Agent': 'CallControl/1.0.0',
       };
 
-      console.log(`[TelfinCallHistory] Trying endpoint: ${url} (param variant ${paramIndex + 1})`);
-      console.log(`[TelfinCallHistory] Request Headers:`, JSON.stringify(headers));
+      console.log(`[TelfinCallHistory] Trying POST endpoint: ${url} (param variant ${paramIndex + 1})`);
+      console.log(`[TelfinCallHistory] Request Body:`, JSON.stringify(params));
+
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(params),
+        });
+
+        const responseForText = response.clone();
+        const diagnosticEntry = {
+          endpoint: path,
+          method: 'POST',
+          status: response.status,
+          paramVariant: paramIndex + 1,
+          params: params,
+        };
+
+        console.log(`[TelfinCallHistory] POST API Response Status: ${response.status} for endpoint: ${path} (variant ${paramIndex + 1})`);
+
+        if (!response.ok) {
+          const errorText = await responseForText.text();
+          console.error(`[TelfinCallHistory] POST API returned non-OK status for endpoint ${path} (variant ${paramIndex + 1}): ${response.status}`);
+          console.error('[TelfinCallHistory] Error Response:', errorText);
+          
+          diagnosticEntry.error = errorText.substring(0, 300);
+          diagnosticInfo.push(diagnosticEntry);
+          
+          lastError = `POST ${path} (variant ${paramIndex + 1}): HTTP ${response.status}. ${errorText.substring(0, 300)}`;
+          
+          // Если это 401 или 403, проблема с авторизацией
+          if (response.status === 401 || response.status === 403) {
+            diagnosticEntry.authIssue = true;
+          }
+          
+          // Если это 404, endpoint не найден
+          if (response.status === 404 && paramIndex < paramVariants.length - 1) {
+            continue; // Попробовать следующий вариант параметров
+          }
+          
+          break; // Переходим к следующему endpoint
+        }
+
+        try {
+          const responseData = await response.json();
+          console.log(`[TelfinCallHistory] Successfully parsed JSON from POST endpoint: ${path} (variant ${paramIndex + 1})`);
+
+          diagnosticEntry.success = true;
+          diagnosticEntry.dataStructure = Object.keys(responseData);
+          diagnosticInfo.push(diagnosticEntry);
+
+          // Успех!
+          return new Response(JSON.stringify({ 
+            success: true, 
+            method: 'POST',
+            endpoint: path, 
+            paramVariant: paramIndex + 1,
+            data: responseData,
+            diagnostics: diagnosticInfo,
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        } catch (jsonError) {
+          const errorText = await responseForText.text();
+          console.error(`[TelfinCallHistory] Failed to parse JSON from POST endpoint: ${path} (variant ${paramIndex + 1})`);
+          console.error('Response Text:', errorText);
+          
+          diagnosticEntry.jsonError = errorText.substring(0, 300);
+          diagnosticInfo.push(diagnosticEntry);
+          
+          lastError = `POST ${path} (variant ${paramIndex + 1}): JSON parse error. ${errorText.substring(0, 300)}`;
+          break;
+        }
+      } catch (err) {
+        const errorMessage = `POST ${path} (variant ${paramIndex + 1}): Network error. ${err instanceof Error ? err.message : String(err)}`;
+        console.error(`[TelfinCallHistory] ${errorMessage}`);
+        
+        diagnosticInfo.push({
+          endpoint: path,
+          method: 'POST',
+          paramVariant: paramIndex + 1,
+          networkError: errorMessage,
+        });
+        
+        lastError = errorMessage;
+        break;
+      }
+    }
+  }
+
+  // Если POST не сработал, пробуем старые GET endpoint'ы
+  console.log('[TelfinCallHistory] POST methods failed, trying GET fallback endpoints...');
+  
+  for (const path of FALLBACK_ENDPOINTS) {
+    for (let paramIndex = 0; paramIndex < paramVariants.length; paramIndex++) {
+      const params = paramVariants[paramIndex];
+      const urlParams = new URLSearchParams();
+      
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined) {
+          urlParams.append(key, String(value));
+        }
+      });
+      
+      const url = `https://${API_HOST}${path}?${urlParams.toString()}`;
+      const headers: Record<string, string> = {
+        'Authorization': `Bearer ${accessToken}`,
+        'Accept': 'application/json',
+        'User-Agent': 'CallControl/1.0.0',
+      };
+
+      console.log(`[TelfinCallHistory] Trying GET fallback endpoint: ${url} (param variant ${paramIndex + 1})`);
 
       try {
         const response = await fetch(url, {
@@ -64,61 +191,119 @@ export async function handleGetCallHistory(body: TelfinRequest): Promise<Respons
         });
 
         const responseForText = response.clone();
+        const diagnosticEntry = {
+          endpoint: path,
+          method: 'GET',
+          status: response.status,
+          paramVariant: paramIndex + 1,
+          params: params,
+        };
 
-        console.log(`[TelfinCallHistory] API Response Status: ${response.status} for endpoint: ${path} (variant ${paramIndex + 1})`);
+        console.log(`[TelfinCallHistory] GET API Response Status: ${response.status} for endpoint: ${path} (variant ${paramIndex + 1})`);
 
         if (!response.ok) {
           const errorText = await responseForText.text();
-          console.error(`[TelfinCallHistory] API returned non-OK status for endpoint ${path} (variant ${paramIndex + 1}): ${response.status}`);
+          console.error(`[TelfinCallHistory] GET API returned non-OK status for endpoint ${path} (variant ${paramIndex + 1}): ${response.status}`);
           console.error('[TelfinCallHistory] Error Response:', errorText);
-          lastError = `Attempted endpoint: ${path} with params variant ${paramIndex + 1}. HTTP error! Status: ${response.status}. Response: ${errorText.substring(0, 600)}`;
           
-          // Если это 401 или 403, то проблема с авторизацией - попробуем другой endpoint
-          // Если это 404, попробуем другие параметры для того же endpoint
+          diagnosticEntry.error = errorText.substring(0, 300);
+          diagnosticInfo.push(diagnosticEntry);
+          
+          lastError = `GET ${path} (variant ${paramIndex + 1}): HTTP ${response.status}. ${errorText.substring(0, 300)}`;
+          
           if (response.status === 404 && paramIndex < paramVariants.length - 1) {
-            continue; // Попробовать следующий вариант параметров для того же endpoint
+            continue;
           }
           
-          break; // Переходим к следующему endpoint
+          break;
         }
 
         try {
           const responseData = await response.json();
-          console.log(`[TelfinCallHistory] Successfully parsed JSON from endpoint: ${path} (variant ${paramIndex + 1})`);
+          console.log(`[TelfinCallHistory] Successfully parsed JSON from GET endpoint: ${path} (variant ${paramIndex + 1})`);
 
-          // success!
+          diagnosticEntry.success = true;
+          diagnosticEntry.dataStructure = Object.keys(responseData);
+          diagnosticInfo.push(diagnosticEntry);
+
+          // Успех!
           return new Response(JSON.stringify({ 
             success: true, 
+            method: 'GET',
             endpoint: path, 
             paramVariant: paramIndex + 1,
-            data: responseData 
+            data: responseData,
+            diagnostics: diagnosticInfo,
           }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           });
         } catch (jsonError) {
           const errorText = await responseForText.text();
-          console.error(`[TelfinCallHistory] Failed to parse JSON from endpoint: ${path} (variant ${paramIndex + 1})`);
+          console.error(`[TelfinCallHistory] Failed to parse JSON from GET endpoint: ${path} (variant ${paramIndex + 1})`);
           console.error('Response Text:', errorText);
-          lastError = `Attempted endpoint: ${path} with params variant ${paramIndex + 1}. Failed to parse JSON. Response: ${errorText.substring(0, 600)}`;
-          break; // Переходим к следующему endpoint
+          
+          diagnosticEntry.jsonError = errorText.substring(0, 300);
+          diagnosticInfo.push(diagnosticEntry);
+          
+          lastError = `GET ${path} (variant ${paramIndex + 1}): JSON parse error. ${errorText.substring(0, 300)}`;
+          break;
         }
       } catch (err) {
-        // Network or fetch error
-        lastError = `[TelfinCallHistory] Network/fetch error on endpoint: ${path} (variant ${paramIndex + 1}). ${err instanceof Error ? err.message : String(err)}`;
-        console.error(lastError);
-        break; // Переходим к следующему endpoint
+        const errorMessage = `GET ${path} (variant ${paramIndex + 1}): Network error. ${err instanceof Error ? err.message : String(err)}`;
+        console.error(`[TelfinCallHistory] ${errorMessage}`);
+        
+        diagnosticInfo.push({
+          endpoint: path,
+          method: 'GET',
+          paramVariant: paramIndex + 1,
+          networkError: errorMessage,
+        });
+        
+        lastError = errorMessage;
+        break;
       }
     }
   }
 
-  // Если не удалось получить ни по одному из endpoint-ов, возвращаем подробную ошибку
+  // Анализируем диагностическую информацию для лучшего сообщения об ошибке
+  const authIssues = diagnosticInfo.filter(d => d.authIssue || d.status === 401 || d.status === 403);
+  const notFoundIssues = diagnosticInfo.filter(d => d.status === 404);
+  
+  let recommendedAction = '';
+  if (authIssues.length > 0) {
+    recommendedAction = 'Проверьте права доступа приложения. Возможно, требуется уровень доступа "All" вместо "Call API".';
+  } else if (notFoundIssues.length === diagnosticInfo.length) {
+    recommendedAction = 'Все endpoint\'ы возвращают 404. Используйте интерактивный обозреватель API для поиска правильных endpoint\'ов.';
+  } else {
+    recommendedAction = 'Проверьте настройки приложения и используйте интерактивный обозреватель API для тестирования.';
+  }
+
+  // Возвращаем подробную диагностическую информацию
   return new Response(
     JSON.stringify({
       success: false,
-      tried_endpoints: ENDPOINTS,
-      tried_param_variants: paramVariants.length,
-      error: lastError || 'Не удалось получить историю звонков ни по одному из возможных endpoint.',
+      error: lastError || 'Не удалось получить историю звонков ни по одному из endpoint\'ов.',
+      diagnostics: {
+        totalEndpointsTried: CDR_ENDPOINTS.length + FALLBACK_ENDPOINTS.length,
+        totalParamVariantsTried: paramVariants.length,
+        detailedResults: diagnosticInfo,
+        recommendedAction,
+        apiExplorerUrl: `https://${API_HOST}/api/ver1.0/client_api_explorer/`,
+        supportInfo: {
+          authIssuesFound: authIssues.length,
+          notFoundIssuesFound: notFoundIssues.length,
+          possibleCauses: [
+            'Недостаточные права доступа приложения',
+            'Неправильные endpoint\'ы API',
+            'Неверный формат параметров',
+            'Проблемы с токеном авторизации'
+          ]
+        }
+      },
     }),
-    { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+    { 
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }, 
+      status: 500 
+    }
   );
 }
