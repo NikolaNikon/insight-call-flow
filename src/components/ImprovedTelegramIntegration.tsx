@@ -47,6 +47,9 @@ export const ImprovedTelegramIntegration = () => {
     if (result && result.success) {
       setCurrentSessionCode(result.session_code || null);
       setSessionData(result);
+      if (result.telegram_url) {
+        window.open(result.telegram_url, '_blank');
+      }
     }
   };
 
