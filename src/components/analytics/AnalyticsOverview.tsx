@@ -53,8 +53,8 @@ export const AnalyticsOverview = ({ onCreateReport }: AnalyticsOverviewProps) =>
         <Card className="bg-white border-0 shadow-sm">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <div className="p-3 rounded-lg bg-blue-100">
-                <BarChart3 className="h-6 w-6 text-blue-600" />
+              <div className="p-3 rounded-lg bg-theme-blue-bg">
+                <BarChart3 className="h-6 w-6 text-theme-blue-text" />
               </div>
               <Badge variant="default" className="text-xs">+12%</Badge>
             </div>
@@ -68,8 +68,8 @@ export const AnalyticsOverview = ({ onCreateReport }: AnalyticsOverviewProps) =>
         <Card className="bg-white border-0 shadow-sm">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <div className="p-3 rounded-lg bg-green-100">
-                <ThumbsUp className="h-6 w-6 text-green-600" />
+              <div className="p-3 rounded-lg bg-theme-green-bg">
+                <ThumbsUp className="h-6 w-6 text-theme-green-text" />
               </div>
               <Badge variant="default" className="text-xs">+5%</Badge>
             </div>
@@ -83,8 +83,8 @@ export const AnalyticsOverview = ({ onCreateReport }: AnalyticsOverviewProps) =>
         <Card className="bg-white border-0 shadow-sm">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <div className="p-3 rounded-lg bg-orange-100">
-                <Users className="h-6 w-6 text-orange-600" />
+              <div className="p-3 rounded-lg bg-theme-orange-bg">
+                <Users className="h-6 w-6 text-theme-orange-text" />
               </div>
               <Badge variant="default" className="text-xs">+2</Badge>
             </div>
@@ -98,8 +98,8 @@ export const AnalyticsOverview = ({ onCreateReport }: AnalyticsOverviewProps) =>
         <Card className="bg-white border-0 shadow-sm">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <div className="p-3 rounded-lg bg-purple-100">
-                <MessageSquare className="h-6 w-6 text-purple-600" />
+              <div className="p-3 rounded-lg bg-theme-purple-bg">
+                <MessageSquare className="h-6 w-6 text-theme-purple-text" />
               </div>
               <Badge variant="outline" className="text-xs">6.2 мин</Badge>
             </div>
@@ -125,16 +125,16 @@ export const AnalyticsOverview = ({ onCreateReport }: AnalyticsOverviewProps) =>
                   <YAxis stroke="#6b7280" fontSize={12} />
                   <Tooltip 
                     contentStyle={{
-                      backgroundColor: 'white',
-                      border: '1px solid #e5e7eb',
+                      backgroundColor: 'hsl(var(--card))',
+                      borderColor: 'hsl(var(--border))',
                       borderRadius: '8px'
                     }}
                   />
                   <Area 
                     type="monotone" 
                     dataKey="calls" 
-                    stroke="#3b82f6" 
-                    fill="#3b82f6" 
+                    stroke="hsl(var(--text-color-blue))" 
+                    fill="hsl(var(--text-color-blue))" 
                     fillOpacity={0.1}
                     name="Звонки"
                   />
@@ -156,22 +156,22 @@ export const AnalyticsOverview = ({ onCreateReport }: AnalyticsOverviewProps) =>
                   <YAxis stroke="#6b7280" fontSize={12} />
                   <Tooltip 
                     contentStyle={{
-                      backgroundColor: 'white',
-                      border: '1px solid #e5e7eb',
+                      backgroundColor: 'hsl(var(--card))',
+                      borderColor: 'hsl(var(--border))',
                       borderRadius: '8px'
                     }}
                   />
                   <Line 
                     type="monotone" 
                     dataKey="calls" 
-                    stroke="#3b82f6" 
+                    stroke="hsl(var(--text-color-blue))" 
                     strokeWidth={2}
                     name="Звонки"
                   />
                   <Line 
                     type="monotone" 
                     dataKey="satisfaction" 
-                    stroke="#10b981" 
+                    stroke="hsl(var(--text-color-green))" 
                     strokeWidth={2}
                     name="Удовлетворенность %"
                   />
@@ -183,18 +183,18 @@ export const AnalyticsOverview = ({ onCreateReport }: AnalyticsOverviewProps) =>
       </div>
 
       {/* CTA for Report Creation */}
-      <Card className="bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200">
+      <Card className="bg-theme-blue-bg border-transparent">
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-lg font-semibold text-blue-900 mb-2">
+              <h3 className="text-lg font-semibold text-theme-blue-text mb-2">
                 Создать отчёт на основе этих данных
               </h3>
-              <p className="text-blue-700">
+              <p className="text-theme-blue-text/80">
                 Экспортируйте текущую аналитику в удобном формате для презентации или архива
               </p>
             </div>
-            <Button onClick={onCreateReport} className="gap-2 bg-blue-600 hover:bg-blue-700">
+            <Button onClick={onCreateReport}>
               <FileText className="h-4 w-4" />
               Создать отчёт
               <ArrowRight className="h-4 w-4" />
