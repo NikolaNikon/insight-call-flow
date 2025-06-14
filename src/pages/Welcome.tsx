@@ -10,11 +10,12 @@ import { OnboardingProgress } from '@/components/onboarding/OnboardingProgress';
 
 // Hooks must be called in the same order for every render
 const Welcome = () => {
+  // 1. Hooks — ВСЕГДА В ВЕРХУ!
   const navigate = useNavigate();
   const { isSuperAdmin, isLoading } = useUserRole();
   const { orgId, setOrgId } = useImpersonateOrg();
 
-  // ВАЖНО: всегда вызываем хуки!
+  // Все хуки до любых return!
   const {
     steps,
     currentStep,
@@ -26,17 +27,17 @@ const Welcome = () => {
     setCompletedSteps
   } = useOnboardingSteps();
 
-  // ---- НОВОЕ: если это суперадмин, сразу перебрасываем с welcome на главную (редирект) ----
+  // -- Loader при загрузке роли/организации
   if (isLoading) {
-    // Во время загрузки — просто лоадер (иначе возможен мигающий лишний контент)
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <Loader2 className="animate-spin h-8 w-8 text-blue-500" />
       </div>
     );
   }
+
+  // -- Суперадмин: мгновенный редирект на главную, скрываем welcome/onboarding
   if (isSuperAdmin) {
-    // Хардконтролируем: мгновенный редирект (без показа welcome)
     navigate("/", { replace: true });
     return null;
   }
@@ -45,25 +46,19 @@ const Welcome = () => {
   useEffect(() => {
     const autoAssignOrCreateDemoOrg = async () => {
       if (!isSuperAdmin || orgId) return;
-
-      // 1. Поиск demo-организации
       const { data: org, error } = await supabase
         .from('organizations')
         .select('id')
         .eq('subdomain', 'demo')
         .maybeSingle();
-
       if (error) {
         // eslint-disable-next-line no-console
         console.error('Ошибка поиска DEMO-организации:', error);
         return;
       }
-
       if (org && org.id) {
-        // Если нашли — выставляем
         setOrgId(org.id);
       } else {
-        // Нет — создаём новую DEMO-организацию
         const { data: created, error: createError } = await supabase
           .from('organizations')
           .insert({
@@ -79,38 +74,20 @@ const Welcome = () => {
           console.error('Ошибка создания DEMO-организации:', createError);
           return;
         }
-        if (created?.id) {
-          setOrgId(created.id);
-        }
+        if (created?.id) setOrgId(created.id);
       }
     };
     autoAssignOrCreateDemoOrg();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSuperAdmin, orgId, setOrgId]);
 
-  // --- Строго блокируем всё на этом экране для суперадмина, кроме редиректа/лоадера
   useEffect(() => {
     if (isSuperAdmin && orgId) {
       navigate("/", { replace: true });
     }
   }, [isSuperAdmin, orgId, navigate]);
 
-  // Если роль пользователя загружается — показываем лоадер
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Loader2 className="animate-spin h-8 w-8 text-blue-500" />
-      </div>
-    );
-  }
-
-  // Если определили, что пользователь — суперадмин, не показываем ничего (ждём редиректа)
-  if (isSuperAdmin) {
-    return null;
-  }
-
   // ---- Обычная онбординг-логика для обычных пользователей ----
-
   const handleNext = () => {
     if (currentStep < steps.length - 1) {
       next();
