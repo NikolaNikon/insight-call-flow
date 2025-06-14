@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -23,6 +22,7 @@ import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import { CallActions } from "@/components/CallActions";
 
 interface Call {
   id: string;
@@ -349,18 +349,12 @@ const Search = () => {
                         )}
                       </div>
 
-                      <div className="flex flex-col gap-2 ml-4">
-                        {call.audio_file_url && (
-                          <Button size="sm" variant="outline" className="gap-2">
-                            <Play className="h-3 w-3" />
-                            Аудио
-                          </Button>
-                        )}
-                        <Button size="sm" variant="outline" className="gap-2">
-                          <FileText className="h-3 w-3" />
-                          Отчет
-                        </Button>
-                      </div>
+                      <CallActions
+                        audioFileUrl={call.audio_file_url}
+                        callId={call.id}
+                        transcription={call.transcription}
+                        summary={call.summary}
+                      />
                     </div>
                   </div>
                 ))}
