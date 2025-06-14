@@ -6,6 +6,7 @@ import { useToast } from './use-toast';
 import { initTelfinAPI, TelfinClientCredentialsAPI, TelfinClientInfo } from '@/services/telfinOAuthApi';
 import { useTelfinConnection } from './useTelfinConnection';
 import { supabase } from '@/integrations/supabase/client';
+import { getPendingTelfinCalls } from '@/services/telfinService';
 
 export const useTelfin = () => {
   const { organization } = useOrganization();
@@ -179,33 +180,76 @@ export const useTelfin = () => {
 
       const callHistory = await apiInstance.getCallHistory(dateFromString, dateToString);
 
-      if (callHistory.length === 0) {
+      if (callHistory.length > 0) {
+        const { data, error } = await supabase.functions.invoke('telfin-integration', {
+          body: {
+            action: 'save_call_history',
+            calls: callHistory,
+            orgId: orgId,
+          },
+        });
+
+        if (error) throw error;
+        
+        const result = data;
+        if (!result.success) {
+          throw new Error(result.error || 'Ошибка при сохранении истории звонков.');
+        }
+        
+        queryClient.invalidateQueries({ queryKey: ['telfin_calls', orgId] });
+        toast({ title: "Синхронизация завершена", description: `Найдено и сохранено звонков: ${result.saved_count}.` });
+      } else {
         toast({ title: "Нет новых звонков", description: "За выбранный период нет звонков для синхронизации." });
-        setIsSyncing(false);
-        return;
       }
 
-      const { data, error } = await supabase.functions.invoke('telfin-integration', {
-        body: {
-          action: 'save_call_history',
-          calls: callHistory,
-          orgId: orgId,
-        },
+      // --- Process part ---
+      toast({ title: "Обработка запущена", description: "Ищем звонки для обработки..." });
+      
+      const pendingCalls = await getPendingTelfinCalls(orgId);
+
+      if (pendingCalls.length === 0) {
+        toast({ title: "Нет звонков для обработки", description: "Все доступные звонки уже обработаны." });
+        return; 
+      }
+      
+      toast({ title: "Начинаем обработку", description: `Найдено звонков для обработки: ${pendingCalls.length}` });
+      
+      let successCount = 0;
+      let errorCount = 0;
+
+      const { clientId } = localConfig;
+      const tokens = apiInstance.getTokens();
+      const accessToken = tokens.accessToken;
+
+      for (const call of pendingCalls) {
+        try {
+          const { data: processData, error: processError } = await supabase.functions.invoke('telfin-integration', {
+            body: {
+              action: 'process_call_record_and_create_call',
+              orgId,
+              telfinCall: call,
+              clientId,
+              accessToken,
+            },
+          });
+          if (processError) throw processError;
+          if (processData && !processData.success) throw new Error(processData.error || 'Неизвестная ошибка на сервере');
+          successCount++;
+        } catch (e: any) {
+          errorCount++;
+          console.error(`Ошибка обработки звонка ${call.id}: ${e.message}`);
+        }
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['telfin_calls', orgId] });
+      toast({
+        title: "Обработка завершена",
+        description: `Успешно: ${successCount}. Ошибки: ${errorCount}.`
       });
 
-      if (error) throw error;
-      
-      const result = data;
-      if (!result.success) {
-        throw new Error(result.error || 'Ошибка при сохранении истории звонков.');
-      }
-      
-      queryClient.invalidateQueries({ queryKey: ['telfin_calls', orgId] });
-      toast({ title: "Синхронизация завершена", description: `Найдено и сохранено звонков: ${result.saved_count}.` });
-
     } catch (error: any) {
-      console.error('Error syncing call history:', error);
-      toast({ title: "Ошибка синхронизации", description: error.message, variant: "destructive" });
+      console.error('Error syncing or processing call history:', error);
+      toast({ title: "Ошибка", description: error.message, variant: "destructive" });
     } finally {
       setIsSyncing(false);
     }

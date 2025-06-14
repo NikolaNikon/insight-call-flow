@@ -1464,6 +1464,7 @@ export type Database = {
           has_record: boolean | null
           id: string
           org_id: string
+          processing_feedback: string | null
           processing_status: string | null
           raw_payload: Json | null
           record_url: string | null
@@ -1482,6 +1483,7 @@ export type Database = {
           has_record?: boolean | null
           id?: string
           org_id: string
+          processing_feedback?: string | null
           processing_status?: string | null
           raw_payload?: Json | null
           record_url?: string | null
@@ -1500,6 +1502,7 @@ export type Database = {
           has_record?: boolean | null
           id?: string
           org_id?: string
+          processing_feedback?: string | null
           processing_status?: string | null
           raw_payload?: Json | null
           record_url?: string | null

@@ -70,7 +70,7 @@ export const TelfinStatusDisplay: React.FC<TelfinStatusDisplayProps> = ({
             </Button>
              <Button onClick={handleSyncCallHistory} variant="outline" className="gap-2" disabled={isLoading || !isAdmin}>
               <RefreshCw className="h-4 w-4" />
-              {isLoading ? 'Синхронизация...' : 'Синхронизировать звонки'}
+              {isLoading ? 'Выполняется...' : 'Синхронизировать и обработать'}
             </Button>
             <Button onClick={handleLogout} variant="destructive" className="gap-2" disabled={isLoading || !isAdmin}>
               <XCircle className="h-4 w-4" />

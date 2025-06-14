@@ -9,12 +9,13 @@ const corsHeaders = {
 const API_HOST = 'apiproxy.telphin.ru';
 
 interface TelfinRequest {
-  action: 'get_audio_url' | 'download_audio_with_oauth' | 'save_call_history';
-  clientId: string; // Numeric user client ID
-  recordUuid: string;
+  action: 'get_audio_url' | 'download_audio_with_oauth' | 'save_call_history' | 'process_call_record_and_create_call';
+  clientId?: string; // Made optional
+  recordUuid?: string; // Made optional
   accessToken?: string;
   calls?: any[];
   orgId?: string;
+  telfinCall?: any;
 }
 
 interface TelfinStorageUrlResponse {
@@ -27,13 +28,15 @@ serve(async (req) => {
   }
 
   try {
-    const { action, clientId, recordUuid, accessToken, calls, orgId }: TelfinRequest = await req.json();
+    const body: TelfinRequest = await req.json();
+    const { action } = body;
 
-    console.log('Telfin integration request:', { action, clientId, recordUuid });
+    console.log('Telfin integration request:', { action });
 
     switch (action) {
       case 'get_audio_url': {
-        if (!accessToken) {
+        const { clientId, recordUuid, accessToken } = body;
+        if (!accessToken || !clientId || !recordUuid) {
           throw new Error('Access Token is required for get_audio_url action');
         }
 
@@ -66,7 +69,8 @@ serve(async (req) => {
       }
 
       case 'download_audio_with_oauth': {
-        if (!accessToken) {
+        const { clientId, recordUuid, accessToken } = body;
+        if (!accessToken || !clientId || !recordUuid) {
           throw new Error('Access token is required for OAuth download');
         }
 
@@ -105,6 +109,7 @@ serve(async (req) => {
       }
 
       case 'save_call_history': {
+        const { calls, orgId } = body;
         if (!calls || !orgId) {
           throw new Error('calls and orgId are required for save_call_history action');
         }
@@ -142,6 +147,100 @@ serve(async (req) => {
         return new Response(JSON.stringify({ success: true, saved_count: callsToUpsert.length }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
+      }
+      
+      case 'process_call_record_and_create_call': {
+        const { orgId, telfinCall, clientId, accessToken } = body;
+
+        if (!orgId || !telfinCall || !clientId || !accessToken) {
+          throw new Error('orgId, telfinCall, clientId, and accessToken are required.');
+        }
+
+        const supabaseAdmin = createClient(
+          Deno.env.get('SUPABASE_URL')!,
+          Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+        );
+
+        const updateStatus = async (status: string, feedback: string | null = null) => {
+          await supabaseAdmin
+            .from('telfin_calls')
+            .update({ processing_status: status, processing_feedback: feedback })
+            .eq('id', telfinCall.id);
+        };
+        
+        if (!telfinCall.has_record || !telfinCall.record_url) {
+          await updateStatus('skipped', 'Звонок без записи');
+          return new Response(JSON.stringify({ success: true, message: 'Skipped: no record.' }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+        
+        try {
+          await updateStatus('processing', null);
+
+          const recordUuid = telfinCall.record_url;
+          const storageUrlEndpoint = `https://${API_HOST}/client/${clientId}/record/${recordUuid}/storage_url/`;
+          
+          const storageUrlResponse = await fetch(storageUrlEndpoint, {
+            headers: { 'Authorization': `Bearer ${accessToken}` }
+          });
+          
+          if (!storageUrlResponse.ok) {
+            const errorText = await storageUrlResponse.text();
+            throw new Error(`Failed to get storage URL: ${errorText}`);
+          }
+          const { record_url } = await storageUrlResponse.json();
+
+          const audioResponse = await fetch(record_url, {
+            headers: { 'Authorization': `Bearer ${accessToken}` }
+          });
+
+          if (!audioResponse.ok) {
+             const errorText = await audioResponse.text();
+            throw new Error(`Failed to download audio: ${errorText}`);
+          }
+          const audioBlob = await audioResponse.blob();
+          const fileName = `${orgId}/${telfinCall.call_id}.mp3`;
+
+          const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
+            .from('call-records')
+            .upload(fileName, audioBlob, {
+              contentType: audioBlob.type || 'audio/mpeg',
+              upsert: true,
+            });
+
+          if (uploadError) throw uploadError;
+
+          const { data: publicUrlData } = supabaseAdmin.storage
+            .from('call-records')
+            .getPublicUrl(fileName);
+
+          if (!publicUrlData) throw new Error("Could not get public URL for the file.");
+
+          const { error: insertError } = await supabaseAdmin
+            .from('calls')
+            .insert({
+              org_id: orgId,
+              audio_file_url: publicUrlData.publicUrl,
+              date: telfinCall.start_time,
+              source: 'telfin',
+              source_call_id: telfinCall.id,
+              processing_status: 'pending',
+            });
+
+          if (insertError) throw insertError;
+
+          await updateStatus('completed');
+          
+          return new Response(JSON.stringify({ success: true, message: 'Call processed successfully.' }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+
+        } catch (e) {
+          console.error(`Error processing call ${telfinCall.id}:`, e);
+          await updateStatus('error', e.message);
+          throw e;
+        }
       }
 
       default:
