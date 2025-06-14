@@ -14,6 +14,18 @@ const Welcome = () => {
   const { isSuperAdmin, isLoading } = useUserRole();
   const { orgId, setOrgId } = useImpersonateOrg();
 
+  // ВАЖНО: всегда вызываем хуки!
+  const {
+    steps,
+    currentStep,
+    completedSteps,
+    next,
+    prev,
+    completeStep,
+    setCurrentStep,
+    setCompletedSteps
+  } = useOnboardingSteps();
+
   // ---- НОВОЕ: если это суперадмин, сразу перебрасываем с welcome на главную (редирект) ----
   if (isLoading) {
     // Во время загрузки — просто лоадер (иначе возможен мигающий лишний контент)
@@ -28,18 +40,6 @@ const Welcome = () => {
     navigate("/", { replace: true });
     return null;
   }
-
-  // Onboarding hooks — всегда вызываем
-  const {
-    steps,
-    currentStep,
-    completedSteps,
-    next,
-    prev,
-    completeStep,
-    setCurrentStep,
-    setCompletedSteps
-  } = useOnboardingSteps();
 
   // --- Автоматическая инициализация DEMO организации для сверхпользователя
   useEffect(() => {
