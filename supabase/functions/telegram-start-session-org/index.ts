@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
@@ -96,7 +95,8 @@ serve(async (req) => {
         session_code: sessionCode,
         user_id: user.id,
         user_name: userData.name,
-        user_role: userData.role
+        user_role: userData.role,
+        org_id: userData.org_id
       })
       .select()
       .single();

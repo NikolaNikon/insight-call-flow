@@ -1345,6 +1345,7 @@ export type Database = {
           created_at: string
           expires_at: string
           id: string
+          org_id: string
           session_code: string
           used: boolean
           user_id: string
@@ -1355,6 +1356,7 @@ export type Database = {
           created_at?: string
           expires_at?: string
           id?: string
+          org_id: string
           session_code: string
           used?: boolean
           user_id: string
@@ -1365,6 +1367,7 @@ export type Database = {
           created_at?: string
           expires_at?: string
           id?: string
+          org_id?: string
           session_code?: string
           used?: boolean
           user_id?: string
@@ -1372,6 +1375,20 @@ export type Database = {
           user_role?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "telegram_sessions_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "telegram_sessions_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "v_org_dashboard_metrics"
+            referencedColumns: ["org_id"]
+          },
           {
             foreignKeyName: "telegram_sessions_user_id_fkey"
             columns: ["user_id"]
