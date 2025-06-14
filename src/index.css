@@ -5,6 +5,7 @@
 
 @layer base {
   :root {
+    /* Основные цвета системы */
     --background: 0 0% 100%;
     --foreground: 0 0% 10%;
 
@@ -43,17 +44,39 @@
     --sidebar-accent-foreground: 0 0% 10%;
     --sidebar-border: 240 25% 92%;
     --sidebar-ring: 185 97% 20%;
+
+    /* CallControl Color Tokens - Light Mode */
+    --text-color-default: 55 4% 20%; /* #373530 */
+    --bg-color-default: 0 0% 100%; /* #FFFFFF */
+    --text-color-gray: 45 4% 47%; /* #787774 */
+    --bg-color-gray: 60 4% 94%; /* #F1F1EF */
+    --text-color-brown: 22 28% 46%; /* #976D57 */
+    --bg-color-brown: 20 13% 95%; /* #F3EEEE */
+    --text-color-orange: 27 62% 48%; /* #CC782F */
+    --bg-color-orange: 37 55% 93%; /* #F8ECDF */
+    --text-color-yellow: 43 48% 51%; /* #C29343 */
+    --bg-color-yellow: 48 67% 93%; /* #FAF3DD */
+    --text-color-green: 146 21% 44%; /* #548164 */
+    --bg-color-green: 102 25% 94%; /* #EEF3ED */
+    --text-color-blue: 201 37% 59%; /* #487CA5 */
+    --bg-color-blue: 191 44% 94%; /* #E9F3F7 */
+    --text-color-purple: 266 26% 54%; /* #8A67AB */
+    --bg-color-purple: 264 22% 96%; /* #F6F3F8 */
+    --text-color-pink: 328 38% 51%; /* #B35488 */
+    --bg-color-pink: 329 45% 95%; /* #F9F2F5 */
+    --text-color-red: 4 45% 55%; /* #C4554D */
+    --bg-color-red: 0 44% 96%; /* #FAECEC */
   }
 
   .dark {
-    --background: 0 0% 8%;
-    --foreground: 0 0% 98%;
+    --background: 0 0% 10%;
+    --foreground: 0 0% 83%;
 
     --card: 0 0% 10%;
-    --card-foreground: 0 0% 98%;
+    --card-foreground: 0 0% 83%;
 
     --popover: 0 0% 10%;
-    --popover-foreground: 0 0% 98%;
+    --popover-foreground: 0 0% 83%;
 
     --primary: 185 97% 25%;
     --primary-foreground: 0 0% 98%;
@@ -74,14 +97,36 @@
     --input: 0 0% 20%;
     --ring: 185 97% 25%;
     
-    --sidebar-background: 0 0% 8%;
-    --sidebar-foreground: 0 0% 98%;
+    --sidebar-background: 0 0% 10%;
+    --sidebar-foreground: 0 0% 83%;
     --sidebar-primary: 185 97% 25%;
     --sidebar-primary-foreground: 0 0% 98%;
     --sidebar-accent: 164 50% 20%;
     --sidebar-accent-foreground: 0 0% 98%;
     --sidebar-border: 0 0% 20%;
     --sidebar-ring: 185 97% 25%;
+
+    /* CallControl Color Tokens - Dark Mode */
+    --text-color-default: 0 0% 83%; /* #D4D4D4 */
+    --bg-color-default: 0 0% 10%; /* #191919 */
+    --text-color-gray: 0 0% 61%; /* #9B9B9B */
+    --bg-color-gray: 0 0% 15%; /* #252525 */
+    --text-color-brown: 22 20% 64%; /* #A27763 */
+    --bg-color-brown: 27 10% 17%; /* #2E2724 */
+    --text-color-orange: 26 56% 51%; /* #CB7B37 */
+    --bg-color-orange: 31 28% 17%; /* #36291F */
+    --text-color-yellow: 43 54% 49%; /* #C19138 */
+    --bg-color-yellow: 44 28% 17%; /* #372E20 */
+    --text-color-green: 146 32% 47%; /* #4F9768 */
+    --bg-color-green: 120 7% 15%; /* #242B26 */
+    --text-color-blue: 207 48% 54%; /* #447ACB */
+    --bg-color-blue: 200 20% 16%; /* #1F282D */
+    --text-color-purple: 267 35% 56%; /* #865DBB */
+    --bg-color-purple: 270 17% 16%; /* #2A2430 */
+    --text-color-pink: 330 46% 51%; /* #BA4A78 */
+    --bg-color-pink: 345 10% 16%; /* #2E2328 */
+    --text-color-red: 4 43% 52%; /* #BE524B */
+    --bg-color-red: 7 15% 17%; /* #332523 */
   }
 }
 

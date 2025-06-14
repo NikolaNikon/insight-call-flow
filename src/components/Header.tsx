@@ -5,6 +5,7 @@ import { User, Menu } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import AnimatedLogoutButton from './AnimatedLogoutButton';
+import { ThemeToggle } from './ThemeToggle';
 
 interface HeaderProps {
   onMenuClick?: () => void;
@@ -31,7 +32,7 @@ const Header = ({ onMenuClick }: HeaderProps) => {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
+    <div className="bg-card rounded-lg shadow-sm border p-6 mb-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           {onMenuClick && (
@@ -45,8 +46,8 @@ const Header = ({ onMenuClick }: HeaderProps) => {
             </Button>
           )}
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">CallControl</h1>
-            <p className="text-gray-600">Система контроля и аналитики звонков менеджеров</p>
+            <h1 className="text-3xl font-bold text-foreground mb-2">CallControl</h1>
+            <p className="text-muted-foreground">Система контроля и аналитики звонков менеджеров</p>
           </div>
         </div>
         <div className="flex items-center gap-4">
@@ -54,9 +55,10 @@ const Header = ({ onMenuClick }: HeaderProps) => {
             <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
             Система активна
           </Badge>
+          <ThemeToggle />
           {user && (
             <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 text-sm text-gray-600">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <User className="h-4 w-4" />
                 <span>{user.email}</span>
               </div>
