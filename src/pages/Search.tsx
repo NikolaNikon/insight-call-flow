@@ -1,8 +1,7 @@
-
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-import { SearchHeader, SearchFilters, SearchResults } from "@/components/search";
+import { SearchFilters, SearchResults } from "@/components/search";
 
 interface Call {
   id: string;
@@ -128,29 +127,25 @@ const Search = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
-        <SearchHeader />
+    <div className="max-w-7xl mx-auto space-y-6">
+      <SearchFilters
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        selectedManager={selectedManager}
+        setSelectedManager={setSelectedManager}
+        dateFrom={dateFrom}
+        setDateFrom={setDateFrom}
+        dateTo={dateTo}
+        setDateTo={setDateTo}
+        managers={managers}
+        onSearch={handleSearch}
+        onReset={handleResetFilters}
+      />
 
-        <SearchFilters
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          selectedManager={selectedManager}
-          setSelectedManager={setSelectedManager}
-          dateFrom={dateFrom}
-          setDateFrom={setDateFrom}
-          dateTo={dateTo}
-          setDateTo={setDateTo}
-          managers={managers}
-          onSearch={handleSearch}
-          onReset={handleResetFilters}
-        />
-
-        <SearchResults
-          calls={calls}
-          isLoading={isLoading}
-        />
-      </div>
+      <SearchResults
+        calls={calls}
+        isLoading={isLoading}
+      />
     </div>
   );
 };
