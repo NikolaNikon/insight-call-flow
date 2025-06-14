@@ -3,6 +3,8 @@ import React, { useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useUserRole } from '@/hooks/useUserRole';
+import { useImpersonateOrg } from '@/hooks/useImpersonateOrg';
+import { supabase } from '@/integrations/supabase/client';
 import { useOnboardingSteps } from '@/hooks/useOnboardingSteps';
 import { WelcomeScreen } from '@/components/onboarding/WelcomeScreen';
 import { OnboardingProgress } from '@/components/onboarding/OnboardingProgress';
@@ -11,8 +13,9 @@ import { OnboardingProgress } from '@/components/onboarding/OnboardingProgress';
 const Welcome = () => {
   const navigate = useNavigate();
   const { isSuperAdmin, isLoading } = useUserRole();
+  const { orgId, setOrgId } = useImpersonateOrg();
 
-  // Onboarding hooks — always called, even if not used yet
+  // Onboarding hooks — всегда вызываем
   const {
     steps,
     currentStep,
@@ -24,12 +27,54 @@ const Welcome = () => {
     setCompletedSteps
   } = useOnboardingSteps();
 
+  // --- Автоматическая инициализация DEMO организации для сверхпользователя
   useEffect(() => {
-    if (isSuperAdmin) {
-      navigate("/", { replace: true });
-    }
-  }, [isSuperAdmin, navigate]);
+    const autoAssignOrCreateDemoOrg = async () => {
+      if (!isSuperAdmin || orgId) return;
 
+      // 1. Поиск demo-организации
+      const { data: org, error } = await supabase
+        .from('organizations')
+        .select('id')
+        .eq('subdomain', 'demo')
+        .maybeSingle();
+
+      if (error) {
+        // eslint-disable-next-line no-console
+        console.error('Ошибка поиска DEMO-организации:', error);
+        return;
+      }
+
+      if (org && org.id) {
+        // Если нашли — выставляем
+        setOrgId(org.id);
+      } else {
+        // Нет — создаём новую DEMO-организацию
+        const { data: created, error: createError } = await supabase
+          .from('organizations')
+          .insert({
+            name: 'DEMO',
+            subdomain: 'demo',
+            is_active: true,
+            settings: {},
+          })
+          .select('id')
+          .single();
+        if (createError) {
+          // eslint-disable-next-line no-console
+          console.error('Ошибка создания DEMO-организации:', createError);
+          return;
+        }
+        if (created?.id) {
+          setOrgId(created.id);
+        }
+      }
+    };
+    autoAssignOrCreateDemoOrg();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSuperAdmin, orgId, setOrgId]);
+
+  // Если загружается роль — показываем лоадер
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -38,10 +83,19 @@ const Welcome = () => {
     );
   }
 
-  if (isSuperAdmin) {
-    // Wait until effect performs redirect above
+  // Если суперадмин и оргId уже есть — можно редиректить или показывать интерфейс
+  useEffect(() => {
+    if (isSuperAdmin && orgId) {
+      navigate("/", { replace: true });
+    }
+  }, [isSuperAdmin, orgId, navigate]);
+
+  if (isSuperAdmin && orgId) {
+    // Ждем редиректа выше
     return null;
   }
+
+  // ---- Обычная онбординг-логика
 
   const handleNext = () => {
     if (currentStep < steps.length - 1) {
@@ -84,3 +138,4 @@ const Welcome = () => {
 };
 
 export default Welcome;
+
