@@ -68,9 +68,7 @@ export const useTelegramSession = () => {
 
   const checkSessionStatus = async (sessionCode: string) => {
     try {
-      const { data, error } = await supabase.functions.invoke('telegram-session-status', {
-        body: { session_code: sessionCode }
-      });
+      const { data, error } = await supabase.functions.invoke(`telegram-session-status?session_code=${sessionCode}`);
 
       if (error) {
         console.error('Error checking session status:', error);

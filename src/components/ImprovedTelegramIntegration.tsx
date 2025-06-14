@@ -5,12 +5,12 @@ import { Loader2, Bot, Info } from 'lucide-react';
 import { useTelegramSession } from '@/hooks/useTelegramSession';
 import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { TelegramConnectionStatus } from '@/components/telegram/TelegramConnectionStatus';
-import { TelegramPendingSession } from '@/components/telegram/TelegramPendingSession';
 import { TelegramActiveConnections } from '@/components/telegram/TelegramActiveConnections';
 import { useOrganization } from '@/hooks/useOrganization';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
+import { TelegramStatusChecker } from '@/components/TelegramStatusChecker';
 
 export const ImprovedTelegramIntegration = () => {
   const [currentSessionCode, setCurrentSessionCode] = useState<string | null>(null);
@@ -100,17 +100,14 @@ export const ImprovedTelegramIntegration = () => {
         loading={linksLoading}
       />
 
-      {/* Pending Session */}
-      {currentSessionCode && sessionData && (
-        <TelegramPendingSession
-          pendingSession={{
-            session_code: currentSessionCode,
-            telegram_url: sessionData.telegram_url,
-            expires_at: sessionData.expires_at
-          }}
-          timeLeft={300} // 5 минут
-          showTimeoutWarning={false}
+      {/* Pending Session Replaced with Status Checker */}
+      {isPending && sessionData && (
+        <TelegramStatusChecker
+          sessionCode={currentSessionCode}
+          telegramUrl={sessionData.telegram_url}
+          onConnected={handleConnectionComplete}
           onCancel={handleConnectionComplete}
+          pollingEnabled={true}
         />
       )}
 
