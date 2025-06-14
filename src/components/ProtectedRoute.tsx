@@ -8,6 +8,7 @@ import { Loader2 } from 'lucide-react';
 import { useUserRole } from '@/hooks/useUserRole';
 import { SuperadminOrgSelector } from './SuperadminOrgSelector';
 import { useImpersonateOrg } from "@/hooks/useImpersonateOrg";
+import { AppShell } from '@/components/AppShell';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -61,8 +62,8 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   }
 
   // Стандартный AppShell для всех обычных пользователей и суперадмина с выбранной организацией
-  const AppShell = require('@/components/AppShell').AppShell;
   return <AppShell>{children}</AppShell>;
 };
 
 export default ProtectedRoute;
+
