@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TelfinConfigForm } from './telfin/TelfinConfigForm';
@@ -47,7 +46,7 @@ export const TelfinOAuthSettings = () => {
             isAuthorized={telfin.isAuthorized}
             userInfo={telfin.userInfo}
             isLoading={telfin.isLoading}
-            handleStartOAuth={telfin.handleStartOAuth}
+            handleConnect={telfin.handleConnect}
             testConnection={telfin.testConnection}
             handleLogout={telfin.handleLogout}
             handleSyncCallHistory={telfin.handleSyncCallHistory}
@@ -57,9 +56,8 @@ export const TelfinOAuthSettings = () => {
       </Tabs>
 
       <div className="text-sm text-gray-600 bg-blue-50 p-3 rounded-lg mt-4">
-        <strong>Схема OAuth 2.0:</strong> Для полноценной интеграции необходимо создать OAuth приложение 
-        в системе Телфин с указанным выше Redirect URI. После авторизации система автоматически создаст 
-        доверенное приложение для постоянного доступа к API.
+        <strong>Схема Client Credentials:</strong> Для интеграции необходимо создать приложение 
+        типа "trusted" в личном кабинете Телфин и указать полученные Application ID и Secret.
       </div>
     </>
   );

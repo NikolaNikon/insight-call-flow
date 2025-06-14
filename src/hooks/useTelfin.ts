@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from './useOrganization';
 import { useToast } from './use-toast';
-import { initTelfinOAuthAPI, TelfinOAuthAPI } from '@/services/telfinOAuthApi';
+import { initTelfinAPI, TelfinClientCredentialsAPI } from '@/services/telfinOAuthApi';
 import { Database } from '@/integrations/supabase/types';
 
 type TelfinConnection = Database['public']['Tables']['telfin_connections']['Row'];
@@ -43,16 +43,14 @@ export const useTelfin = () => {
   const queryClient = useQueryClient();
 
   const [localConfig, setLocalConfig] = useState({
-    hostname: '',
     clientId: '',
     clientSecret: '',
-    redirectUri: `${window.location.origin}/settings?tab=integrations&oauth_callback=true`
   });
 
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [userInfo, setUserInfo] = useState<any>(null);
-  const [apiInstance, setApiInstance] = useState<TelfinOAuthAPI | null>(null);
-  const [isCallbackLoading, setIsCallbackLoading] = useState(false);
+  const [apiInstance, setApiInstance] = useState<TelfinClientCredentialsAPI | null>(null);
+  const [isConnecting, setIsConnecting] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
 
   const { data: connection, isLoading: isLoadingConnection } = useQuery({
@@ -63,9 +61,9 @@ export const useTelfin = () => {
 
   const saveMutation = useMutation({
     mutationFn: saveTelfinConnection,
-    onSuccess: () => {
-      toast({ title: "Настройки сохранены", description: "Конфигурация Телфин OAuth успешно сохранена" });
-      queryClient.invalidateQueries({ queryKey: ['telfin_connection', orgId] });
+    onSuccess: (data) => {
+      toast({ title: "Настройки сохранены", description: "Конфигурация Телфин успешно сохранена" });
+      queryClient.setQueryData(['telfin_connection', orgId], data);
     },
     onError: (error: any) => {
       toast({ title: "Ошибка сохранения", description: error.message, variant: "destructive" });
@@ -73,131 +71,105 @@ export const useTelfin = () => {
   });
 
   useEffect(() => {
-    if (orgId) {
-      const storedHostname = localStorage.getItem(`telfin_oauth_hostname_${orgId}`) || '';
-      let apiConfig: any = {
-        hostname: storedHostname,
-        redirectUri: localConfig.redirectUri,
+    if (connection) {
+      const newLocalConfig = {
+        clientId: connection.client_id || '',
+        clientSecret: connection.client_secret || '',
       };
+      setLocalConfig(newLocalConfig);
 
-      if (connection) {
-        setLocalConfig(prev => ({
-          ...prev,
-          hostname: storedHostname,
-          clientId: connection.client_id || '',
-          clientSecret: connection.client_secret || '',
-        }));
-        
-        apiConfig = {
-          ...apiConfig,
-          clientId: connection.client_id,
-          clientSecret: connection.client_secret,
-          accessToken: connection.access_token || undefined,
-          refreshToken: connection.refresh_token || undefined,
-          tokenExpiry: connection.token_expiry ? new Date(connection.token_expiry).getTime() : undefined,
-        };
-      } else {
-        setLocalConfig(prev => ({ ...prev, hostname: storedHostname, clientId: '', clientSecret: '' }));
-      }
-      
-      if (apiConfig.hostname && apiConfig.clientId && apiConfig.clientSecret) {
-        const api = initTelfinOAuthAPI(apiConfig);
+      if (newLocalConfig.clientId && newLocalConfig.clientSecret) {
+        const api = initTelfinAPI({
+          ...newLocalConfig,
+          accessToken: connection.access_token,
+          tokenExpiry: connection.token_expiry ? new Date(connection.token_expiry).getTime() : null,
+        });
         setApiInstance(api);
-        setIsAuthorized(api.hasValidToken());
-        if(api.hasValidToken()) {
-            loadUserInfo(api);
+
+        if (api.hasValidToken()) {
+          setIsAuthorized(true);
+          loadUserInfo(api);
+        } else {
+          setIsAuthorized(false);
+          setUserInfo(null);
         }
       } else {
         setApiInstance(null);
         setIsAuthorized(false);
+        setUserInfo(null);
       }
+    } else if (orgId) {
+      setLocalConfig({ clientId: '', clientSecret: '' });
+      setApiInstance(null);
+      setIsAuthorized(false);
+      setUserInfo(null);
     }
   }, [connection, orgId]);
 
 
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const code = urlParams.get('code');
-    const oauthCallback = urlParams.get('oauth_callback');
-    
-    if (code && oauthCallback && apiInstance) {
-      handleOAuthCallback(code);
-    }
-  }, [apiInstance]);
-
-  const loadUserInfo = async (api: TelfinOAuthAPI) => {
+  const loadUserInfo = async (api: TelfinClientCredentialsAPI) => {
     try {
       const info = await api.getUserInfo();
       setUserInfo(info);
-    } catch (error) {
+      return info;
+    } catch (error: any) {
       console.error('Error loading user info:', error);
-      toast({ title: 'Ошибка загрузки данных', description: 'Не удалось получить информацию о пользователе Телфин.', variant: "destructive" });
+      toast({ title: 'Ошибка загрузки данных', description: `Не удалось получить информацию о пользователе Телфин: ${error.message}`, variant: "destructive" });
+      setIsAuthorized(false);
+      setUserInfo(null);
+      return null;
     }
   };
 
   const handleSaveConfig = () => {
-    if (!orgId || !localConfig.hostname || !localConfig.clientId || !localConfig.clientSecret) {
-      toast({ title: "Ошибка конфигурации", description: "Заполните все поля для настройки Телфин OAuth", variant: "destructive" });
+    if (!orgId || !localConfig.clientId || !localConfig.clientSecret) {
+      toast({ title: "Ошибка конфигурации", description: "Заполните Application ID и Application Secret", variant: "destructive" });
       return;
     }
-    localStorage.setItem(`telfin_oauth_hostname_${orgId}`, localConfig.hostname);
     
     saveMutation.mutate({
       org_id: orgId,
       client_id: localConfig.clientId,
       client_secret: localConfig.clientSecret,
+      access_token: null,
+      refresh_token: null,
+      token_expiry: null,
     });
   };
-
-  const handleStartOAuth = () => {
-    if (!apiInstance) {
-      toast({ title: "Ошибка", description: "Сначала сохраните настройки OAuth", variant: "destructive" });
+  
+  const handleConnect = async () => {
+    if (!apiInstance || !orgId) {
+      toast({ title: "Ошибка", description: "Сначала сохраните настройки", variant: "destructive" });
       return;
     }
-
+    setIsConnecting(true);
     try {
-      const authUrl = apiInstance.getAuthorizationUrl();
-      window.open(authUrl, 'telfin_oauth', 'width=600,height=700,scrollbars=yes,resizable=yes');
-    } catch (error) {
-      toast({ title: "Ошибка авторизации", description: "Не удалось начать процесс OAuth авторизации", variant: "destructive" });
-    }
-  };
+      await apiInstance.getAccessToken();
+      const loadedUserInfo = await loadUserInfo(apiInstance);
 
-  const handleOAuthCallback = async (code: string) => {
-    if (!apiInstance || !orgId) return;
-    setIsCallbackLoading(true);
-    try {
-      await apiInstance.exchangeCodeForToken(code);
-      const tokens = apiInstance.getTokens();
-      
-      await saveTelfinConnection({
-        org_id: orgId,
-        client_id: localConfig.clientId,
-        client_secret: localConfig.clientSecret,
-        access_token: tokens.accessToken,
-        refresh_token: tokens.refreshToken,
-        token_expiry: tokens.tokenExpiry ? new Date(tokens.tokenExpiry).toISOString() : null,
-      });
-
-      await apiInstance.createTrustedApplication('CallControl Integration');
-      
-      setIsAuthorized(true);
-      await loadUserInfo(apiInstance);
-      
-      toast({ title: "Авторизация успешна", description: "OAuth авторизация с Телфин выполнена успешно" });
-
-      const newUrl = new URL(window.location.href);
-      newUrl.searchParams.delete('code');
-      newUrl.searchParams.delete('oauth_callback');
-      window.history.replaceState({}, document.title, newUrl.toString());
-
-      queryClient.invalidateQueries({ queryKey: ['telfin_connection', orgId] });
-      
-    } catch (error) {
-      console.error('OAuth callback error:', error);
-      toast({ title: "Ошибка авторизации", description: "Не удалось завершить OAuth авторизацию", variant: "destructive" });
+      if (loadedUserInfo) {
+        const tokens = apiInstance.getTokens();
+        await saveTelfinConnection({
+          org_id: orgId,
+          client_id: localConfig.clientId,
+          client_secret: localConfig.clientSecret,
+          access_token: tokens.accessToken,
+          refresh_token: null, // refresh_token не используется в client_credentials
+          token_expiry: tokens.tokenExpiry ? new Date(tokens.tokenExpiry).toISOString() : null,
+        });
+        
+        setIsAuthorized(true);
+        toast({ title: "Подключение успешно", description: "Авторизация с Телфин выполнена." });
+        queryClient.invalidateQueries({ queryKey: ['telfin_connection', orgId] });
+      } else {
+        throw new Error("Не удалось получить информацию о пользователе после получения токена.");
+      }
+    } catch (error: any) {
+      console.error('Connection error:', error);
+      toast({ title: "Ошибка подключения", description: error.message, variant: "destructive" });
+      setIsAuthorized(false);
     } finally {
-      setIsCallbackLoading(false);
+      setIsConnecting(false);
     }
   };
 
@@ -215,30 +187,30 @@ export const useTelfin = () => {
         setIsAuthorized(false);
         setUserInfo(null);
         queryClient.invalidateQueries({ queryKey: ['telfin_connection', orgId] });
-        toast({ title: "Выход выполнен", description: "OAuth токены очищены" });
-    } catch (error) {
+        toast({ title: "Отключено", description: "Доступ к Телфин отозван" });
+    } catch (error: any) {
         console.error('Error during logout:', error);
-        toast({ title: "Ошибка выхода", description: "Не удалось очистить токены", variant: "destructive" });
+        toast({ title: "Ошибка", description: "Не удалось отозвать доступ", variant: "destructive" });
     }
   };
 
   const handleSyncCallHistory = async () => {
-    if (!apiInstance || !orgId) {
-      toast({ title: "Ошибка", description: "API не инициализировано или не выбрана организация.", variant: "destructive" });
+    if (!apiInstance || !orgId || !userInfo?.client_id) {
+      toast({ title: "Ошибка", description: "API не инициализировано, не выбрана организация или отсутствуют данные о пользователе.", variant: "destructive" });
       return;
     }
     setIsSyncing(true);
     try {
       const dateTo = new Date();
       const dateFrom = new Date();
-      dateFrom.setDate(dateTo.getDate() - 7); // Синхронизация за последние 7 дней
+      dateFrom.setDate(dateTo.getDate() - 7);
 
       const dateToString = dateTo.toISOString().split('T')[0];
       const dateFromString = dateFrom.toISOString().split('T')[0];
 
       toast({ title: "Синхронизация запущена", description: `Загрузка истории звонков с ${dateFromString} по ${dateToString}`});
 
-      const callHistory = await apiInstance.getCallHistory(dateFromString, dateToString);
+      const callHistory = await apiInstance.getCallHistory(userInfo.client_id, dateFromString, dateToString);
 
       if (callHistory.length === 0) {
         toast({ title: "Нет новых звонков", description: "За выбранный период нет звонков для синхронизации." });
@@ -274,17 +246,17 @@ export const useTelfin = () => {
 
   const testConnection = async () => {
     if (!isAuthorized || !apiInstance) {
-        toast({ title: "Ошибка", description: "Сначала авторизуйтесь", variant: "destructive" });
+        toast({ title: "Ошибка", description: "Сначала подключитесь", variant: "destructive" });
         return;
     }
-    setIsCallbackLoading(true);
+    setIsConnecting(true);
     try {
         await loadUserInfo(apiInstance);
-        toast({ title: "Тест прошел успешно", description: "Подключение к Телфин OAuth API работает корректно" });
-    } catch (error) {
-        toast({ title: "Ошибка подключения", description: "Не удалось подключиться к Телфин API", variant: "destructive" });
+        toast({ title: "Тест прошел успешно", description: "Подключение к Телфин API работает корректно" });
+    } catch (error: any) {
+        toast({ title: "Ошибка подключения", description: `Не удалось подключиться к Телфин API: ${error.message}`, variant: "destructive" });
     } finally {
-        setIsCallbackLoading(false);
+        setIsConnecting(false);
     }
   };
 
@@ -293,9 +265,9 @@ export const useTelfin = () => {
     setConfig: setLocalConfig,
     isAuthorized,
     userInfo,
-    isLoading: isLoadingConnection || saveMutation.isPending || isCallbackLoading || isSyncing,
+    isLoading: isLoadingConnection || saveMutation.isPending || isConnecting || isSyncing,
     handleSaveConfig,
-    handleStartOAuth,
+    handleConnect,
     testConnection,
     handleLogout,
     handleSyncCallHistory,

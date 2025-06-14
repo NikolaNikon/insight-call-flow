@@ -1,10 +1,8 @@
-interface TelfinOAuthConfig {
-  hostname: string;
+
+interface TelfinClientCredentialsConfig {
   clientId: string;
   clientSecret: string;
-  redirectUri: string;
   accessToken?: string | null;
-  refreshToken?: string | null;
   tokenExpiry?: number | null;
 }
 
@@ -12,7 +10,7 @@ interface TelfinTokenResponse {
   access_token: string;
   expires_in: number;
   token_type: string;
-  refresh_token?: string;
+  scope: string;
 }
 
 interface TelfinUserInfo {
@@ -25,119 +23,32 @@ interface TelfinUserInfo {
   login: string;
 }
 
-export class TelfinOAuthAPI {
-  private config: TelfinOAuthConfig;
+const API_HOST = 'apiproxy.telphin.ru';
+
+export class TelfinClientCredentialsAPI {
+  private config: TelfinClientCredentialsConfig;
   private accessToken: string | null = null;
   private tokenExpiry: number | null = null;
-  private refreshToken: string | null = null;
 
-  constructor(config: TelfinOAuthConfig) {
+  constructor(config: TelfinClientCredentialsConfig) {
     this.config = config;
     this.accessToken = config.accessToken || null;
-    this.refreshToken = config.refreshToken || null;
     this.tokenExpiry = config.tokenExpiry || null;
   }
 
   /**
-   * Шаг 1: Генерация URL для авторизации пользователя
+   * Получение токена доступа по client_credentials
    */
-  getAuthorizationUrl(): string {
-    const params = new URLSearchParams({
-      response_type: 'code',
-      client_id: this.config.clientId,
-      redirect_uri: this.config.redirectUri,
-      scope: 'all'
-    });
-
-    return `https://${this.config.hostname}/oauth/authorize?${params.toString()}`;
-  }
-
-  /**
-   * Шаг 2: Обмен кода авторизации на токен доступа
-   */
-  async exchangeCodeForToken(code: string): Promise<TelfinTokenResponse> {
-    const url = `https://${this.config.hostname}/oauth/token`;
-    
-    const body = new URLSearchParams({
-      grant_type: 'authorization_code',
-      code: code,
-      client_id: this.config.clientId,
-      client_secret: this.config.clientSecret,
-      redirect_uri: this.config.redirectUri
-    });
-
-    try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: body.toString()
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-
-      const tokenData: TelfinTokenResponse = await response.json();
-      
-      // Сохраняем токен
-      this.accessToken = tokenData.access_token;
-      this.refreshToken = tokenData.refresh_token || null;
-      this.tokenExpiry = Date.now() + (tokenData.expires_in * 1000);
-      
-      return tokenData;
-    } catch (error) {
-      console.error('Error exchanging code for token:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Шаг 3: Создание доверенного приложения
-   */
-  async createTrustedApplication(name: string): Promise<any> {
-    if (!this.accessToken) {
-      throw new Error('No access token available');
-    }
-
-    const url = `https://${this.config.hostname}/api/ver1.0/application/`;
-    
-    try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.accessToken}`
-        },
-        body: JSON.stringify({
-          name: name,
-          type: 'trusted'
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Error creating trusted application:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Шаг 4: Получение токена для доверенного приложения
-   */
-  async getTrustedAppToken(): Promise<TelfinTokenResponse> {
-    const url = `https://${this.config.hostname}/oauth/token`;
+  async getAccessToken(): Promise<TelfinTokenResponse> {
+    const url = `https://${API_HOST}/api/ver1.0/oauth/token`;
     
     const body = new URLSearchParams({
       grant_type: 'client_credentials',
       client_id: this.config.clientId,
-      client_secret: this.config.clientSecret
+      client_secret: this.config.clientSecret,
     });
+
+    console.log('Requesting Telfin access token with client_id:', this.config.clientId);
 
     try {
       const response = await fetch(url, {
@@ -149,7 +60,9 @@ export class TelfinOAuthAPI {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error', error_description: 'Failed to parse error response' }));
+        console.error('Telfin API Error:', response.status, errorData);
+        throw new Error(`Ошибка API Телфин: ${errorData.error_description || errorData.error || `HTTP ${response.status}`}`);
       }
 
       const tokenData: TelfinTokenResponse = await response.json();
@@ -159,8 +72,22 @@ export class TelfinOAuthAPI {
       
       return tokenData;
     } catch (error) {
-      console.error('Error getting trusted app token:', error);
+      console.error('Error getting access token:', error);
       throw error;
+    }
+  }
+
+  /**
+   * Проверка валидности токена и обновление при необходимости
+   */
+  private async ensureValidToken(): Promise<void> {
+    // Проверяем токен с запасом в 1 минуту
+    if (!this.accessToken || !this.tokenExpiry || Date.now() > (this.tokenExpiry - 60000)) {
+      console.log('Токен недействителен или истекает, запрашиваем новый.');
+      await this.getAccessToken();
+    }
+    if (!this.accessToken) {
+      throw new Error('Не удалось получить действительный токен доступа.');
     }
   }
 
@@ -170,7 +97,7 @@ export class TelfinOAuthAPI {
   async getUserInfo(): Promise<TelfinUserInfo> {
     await this.ensureValidToken();
     
-    const url = `https://${this.config.hostname}/api/ver1.0/user/`;
+    const url = `https://${API_HOST}/api/ver1.0/user/`;
     
     try {
       const response = await fetch(url, {
@@ -194,7 +121,7 @@ export class TelfinOAuthAPI {
   /**
    * Получение истории звонков
    */
-  async getCallHistory(dateFrom: string, dateTo: string): Promise<any[]> {
+  async getCallHistory(clientId: number, dateFrom: string, dateTo: string): Promise<any[]> {
     await this.ensureValidToken();
     
     const params = new URLSearchParams({
@@ -203,10 +130,7 @@ export class TelfinOAuthAPI {
       limit: '1000'
     });
     
-    // В API Телфина для истории звонков обычно требуется ID клиента
-    // @ts-ignore
-    const userInfo = await this.getUserInfo();
-    const url = `https://${this.config.hostname}/api/ver1.0/client/${userInfo.client_id}/call_history/?${params.toString()}`;
+    const url = `https://${API_HOST}/api/ver1.0/client/${clientId}/call_history/?${params.toString()}`;
     
     try {
       const response = await fetch(url, {
@@ -221,142 +145,40 @@ export class TelfinOAuthAPI {
       }
 
       const data = await response.json();
-      return data.records || []; // Предполагаем, что звонки находятся в массиве 'records'
+      return data.records || [];
     } catch (error) {
       console.error('Error getting call history:', error);
       throw error;
     }
   }
 
-  /**
-   * Получение аудиофайла с использованием OAuth токена
-   */
-  async getAudioFileWithOAuth(clientId: string, recordUuid: string): Promise<Blob> {
-    await this.ensureValidToken();
-    
-    const url = `https://${this.config.hostname}/client/${clientId}/record/${recordUuid}/download/`;
-    
-    try {
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${this.accessToken}`
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-
-      return await response.blob();
-    } catch (error) {
-      console.error('Error downloading audio file with OAuth:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Проверка валидности токена и обновление при необходимости
-   */
-  private async ensureValidToken(): Promise<void> {
-    if (!this.accessToken || !this.tokenExpiry) {
-      throw new Error('No access token available');
-    }
-
-    // Проверяем, не истек ли токен (с запасом в 5 минут)
-    if (Date.now() > (this.tokenExpiry - 300000)) {
-      if (this.refreshToken) {
-        await this.refreshAccessToken();
-      } else {
-        // Нужно получить новый токен для доверенного приложения
-        await this.getTrustedAppToken();
-      }
-    }
-  }
-
-  /**
-   * Обновление токена доступа
-   */
-  private async refreshAccessToken(): Promise<void> {
-    if (!this.refreshToken) {
-      throw new Error('No refresh token available');
-    }
-
-    const url = `https://${this.config.hostname}/oauth/token`;
-    
-    const body = new URLSearchParams({
-      grant_type: 'refresh_token',
-      refresh_token: this.refreshToken,
-      client_id: this.config.clientId,
-      client_secret: this.config.clientSecret
-    });
-
-    try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: body.toString()
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-
-      const tokenData: TelfinTokenResponse = await response.json();
-      
-      this.accessToken = tokenData.access_token;
-      this.tokenExpiry = Date.now() + (tokenData.expires_in * 1000);
-      if (tokenData.refresh_token) {
-        this.refreshToken = tokenData.refresh_token;
-      }
-      
-    } catch (error) {
-      console.error('Error refreshing access token:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Очистка сохраненных токенов
-   */
   clearTokens(): void {
     this.accessToken = null;
-    this.refreshToken = null;
     this.tokenExpiry = null;
   }
 
-  /**
-   * Проверка наличия действующего токена
-   */
   hasValidToken(): boolean {
     return !!(this.accessToken && this.tokenExpiry && Date.now() < this.tokenExpiry);
   }
 
-  /**
-  * Получение текущих токенов
-  */
   getTokens() {
     return {
       accessToken: this.accessToken,
-      refreshToken: this.refreshToken,
       tokenExpiry: this.tokenExpiry,
     };
   }
 }
 
-// Singleton instance для OAuth API
-let telfinOAuthInstance: TelfinOAuthAPI | null = null;
+let apiInstance: TelfinClientCredentialsAPI | null = null;
 
-export const initTelfinOAuthAPI = (config: TelfinOAuthConfig): TelfinOAuthAPI => {
-  telfinOAuthInstance = new TelfinOAuthAPI(config);
-  return telfinOAuthInstance;
+export const initTelfinAPI = (config: TelfinClientCredentialsConfig): TelfinClientCredentialsAPI => {
+  apiInstance = new TelfinClientCredentialsAPI(config);
+  return apiInstance;
 };
 
-export const getTelfinOAuthAPI = (): TelfinOAuthAPI => {
-  if (!telfinOAuthInstance) {
-    throw new Error('Telfin OAuth API not initialized. Call initTelfinOAuthAPI first.');
+export const getTelfinAPI = (): TelfinClientCredentialsAPI => {
+  if (!apiInstance) {
+    throw new Error('Telfin API not initialized. Call initTelfinAPI first.');
   }
-  return telfinOAuthInstance;
+  return apiInstance;
 };

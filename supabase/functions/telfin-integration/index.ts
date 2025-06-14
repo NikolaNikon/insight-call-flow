@@ -6,13 +6,12 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const API_HOST = 'apiproxy.telphin.ru';
+
 interface TelfinRequest {
-  action: 'get_audio_url' | 'download_audio' | 'download_audio_with_oauth' | 'save_call_history';
-  clientId: string;
+  action: 'get_audio_url' | 'download_audio_with_oauth' | 'save_call_history';
+  clientId: string; // Numeric user client ID
   recordUuid: string;
-  hostname?: string;
-  username?: string;
-  password?: string;
   accessToken?: string;
   calls?: any[];
   orgId?: string;
@@ -23,35 +22,34 @@ interface TelfinStorageUrlResponse {
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { action, clientId, recordUuid, hostname, username, password, accessToken, calls, orgId }: TelfinRequest = await req.json();
+    const { action, clientId, recordUuid, accessToken, calls, orgId }: TelfinRequest = await req.json();
 
-    console.log('Telfin integration request:', { action, clientId, recordUuid, hostname });
+    console.log('Telfin integration request:', { action, clientId, recordUuid });
 
     switch (action) {
       case 'get_audio_url': {
-        if (!hostname) {
-          throw new Error('Hostname is required for get_audio_url action');
+        if (!accessToken) {
+          throw new Error('Access Token is required for get_audio_url action');
         }
 
-        const url = `https://${hostname}/client/${clientId}/record/${recordUuid}/storage_url/`;
+        const url = `https://${API_HOST}/client/${clientId}/record/${recordUuid}/storage_url/`;
         
         console.log('Fetching storage URL from:', url);
         
         const response = await fetch(url, {
           method: 'GET',
           headers: {
-            'Accept': 'application/json'
+            'Accept': 'application/json',
+            'Authorization': `Bearer ${accessToken}`
           }
         });
         
         console.log('Response status:', response.status);
-        console.log('Response headers:', Object.fromEntries(response.headers.entries()));
         
         if (!response.ok) {
           const errorText = await response.text();
@@ -67,57 +65,12 @@ serve(async (req) => {
         });
       }
 
-      case 'download_audio': {
-        if (!hostname || !username || !password) {
-          throw new Error('Hostname, username, and password are required for download_audio action');
-        }
-
-        const url = `https://${hostname}/client/${clientId}/record/${recordUuid}/download/`;
-        
-        // Создание базовой аутентификации
-        const credentials = btoa(`${username}:${password}`);
-        
-        console.log('Downloading audio from:', url);
-        
-        const response = await fetch(url, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Basic ${credentials}`,
-            'Accept': '*/*'
-          }
-        });
-        
-        console.log('Download response status:', response.status);
-        
-        if (!response.ok) {
-          console.error('Download failed with status:', response.status);
-          const errorText = await response.text();
-          console.error('Error response:', errorText);
-          throw new Error(`HTTP error! Status: ${response.status} - ${errorText}`);
-        }
-        
-        // Получение аудиофайла в виде ArrayBuffer
-        const audioBuffer = await response.arrayBuffer();
-        const audioBlob = new Uint8Array(audioBuffer);
-        
-        // Возвращаем бинарные данные как base64
-        const base64Audio = btoa(String.fromCharCode(...audioBlob));
-        
-        return new Response(JSON.stringify({ 
-          success: true, 
-          audioData: base64Audio,
-          contentType: response.headers.get('content-type') || 'audio/mpeg'
-        }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-
       case 'download_audio_with_oauth': {
-        if (!hostname || !accessToken) {
-          throw new Error('Hostname and access token are required for OAuth download');
+        if (!accessToken) {
+          throw new Error('Access token is required for OAuth download');
         }
 
-        const url = `https://${hostname}/client/${clientId}/record/${recordUuid}/download/`;
+        const url = `https://${API_HOST}/client/${clientId}/record/${recordUuid}/download/`;
         
         console.log('Downloading audio with OAuth from:', url);
         
@@ -138,11 +91,8 @@ serve(async (req) => {
           throw new Error(`HTTP error! Status: ${response.status} - ${errorText}`);
         }
         
-        // Получение аудиофайла в виде ArrayBuffer
         const audioBuffer = await response.arrayBuffer();
         const audioBlob = new Uint8Array(audioBuffer);
-        
-        // Возвращаем бинарные данные как base64
         const base64Audio = btoa(String.fromCharCode(...audioBlob));
         
         return new Response(JSON.stringify({ 

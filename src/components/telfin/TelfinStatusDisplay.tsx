@@ -2,13 +2,13 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { TestTube, ExternalLink, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
+import { TestTube, Plug, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
 
 interface TelfinStatusDisplayProps {
   isAuthorized: boolean;
   userInfo: any;
   isLoading: boolean;
-  handleStartOAuth: () => void;
+  handleConnect: () => void;
   testConnection: () => void;
   handleLogout: () => void;
   handleSyncCallHistory: () => void;
@@ -19,7 +19,7 @@ export const TelfinStatusDisplay: React.FC<TelfinStatusDisplayProps> = ({
   isAuthorized,
   userInfo,
   isLoading,
-  handleStartOAuth,
+  handleConnect,
   testConnection,
   handleLogout,
   handleSyncCallHistory,
@@ -50,7 +50,7 @@ export const TelfinStatusDisplay: React.FC<TelfinStatusDisplayProps> = ({
           <div className="text-sm space-y-1">
             <p><strong>Логин:</strong> {userInfo.login}</p>
             <p><strong>ID:</strong> {userInfo.id}</p>
-            <p><strong>Client ID:</strong> {userInfo.client_id}</p>
+            <p><strong>Client ID (пользователя):</strong> {userInfo.client_id}</p>
             <p><strong>Администратор:</strong> {userInfo.admin ? 'Да' : 'Нет'}</p>
           </div>
         </div>
@@ -58,9 +58,9 @@ export const TelfinStatusDisplay: React.FC<TelfinStatusDisplayProps> = ({
 
       <div className="flex flex-wrap gap-2">
         {!isAuthorized ? (
-          <Button onClick={handleStartOAuth} className="gap-2" disabled={isLoading || !isAdmin}>
-            <ExternalLink className="h-4 w-4" />
-            {isLoading ? 'Авторизация...' : 'Начать OAuth авторизацию'}
+          <Button onClick={handleConnect} className="gap-2" disabled={isLoading || !isAdmin}>
+            <Plug className="h-4 w-4" />
+            {isLoading ? 'Подключение...' : 'Подключиться'}
           </Button>
         ) : (
           <>
@@ -74,7 +74,7 @@ export const TelfinStatusDisplay: React.FC<TelfinStatusDisplayProps> = ({
             </Button>
             <Button onClick={handleLogout} variant="destructive" className="gap-2" disabled={isLoading || !isAdmin}>
               <XCircle className="h-4 w-4" />
-              Отозвать доступ
+              Отключить
             </Button>
           </>
         )}

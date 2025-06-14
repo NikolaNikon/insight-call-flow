@@ -7,10 +7,8 @@ import { Save } from 'lucide-react';
 
 interface TelfinConfigFormProps {
   config: {
-    hostname: string;
     clientId: string;
     clientSecret: string;
-    redirectUri: string;
   };
   setConfig: (config: TelfinConfigFormProps['config']) => void;
   handleSaveConfig: () => void;
@@ -27,21 +25,10 @@ export const TelfinConfigForm: React.FC<TelfinConfigFormProps> = ({ config, setC
       )}
       <div className="grid grid-cols-1 gap-4">
         <div>
-          <Label htmlFor="hostname">Hostname Телфин</Label>
-          <Input
-            id="hostname"
-            placeholder="example.telfin.ru"
-            value={config.hostname}
-            onChange={(e) => setConfig({ ...config, hostname: e.target.value })}
-            readOnly={!isAdmin}
-          />
-        </div>
-        
-        <div>
-          <Label htmlFor="client-id">Client ID (App ID)</Label>
+          <Label htmlFor="client-id">Application ID (client_id)</Label>
           <Input
             id="client-id"
-            placeholder="a80f1e618ddd4d4584e2bd48fd404194"
+            placeholder="Ваш Application ID из личного кабинета Телфин"
             value={config.clientId}
             onChange={(e) => setConfig({ ...config, clientId: e.target.value })}
             readOnly={!isAdmin}
@@ -49,29 +36,19 @@ export const TelfinConfigForm: React.FC<TelfinConfigFormProps> = ({ config, setC
         </div>
         
         <div>
-          <Label htmlFor="client-secret">Client Secret (App Secret)</Label>
+          <Label htmlFor="client-secret">Application Secret (client_secret)</Label>
           <Input
             id="client-secret"
             type="password"
-            placeholder="a2423941f5be408c998d5f7207570990"
+            placeholder="Ваш Application Secret"
             value={config.clientSecret}
             onChange={(e) => setConfig({ ...config, clientSecret: e.target.value })}
             readOnly={!isAdmin}
           />
         </div>
-
-        <div>
-          <Label htmlFor="redirect-uri">Redirect URI</Label>
-          <Input
-            id="redirect-uri"
-            value={config.redirectUri}
-            readOnly
-            className="bg-gray-100"
-          />
-          <p className="text-xs text-gray-500 mt-1">
-            Укажите этот URI при создании OAuth приложения в Телфин
-          </p>
-        </div>
+        <p className="text-xs text-gray-500 mt-1">
+          Получить Application ID и Secret можно в личном кабинете Телфин, создав приложение типа "trusted".
+        </p>
       </div>
 
       <Button onClick={handleSaveConfig} className="gap-2" disabled={!isAdmin}>
