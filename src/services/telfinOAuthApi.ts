@@ -68,10 +68,10 @@ export class TelfinClientCredentialsAPI {
         try {
             const errorData = JSON.parse(errorText);
             console.error('Telfin API Error:', response.status, errorData);
-            throw new Error(`Ошибка API Телфин: ${errorData.error_description || errorData.error || `HTTP ${response.status}`}`);
+            throw new Error(`[TELFIN-API-001] Ошибка API Телфин: ${errorData.error_description || errorData.error || `HTTP ${response.status}`}`);
         } catch (e) {
             // The response was not JSON, throw error with the text content, truncated
-            throw new Error(`Ошибка API Телфин: ${errorText.substring(0, 300) || `HTTP ${response.status}`}`);
+            throw new Error(`[TELFIN-API-001] Ошибка API Телфин: ${errorText.substring(0, 300) || `HTTP ${response.status}`}`);
         }
       }
 
@@ -97,7 +97,7 @@ export class TelfinClientCredentialsAPI {
       await this.getAccessToken();
     }
     if (!this.accessToken) {
-      throw new Error('Не удалось получить действительный токен доступа.');
+      throw new Error('[TELFIN-API-002] Не удалось получить действительный токен доступа.');
     }
   }
 
@@ -118,7 +118,7 @@ export class TelfinClientCredentialsAPI {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
+        throw new Error(`[TELFIN-API-003] HTTP error! Status: ${response.status}`);
       }
       
       const data = await response.json();
@@ -131,7 +131,7 @@ export class TelfinClientCredentialsAPI {
         return data;
       }
       
-      throw new Error("Информация о клиенте не найдена в ответе API.");
+      throw new Error("[TELFIN-API-004] Информация о клиенте не найдена в ответе API.");
 
     } catch (error) {
       console.error('Error getting user info:', error);
@@ -162,7 +162,7 @@ export class TelfinClientCredentialsAPI {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
+        throw new Error(`[TELFIN-API-005] HTTP error! Status: ${response.status}`);
       }
 
       const data = await response.json();
@@ -200,7 +200,7 @@ export const initTelfinAPI = (config: TelfinClientCredentialsConfig): TelfinClie
 
 export const getTelfinAPI = (): TelfinClientCredentialsAPI => {
   if (!apiInstance) {
-    throw new Error('Telfin API not initialized. Call initTelfinAPI first.');
+    throw new Error('[TELFIN-API-006] Telfin API not initialized. Call initTelfinAPI first.');
   }
   return apiInstance;
 };
