@@ -25,9 +25,21 @@ const Welcome = () => {
     setCompletedSteps
   } = useOnboardingSteps();
 
-  // Demo org auto-assign for superadmin (always in useEffect)
+  // НЕМЕДЛЕННЫЙ редирект для суперадмина (без ожидания useEffect)
+  if (!isLoading && isSuperAdmin) {
+    console.log('🔄 Суперадмин обнаружен, редирект на главную страницу');
+    navigate('/', { replace: true });
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <Loader2 className="animate-spin h-8 w-8 text-blue-500" />
+      </div>
+    );
+  }
+
+  // Demo org auto-assign for superadmin (в фоне для будущих заходов)
   useEffect(() => {
     if (isSuperAdmin && !orgId) {
+      console.log('🏢 Автоназначение DEMO организации для суперадмина');
       const autoAssignOrCreateDemoOrg = async () => {
         const { data: org, error } = await supabase
           .from('organizations')
@@ -35,7 +47,6 @@ const Welcome = () => {
           .eq('subdomain', 'demo')
           .maybeSingle();
         if (error) {
-          // eslint-disable-next-line no-console
           console.error('Ошибка поиска DEMO-организации:', error);
           return;
         }
@@ -53,7 +64,6 @@ const Welcome = () => {
             .select('id')
             .single();
           if (createError) {
-            // eslint-disable-next-line no-console
             console.error('Ошибка создания DEMO-организации:', createError);
             return;
           }
@@ -64,24 +74,8 @@ const Welcome = () => {
     }
   }, [isSuperAdmin, orgId, setOrgId]);
 
-  // Redirect superadmin to the dashboard when orgId appears
-  useEffect(() => {
-    if (isSuperAdmin && orgId) {
-      navigate("/", { replace: true });
-    }
-  }, [isSuperAdmin, orgId, navigate]);
-
   // Always render the loader while loading
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Loader2 className="animate-spin h-8 w-8 text-blue-500" />
-      </div>
-    );
-  }
-
-  // For superadmin: always render a loader while waiting for org assignment or navigation (never return null abruptly!)
-  if (isSuperAdmin) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <Loader2 className="animate-spin h-8 w-8 text-blue-500" />

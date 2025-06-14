@@ -18,21 +18,30 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const user = useUser();
   const { organization, isLoading } = useOrganization();
   const { toast } = useToast();
-  const { isSuperAdmin } = useUserRole();
+  const { isSuperAdmin, isLoading: roleLoading } = useUserRole();
   const { orgId } = useImpersonateOrg();
   const [hasCheckedOrg, setHasCheckedOrg] = useState(false);
 
-  // Для суперадмина обязательно должна быть выбрана организация
-  if (isSuperAdmin) {
+  console.log('🛡️ ProtectedRoute:', { 
+    isSuperAdmin, 
+    orgId, 
+    hasOrganization: !!organization,
+    isLoading: isLoading || roleLoading 
+  });
+
+  // Для суперадмина: обязательно должна быть выбрана организация
+  if (isSuperAdmin && !roleLoading) {
     if (!orgId) {
+      console.log('🔧 Суперадмин без выбранной организации - показываем селектор');
       return <SuperadminOrgSelector />;
     }
+    console.log('✅ Суперадмин с выбранной организацией - загружаем AppShell');
     // Если организация выбрана, грузим обычный shell с этой организацией
-    // ... не делаем редирект на welcome, просто идем дальше
   }
 
   useEffect(() => {
     if (user && !organization && !isLoading && !hasCheckedOrg && !isSuperAdmin) {
+      console.log('⚠️ Обычный пользователь без организации');
       toast({
         title: "Организация не найдена",
         description: "Обратитесь к администратору для добавления в организацию.",
@@ -43,10 +52,12 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   }, [user, organization, isLoading, toast, hasCheckedOrg, isSuperAdmin]);
 
   if (!user) {
+    console.log('🚫 Нет пользователя - редирект на авторизацию');
     return <Navigate to="/auth" replace />;
   }
 
-  if (isLoading) {
+  if (isLoading || roleLoading) {
+    console.log('⏳ Загрузка данных пользователя/организации');
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="flex items-center gap-2">
@@ -57,13 +68,15 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     );
   }
 
+  // Проверяем организацию только для обычных пользователей
   if (!organization && hasCheckedOrg && !isSuperAdmin) {
+    console.log('🔄 Обычный пользователь без организации - редирект на welcome');
     return <Navigate to="/welcome" replace />;
   }
 
+  console.log('🎯 Загружаем AppShell для пользователя');
   // Стандартный AppShell для всех обычных пользователей и суперадмина с выбранной организацией
   return <AppShell>{children}</AppShell>;
 };
 
 export default ProtectedRoute;
-
