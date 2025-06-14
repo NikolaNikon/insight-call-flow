@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Bot, Phone, Settings, ChevronDown, Building2 } from 'lucide-react';
 import { ImprovedTelegramIntegration } from '@/components/ImprovedTelegramIntegration';
-import { OrganizationTelegramSettings } from '@/components/OrganizationTelegramSettings';
 import { TelfinOAuthSettings } from '@/components/TelfinOAuthSettings';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useOrganization } from '@/hooks/useOrganization';
@@ -32,9 +31,6 @@ export const SimplifiedIntegrationsTab = () => {
           </CardHeader>
         </Card>
       )}
-
-      {/* Organization Telegram Settings */}
-      <OrganizationTelegramSettings />
 
       {/* User Telegram Connection */}
       <Card className="bg-white border-0 shadow-sm">
@@ -112,4 +108,3 @@ export const SimplifiedIntegrationsTab = () => {
     </div>
   );
 };
-
