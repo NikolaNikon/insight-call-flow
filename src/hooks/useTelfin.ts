@@ -1,47 +1,25 @@
 
 import { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
 import { useOrganization } from './useOrganization';
 import { useToast } from './use-toast';
 import { initTelfinAPI, TelfinClientCredentialsAPI, TelfinClientInfo } from '@/services/telfinOAuthApi';
-import { Database } from '@/integrations/supabase/types';
-
-type TelfinConnection = Database['public']['Tables']['telfin_connections']['Row'];
-type UpsertTelfinConnection = Database['public']['Tables']['telfin_connections']['Insert'];
-
-const getTelfinConnection = async (orgId: string) => {
-  const { data, error } = await supabase
-    .from('telfin_connections')
-    .select('*')
-    .eq('org_id', orgId)
-    .single();
-
-  if (error && error.code !== 'PGRST116') { // PGRST116: no rows found
-    throw error;
-  }
-  return data;
-};
-
-const saveTelfinConnection = async (connection: UpsertTelfinConnection) => {
-  const { data, error } = await supabase
-    .from('telfin_connections')
-    .upsert(connection)
-    .select()
-    .single();
-
-  if (error) {
-    throw error;
-  }
-  return data;
-};
-
+import { useTelfinConnection } from './useTelfinConnection';
+import { supabase } from '@/integrations/supabase/client';
 
 export const useTelfin = () => {
   const { organization } = useOrganization();
   const orgId = organization?.id;
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  const {
+    connection,
+    isLoadingConnection,
+    saveConnection,
+    saveConnectionAsync,
+    isSavingConnection,
+  } = useTelfinConnection(orgId);
 
   const [localConfig, setLocalConfig] = useState({
     clientId: '',
@@ -53,23 +31,6 @@ export const useTelfin = () => {
   const [apiInstance, setApiInstance] = useState<TelfinClientCredentialsAPI | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
-
-  const { data: connection, isLoading: isLoadingConnection } = useQuery({
-    queryKey: ['telfin_connection', orgId],
-    queryFn: () => getTelfinConnection(orgId!),
-    enabled: !!orgId,
-  });
-
-  const saveMutation = useMutation({
-    mutationFn: saveTelfinConnection,
-    onSuccess: (data) => {
-      toast({ title: "Настройки сохранены", description: "Конфигурация Телфин успешно сохранена" });
-      queryClient.setQueryData(['telfin_connection', orgId], data);
-    },
-    onError: (error: any) => {
-      toast({ title: "Ошибка сохранения", description: error.message, variant: "destructive" });
-    },
-  });
 
   useEffect(() => {
     if (connection) {
@@ -128,13 +89,20 @@ export const useTelfin = () => {
       return;
     }
     
-    saveMutation.mutate({
+    saveConnection({
       org_id: orgId,
       client_id: localConfig.clientId,
       client_secret: localConfig.clientSecret,
       access_token: null,
       refresh_token: null,
       token_expiry: null,
+    }, {
+      onSuccess: () => {
+        toast({ title: "Настройки сохранены", description: "Конфигурация Телфин успешно сохранена" });
+      },
+      onError: (error: any) => {
+        toast({ title: "Ошибка сохранения", description: error.message, variant: "destructive" });
+      }
     });
   };
   
@@ -150,7 +118,7 @@ export const useTelfin = () => {
 
       if (loadedUserInfo) {
         const tokens = apiInstance.getTokens();
-        await saveTelfinConnection({
+        await saveConnectionAsync({
           org_id: orgId,
           client_id: localConfig.clientId,
           client_secret: localConfig.clientSecret,
@@ -161,7 +129,6 @@ export const useTelfin = () => {
         
         setIsAuthorized(true);
         toast({ title: "Подключение успешно", description: "Авторизация с Телфин выполнена." });
-        queryClient.invalidateQueries({ queryKey: ['telfin_connection', orgId] });
       } else {
         throw new Error("Не удалось получить информацию о пользователе после получения токена.");
       }
@@ -179,7 +146,7 @@ export const useTelfin = () => {
 
     try {
         apiInstance.clearTokens();
-        await saveTelfinConnection({
+        await saveConnectionAsync({
             ...connection,
             access_token: null,
             refresh_token: null,
@@ -187,7 +154,6 @@ export const useTelfin = () => {
         });
         setIsAuthorized(false);
         setUserInfo(null);
-        queryClient.invalidateQueries({ queryKey: ['telfin_connection', orgId] });
         toast({ title: "Отключено", description: "Доступ к Телфин отозван" });
     } catch (error: any) {
         console.error('Error during logout:', error);
@@ -266,7 +232,7 @@ export const useTelfin = () => {
     setConfig: setLocalConfig,
     isAuthorized,
     userInfo,
-    isLoading: isLoadingConnection || saveMutation.isPending || isConnecting || isSyncing,
+    isLoading: isLoadingConnection || isSavingConnection || isConnecting || isSyncing,
     handleSaveConfig,
     handleConnect,
     testConnection,
