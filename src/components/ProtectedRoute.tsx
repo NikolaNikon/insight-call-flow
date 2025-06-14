@@ -16,7 +16,7 @@ interface ProtectedRouteProps {
 
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const user = useUser();
-  const { organization, isLoading } = useOrganization();
+  const { organization, isLoading: orgLoading } = useOrganization();
   const { toast } = useToast();
   const { isSuperAdmin, isLoading: roleLoading } = useUserRole();
   const { orgId } = useImpersonateOrg();
@@ -26,37 +26,15 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     isSuperAdmin, 
     orgId, 
     hasOrganization: !!organization,
-    isLoading: isLoading || roleLoading 
+    isLoading: orgLoading || roleLoading 
   });
-
-  // Для суперадмина: обязательно должна быть выбрана организация
-  if (isSuperAdmin && !roleLoading) {
-    if (!orgId) {
-      console.log('🔧 Суперадмин без выбранной организации - показываем селектор');
-      return <SuperadminOrgSelector />;
-    }
-    console.log('✅ Суперадмин с выбранной организацией - загружаем AppShell');
-    // Если организация выбрана, грузим обычный shell с этой организацией
-  }
-
-  useEffect(() => {
-    if (user && !organization && !isLoading && !hasCheckedOrg && !isSuperAdmin) {
-      console.log('⚠️ Обычный пользователь без организации');
-      toast({
-        title: "Организация не найдена",
-        description: "Обратитесь к администратору для добавления в организацию.",
-        variant: "destructive",
-      });
-      setHasCheckedOrg(true);
-    }
-  }, [user, organization, isLoading, toast, hasCheckedOrg, isSuperAdmin]);
 
   if (!user) {
     console.log('🚫 Нет пользователя - редирект на авторизацию');
     return <Navigate to="/auth" replace />;
   }
 
-  if (isLoading || roleLoading) {
+  if (roleLoading || orgLoading) {
     console.log('⏳ Загрузка данных пользователя/организации');
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -68,6 +46,24 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     );
   }
 
+  // Для суперадмина: если нет организации, показываем селектор
+  if (isSuperAdmin && !organization) {
+    console.log('🔧 Суперадмин без организации - показываем селектор');
+    return <SuperadminOrgSelector />;
+  }
+
+  useEffect(() => {
+    if (user && !organization && !hasCheckedOrg && !isSuperAdmin) {
+      console.log('⚠️ Обычный пользователь без организации');
+      toast({
+        title: "Организация не найдена",
+        description: "Обратитесь к администратору для добавления в организацию.",
+        variant: "destructive",
+      });
+      setHasCheckedOrg(true);
+    }
+  }, [user, organization, hasCheckedOrg, isSuperAdmin, toast]);
+
   // Проверяем организацию только для обычных пользователей
   if (!organization && hasCheckedOrg && !isSuperAdmin) {
     console.log('🔄 Обычный пользователь без организации - редирект на welcome');
@@ -75,7 +71,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   }
 
   console.log('🎯 Загружаем AppShell для пользователя');
-  // Стандартный AppShell для всех обычных пользователей и суперадмина с выбранной организацией
+  // Стандартный AppShell для всех пользователей с организацией
   return <AppShell>{children}</AppShell>;
 };
 
