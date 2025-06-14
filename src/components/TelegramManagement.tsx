@@ -1,15 +1,13 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Bot, Loader2 } from 'lucide-react';
 import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { useTelegramSession } from '@/hooks/useTelegramSession';
-import { useTelegramSessionTimeout } from '@/hooks/useTelegramSessionTimeout';
 import { useTelegramConnectionAttempts } from '@/hooks/useTelegramConnectionAttempts';
 import { TelegramConnectionStatus } from '@/components/telegram/TelegramConnectionStatus';
 import { TelegramActiveConnections } from '@/components/telegram/TelegramActiveConnections';
-import { TelegramPendingSession } from '@/components/telegram/TelegramPendingSession';
+import { TelegramStatusChecker } from '@/components/TelegramStatusChecker';
 import { useToast } from '@/hooks/use-toast';
 
 interface TelegramLink {
@@ -33,24 +31,18 @@ export const TelegramManagement = () => {
   const [pendingSession, setPendingSession] = useState<PendingSession | null>(null);
   
   const { getTelegramLinks, deactivateTelegramLink } = useTelegramAuth();
-  const { startTelegramSession, checkSessionStatus, isGeneratingSession } = useTelegramSession();
+  const { startTelegramSession, isGeneratingSession } = useTelegramSession();
   const { toast } = useToast();
 
   const {
     connectionAttempts,
     error,
     canAttemptConnection,
-    handleSessionTimeout: onTimeout,
     handleSuccessfulConnection: onSuccess,
     incrementAttempts,
     resetError,
     setError
   } = useTelegramConnectionAttempts();
-
-  const handleSessionTimeout = () => {
-    setPendingSession(null);
-    onTimeout();
-  };
 
   const handleSuccessfulConnection = async () => {
     setPendingSession(null);
@@ -62,13 +54,6 @@ export const TelegramManagement = () => {
       description: "Telegram бот успешно подключен к вашему аккаунту",
     });
   };
-
-  const { timeLeft, showTimeoutWarning, resetWarning } = useTelegramSessionTimeout({
-    pendingSession,
-    checkSessionStatus,
-    onSessionTimeout: handleSessionTimeout,
-    onSuccessfulConnection: handleSuccessfulConnection
-  });
 
   useEffect(() => {
     loadTelegramLinks();
@@ -107,7 +92,6 @@ export const TelegramManagement = () => {
   const handleConnectBot = async () => {
     try {
       resetError();
-      resetWarning();
       
       // Проверяем лимит попыток
       if (!canAttemptConnection) {
@@ -164,7 +148,6 @@ export const TelegramManagement = () => {
 
   const handleCancelPendingSession = () => {
     setPendingSession(null);
-    resetWarning();
   };
 
   return (
@@ -183,7 +166,6 @@ export const TelegramManagement = () => {
           isConnected={links.length > 0}
           isPending={!!pendingSession}
           error={error}
-          showTimeoutWarning={showTimeoutWarning}
         />
 
         {loading ? (
@@ -203,11 +185,12 @@ export const TelegramManagement = () => {
             />
 
             {pendingSession && (
-              <TelegramPendingSession
-                pendingSession={pendingSession}
-                timeLeft={timeLeft}
-                showTimeoutWarning={showTimeoutWarning}
+              <TelegramStatusChecker
+                sessionCode={pendingSession.session_code}
+                telegramUrl={pendingSession.telegram_url}
+                onConnected={handleSuccessfulConnection}
                 onCancel={handleCancelPendingSession}
+                pollingEnabled={true}
               />
             )}
 
