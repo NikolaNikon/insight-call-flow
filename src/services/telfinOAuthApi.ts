@@ -25,7 +25,7 @@ export interface TelfinClientInfo {
   extensions: TelfinExtension[];
 }
 
-const OAUTH_HOST = 'api.telphin.ru';
+const OAUTH_HOST = 'apiproxy.telphin.ru';
 const API_HOST = 'apiproxy.telphin.ru';
 
 export class TelfinClientCredentialsAPI {
