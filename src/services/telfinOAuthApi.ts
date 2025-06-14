@@ -1,4 +1,3 @@
-
 interface TelfinClientCredentialsConfig {
   clientId: string;
   clientSecret: string;
@@ -60,9 +59,16 @@ export class TelfinClientCredentialsAPI {
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Unknown error', error_description: 'Failed to parse error response' }));
-        console.error('Telfin API Error:', response.status, errorData);
-        throw new Error(`Ошибка API Телфин: ${errorData.error_description || errorData.error || `HTTP ${response.status}`}`);
+        const errorText = await response.text();
+        console.error('Telfin API Error Response Text:', errorText);
+        try {
+            const errorData = JSON.parse(errorText);
+            console.error('Telfin API Error:', response.status, errorData);
+            throw new Error(`Ошибка API Телфин: ${errorData.error_description || errorData.error || `HTTP ${response.status}`}`);
+        } catch (e) {
+            // The response was not JSON, throw error with the text content, truncated
+            throw new Error(`Ошибка API Телфин: ${errorText.substring(0, 300) || `HTTP ${response.status}`}`);
+        }
       }
 
       const tokenData: TelfinTokenResponse = await response.json();
