@@ -1,9 +1,10 @@
+
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from './useOrganization';
 import { useToast } from './use-toast';
-import { initTelfinAPI, TelfinClientCredentialsAPI } from '@/services/telfinOAuthApi';
+import { initTelfinAPI, TelfinClientCredentialsAPI, TelfinClientInfo } from '@/services/telfinOAuthApi';
 import { Database } from '@/integrations/supabase/types';
 
 type TelfinConnection = Database['public']['Tables']['telfin_connections']['Row'];
@@ -48,7 +49,7 @@ export const useTelfin = () => {
   });
 
   const [isAuthorized, setIsAuthorized] = useState(false);
-  const [userInfo, setUserInfo] = useState<any>(null);
+  const [userInfo, setUserInfo] = useState<TelfinClientInfo | null>(null);
   const [apiInstance, setApiInstance] = useState<TelfinClientCredentialsAPI | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -195,7 +196,7 @@ export const useTelfin = () => {
   };
 
   const handleSyncCallHistory = async () => {
-    if (!apiInstance || !orgId || !userInfo?.client_id) {
+    if (!apiInstance || !orgId || !userInfo) {
       toast({ title: "Ошибка", description: "API не инициализировано, не выбрана организация или отсутствуют данные о пользователе.", variant: "destructive" });
       return;
     }
@@ -210,7 +211,7 @@ export const useTelfin = () => {
 
       toast({ title: "Синхронизация запущена", description: `Загрузка истории звонков с ${dateFromString} по ${dateToString}`});
 
-      const callHistory = await apiInstance.getCallHistory(userInfo.client_id, dateFromString, dateToString);
+      const callHistory = await apiInstance.getCallHistory(dateFromString, dateToString);
 
       if (callHistory.length === 0) {
         toast({ title: "Нет новых звонков", description: "За выбранный период нет звонков для синхронизации." });

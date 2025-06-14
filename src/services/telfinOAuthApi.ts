@@ -12,17 +12,21 @@ interface TelfinTokenResponse {
   scope: string;
 }
 
-interface TelfinUserInfo {
-  admin: boolean;
-  client_id: number;
-  dealer_id: number | null;
-  extension_group_id: number | null;
-  extension_id: number | null;
-  id: number;
-  login: string;
+interface TelfinExtension {
+  extension_id: string;
+  number: string;
+  name: string;
 }
 
-const API_HOST = 'api.telphin.ru';
+export interface TelfinClientInfo {
+  client_id: string;
+  name: string;
+  timezone: string;
+  extensions: TelfinExtension[];
+}
+
+const OAUTH_HOST = 'api.telphin.ru';
+const API_HOST = 'apiproxy.telphin.ru';
 
 export class TelfinClientCredentialsAPI {
   private config: TelfinClientCredentialsConfig;
@@ -39,7 +43,7 @@ export class TelfinClientCredentialsAPI {
    * Получение токена доступа по client_credentials
    */
   async getAccessToken(): Promise<TelfinTokenResponse> {
-    const url = `https://${API_HOST}/api/ver1.0/oauth/token`;
+    const url = `https://${OAUTH_HOST}/api/ver1.0/oauth/token`;
     
     const body = new URLSearchParams({
       grant_type: 'client_credentials',
@@ -100,10 +104,10 @@ export class TelfinClientCredentialsAPI {
   /**
    * Получение информации об авторизованном пользователе
    */
-  async getUserInfo(): Promise<TelfinUserInfo> {
+  async getUserInfo(): Promise<TelfinClientInfo> {
     await this.ensureValidToken();
     
-    const url = `https://${API_HOST}/api/ver1.0/user/`;
+    const url = `https://${API_HOST}/api/ver1.0/client/`;
     
     try {
       const response = await fetch(url, {
@@ -116,8 +120,19 @@ export class TelfinClientCredentialsAPI {
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
+      
+      const data = await response.json();
+      // API может вернуть массив с одним объектом клиента
+      if (Array.isArray(data) && data.length > 0) {
+        return data[0];
+      }
+      // Или один объект клиента
+      if (!Array.isArray(data) && data.client_id) {
+        return data;
+      }
+      
+      throw new Error("Информация о клиенте не найдена в ответе API.");
 
-      return await response.json();
     } catch (error) {
       console.error('Error getting user info:', error);
       throw error;
@@ -127,16 +142,16 @@ export class TelfinClientCredentialsAPI {
   /**
    * Получение истории звонков
    */
-  async getCallHistory(clientId: number, dateFrom: string, dateTo: string): Promise<any[]> {
+  async getCallHistory(dateFrom: string, dateTo: string): Promise<any[]> {
     await this.ensureValidToken();
     
     const params = new URLSearchParams({
-      date_from: dateFrom,
-      date_to: dateTo,
+      date_start: dateFrom,
+      date_end: dateTo,
       limit: '1000'
     });
     
-    const url = `https://${API_HOST}/api/ver1.0/client/${clientId}/call_history/?${params.toString()}`;
+    const url = `https://${API_HOST}/api/ver1.0/client/cdr/?${params.toString()}`;
     
     try {
       const response = await fetch(url, {
@@ -151,7 +166,8 @@ export class TelfinClientCredentialsAPI {
       }
 
       const data = await response.json();
-      return data.records || [];
+      // API может вернуть объект с полем records или просто массив
+      return data.records || data || [];
     } catch (error) {
       console.error('Error getting call history:', error);
       throw error;

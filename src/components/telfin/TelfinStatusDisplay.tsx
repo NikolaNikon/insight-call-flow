@@ -3,10 +3,11 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { TestTube, Plug, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
+import { TelfinClientInfo } from '@/services/telfinOAuthApi';
 
 interface TelfinStatusDisplayProps {
   isAuthorized: boolean;
-  userInfo: any;
+  userInfo: TelfinClientInfo | null;
   isLoading: boolean;
   handleConnect: () => void;
   testConnection: () => void;
@@ -46,12 +47,11 @@ export const TelfinStatusDisplay: React.FC<TelfinStatusDisplayProps> = ({
 
       {userInfo && (
         <div className="p-4 border rounded-lg bg-gray-50">
-          <h4 className="font-medium mb-2">Информация о пользователе:</h4>
+          <h4 className="font-medium mb-2">Информация о клиенте Телфин:</h4>
           <div className="text-sm space-y-1">
-            <p><strong>Логин:</strong> {userInfo.login}</p>
-            <p><strong>ID:</strong> {userInfo.id}</p>
-            <p><strong>Client ID (пользователя):</strong> {userInfo.client_id}</p>
-            <p><strong>Администратор:</strong> {userInfo.admin ? 'Да' : 'Нет'}</p>
+            <p><strong>Название компании:</strong> {userInfo.name}</p>
+            <p><strong>Client ID:</strong> {userInfo.client_id}</p>
+            <p><strong>Часовой пояс:</strong> {userInfo.timezone}</p>
           </div>
         </div>
       )}
