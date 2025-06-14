@@ -21,37 +21,38 @@ serve(async (req) => {
 
   try {
     const { user_id, user_ids, message, type = 'info' }: NotificationRequest = await req.json();
-    
+
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
+    // Тут — единый токен, глобально для всего проекта
     const botToken = Deno.env.get('TELEGRAM_BOT_TOKEN');
-    if (!botToken) {
-      throw new Error('Telegram bot token not configured');
-    }
+    if (!botToken) throw new Error('Telegram bot token not configured');
 
-    // Определяем список пользователей для уведомления
+    // Список пользователей-реципиентов
     const targetUserIds = user_id ? [user_id] : (user_ids || []);
-    
-    if (targetUserIds.length === 0) {
-      throw new Error('No user IDs provided');
-    }
+    if (targetUserIds.length === 0) throw new Error('No user IDs provided');
 
-    // Получаем активные Telegram связи для указанных пользователей
-    const { data: telegramLinks, error } = await supabaseClient
+    // Получаем данные связей + профили пользователя + организации (+ user_role)
+    const { data: links, error: linkError } = await supabaseClient
       .from('telegram_links')
-      .select('chat_id, user_id, first_name')
+      .select(`
+        chat_id, user_id, first_name, username, org_id, is_active,
+        users:users (
+          name, role, org_id,
+          organizations (
+            name
+          )
+        )
+      `)
       .in('user_id', targetUserIds)
-      .eq('active', true);
+      .eq('is_active', true);
 
-    if (error) {
-      throw error;
-    }
+    if (linkError) throw linkError;
 
-    if (!telegramLinks || telegramLinks.length === 0) {
-      console.log('No active Telegram links found for users:', targetUserIds);
+    if (!links || links.length === 0) {
       return new Response(
         JSON.stringify({
           success: true,
@@ -64,18 +65,44 @@ serve(async (req) => {
       );
     }
 
-    // Добавляем эмодзи в зависимости от типа
-    const typeEmojis = {
+    // Эмодзи по типу
+    const typeEmojis: Record<string, string> = {
       info: 'ℹ️',
       success: '✅',
       warning: '⚠️',
       error: '❌'
     };
 
-    const formattedMessage = `${typeEmojis[type]} ${message}`;
+    // Стандартизируем сообщение с вставками: имя, роль, орг
+    function formatMessageTelegram(link: any): string {
+      const fullname = link.users?.name || link.first_name || 'Пользователь';
+      const username = link.username ? `@${link.username}` : '';
+      // Роль из users или fallback
+      const userRole = link.users?.role || 'user';
+      // Friendly (русское) имя роли
+      const roleMap: Record<string, string> = {
+        admin: "Администратор",
+        manager: "Менеджер",
+        operator: "Оператор",
+        viewer: "Наблюдатель",
+        superadmin: "Суперадмин"
+      };
+      const roleHuman = roleMap[userRole] || userRole;
+
+      // Организация
+      const org = link.users?.organizations?.name || '—';
+
+      // Новый шаблон уведомлений
+      return `${typeEmojis[type] || ''} ${message}
+👤 ${fullname} ${username}
+🎭 Роль: ${roleHuman}
+🏢 Организация: ${org}`;
+    }
 
     // Отправляем уведомления
-    const sendPromises = telegramLinks.map(async (link) => {
+    const sendPromises = links.map(async (link: any) => {
+      const formattedMessage = formatMessageTelegram(link);
+
       try {
         const response = await fetch(
           `https://api.telegram.org/bot${botToken}/sendMessage`,
@@ -89,18 +116,22 @@ serve(async (req) => {
             }),
           }
         );
-
         const result = await response.json();
-        
+
         if (!response.ok) {
-          console.error(`Failed to send message to ${link.chat_id}:`, result);
+          // Если 403: бот заблокирован — деактивируем связь
+          if (result?.error_code === 403) {
+            await supabaseClient
+              .from('telegram_links')
+              .update({ is_active: false })
+              .eq('chat_id', link.chat_id)
+              .eq('user_id', link.user_id);
+          }
           return { success: false, chat_id: link.chat_id, error: result };
         }
-        
         return { success: true, chat_id: link.chat_id };
       } catch (error) {
-        console.error(`Error sending message to ${link.chat_id}:`, error);
-        return { success: false, chat_id: link.chat_id, error: error.message };
+        return { success: false, chat_id: link.chat_id, error: (error as any).message };
       }
     });
 
@@ -108,12 +139,12 @@ serve(async (req) => {
     const successCount = results.filter(r => r.success).length;
     const failedResults = results.filter(r => !r.success);
 
-    // Логируем результат в audit_logs
+    // Логируем результат (минимально — в audit_logs)
     const logData = {
       action: 'telegram_personal_notification',
       details: {
         target_users: targetUserIds,
-        message_preview: message.substring(0, 100),
+        requested_message: message.substring(0, 100),
         type,
         sent_count: successCount,
         failed_count: failedResults.length,
@@ -139,9 +170,9 @@ serve(async (req) => {
       }
     );
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error in telegram-personal-notifications function:', error);
-    
+
     return new Response(
       JSON.stringify({
         success: false,
