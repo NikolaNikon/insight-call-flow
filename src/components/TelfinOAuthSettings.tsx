@@ -6,7 +6,6 @@ import { TelfinStatusDisplay } from './telfin/TelfinStatusDisplay';
 import { useTelfin } from '@/hooks/useTelfin';
 import { useOrganization } from '@/hooks/useOrganization';
 import { Loader2 } from 'lucide-react';
-import { TelfinCallsList } from './telfin/TelfinCallsList';
 
 export const TelfinOAuthSettings = () => {
   const { organization, isLoading: isLoadingOrg } = useOrganization();
@@ -27,10 +26,9 @@ export const TelfinOAuthSettings = () => {
   return (
     <>
       <Tabs defaultValue="config" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="config">Настройки</TabsTrigger>
           <TabsTrigger value="status">Статус</TabsTrigger>
-          <TabsTrigger value="calls">Звонки</TabsTrigger>
         </TabsList>
         
         <TabsContent value="config">
@@ -51,10 +49,6 @@ export const TelfinOAuthSettings = () => {
             handleLogout={telfin.handleLogout}
             handleSyncCallHistory={telfin.handleSyncCallHistory}
           />
-        </TabsContent>
-        
-        <TabsContent value="calls">
-          <TelfinCallsList />
         </TabsContent>
       </Tabs>
 

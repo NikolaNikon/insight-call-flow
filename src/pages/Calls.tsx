@@ -32,6 +32,8 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { CallActions } from "@/components/CallActions";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TelfinCallsList } from "@/components/telfin/TelfinCallsList";
 
 interface Call {
   id: string;
@@ -210,253 +212,266 @@ const Calls = () => {
       <div className="max-w-7xl mx-auto space-y-6">
         <div className="bg-white rounded-lg shadow-sm border p-6">
           <h1 className="text-3xl font-bold text-graphite mb-2">Звонки</h1>
-          <p className="text-gray-600">Поиск и фильтрация записей звонков по различным параметрам</p>
+          <p className="text-gray-600">Анализ обработанных звонков и просмотр синхронизированных данных из интеграций.</p>
         </div>
 
-        {/* Search and Filters */}
-        <Card className="bg-white border-0 shadow-sm">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-graphite">
-              <SearchIcon className="h-5 w-5" />
-              Параметры поиска
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div>
-                <label className="text-sm font-semibold text-graphite mb-2 block">
-                  Поиск по ключевым словам
-                </label>
-                <Input
-                  placeholder="Введите ключевые слова..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full"
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-semibold text-graphite mb-2 block">
-                  Менеджер
-                </label>
-                <Select value={selectedManager} onValueChange={setSelectedManager}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Выберите менеджера" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Все менеджеры</SelectItem>
-                    {managers.map((manager) => (
-                      <SelectItem key={manager.id} value={manager.id}>
-                        {manager.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <label className="text-sm font-semibold text-graphite mb-2 block">
-                  Дата с
-                </label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className="w-full justify-start text-left font-normal">
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {dateFrom ? format(dateFrom, "dd.MM.yyyy", { locale: ru }) : "Выберите дату"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={dateFrom}
-                      onSelect={setDateFrom}
-                      initialFocus
+        <Tabs defaultValue="processed" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="processed">Обработанные звонки</TabsTrigger>
+            <TabsTrigger value="telfin">Звонки из Телфин</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="processed" className="mt-6 space-y-6">
+            {/* Search and Filters */}
+            <Card className="bg-white border-0 shadow-sm">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-graphite">
+                  <SearchIcon className="h-5 w-5" />
+                  Параметры поиска
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div>
+                    <label className="text-sm font-semibold text-graphite mb-2 block">
+                      Поиск по ключевым словам
+                    </label>
+                    <Input
+                      placeholder="Введите ключевые слова..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full"
                     />
-                  </PopoverContent>
-                </Popover>
-              </div>
-
-              <div>
-                <label className="text-sm font-semibold text-graphite mb-2 block">
-                  Дата до
-                </label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className="w-full justify-start text-left font-normal">
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {dateTo ? format(dateTo, "dd.MM.yyyy", { locale: ru }) : "Выберите дату"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={dateTo}
-                      onSelect={setDateTo}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-            </div>
-
-            <div className="flex gap-3">
-              <Button className="gap-2 bg-primary hover:bg-primary/90" onClick={handleSearch}>
-                <SearchIcon className="h-4 w-4" />
-                Найти
-              </Button>
-              <Button variant="outline" className="gap-2" onClick={handleResetFilters}>
-                <Filter className="h-4 w-4" />
-                Сбросить фильтры
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Search Results */}
-        <Card className="bg-white border-0 shadow-sm">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-graphite">Результаты поиска</CardTitle>
-              <div className="flex items-center gap-4">
-                <Badge variant="outline">
-                  Найдено: {callsData?.totalCount || 0} звонков
-                </Badge>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-600">Показать:</span>
-                  <Select value={pageSize.toString()} onValueChange={(value) => {
-                    setPageSize(Number(value));
-                    setCurrentPage(1);
-                  }}>
-                    <SelectTrigger className="w-20">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="10">10</SelectItem>
-                      <SelectItem value="50">50</SelectItem>
-                      <SelectItem value="100">100</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-8 w-8 animate-spin" />
-                <span className="ml-2">Загрузка звонков...</span>
-              </div>
-            ) : !callsData?.calls.length ? (
-              <div className="text-center py-8 text-gray-500">
-                Звонки не найдены. Попробуйте изменить параметры поиска.
-              </div>
-            ) : (
-              <>
-                <div className="space-y-4">
-                  {callsData.calls.map((call) => (
-                    <div key={call.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-4 mb-3">
-                            <div className="flex items-center gap-2">
-                              <User className="h-4 w-4 text-gray-500" />
-                              <span className="font-semibold text-graphite">{call.customer.name}</span>
-                            </div>
-                            <div className="flex items-center gap-2 text-gray-600">
-                              <Phone className="h-3 w-3" />
-                              <span className="text-sm">{call.customer.phone_number}</span>
-                            </div>
-                            <Badge variant="outline" className="text-xs">
-                              ID: {call.id.slice(0, 8)}...
-                            </Badge>
-                          </div>
-
-                          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-sm text-gray-600 mb-3">
-                            <div>
-                              <span className="block">Менеджер:</span>
-                              <span className="font-semibold">{call.manager.name}</span>
-                            </div>
-                            <div>
-                              <span className="block">Дата и время:</span>
-                              <span className="font-semibold">{formatDate(call.date)}</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Star className="h-3 w-3" />
-                              <span className={`font-semibold ${getScoreColor(call.general_score)}`}>
-                                {call.general_score}/10
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <span className="text-gray-500">Удовлетворенность:</span>
-                              <span className="font-semibold text-green">{call.user_satisfaction_index * 10}%</span>
-                            </div>
-                          </div>
-
-                          <p className="text-sm text-gray-600 mb-3">{call.summary}</p>
-
-                          {extractKeywords(call.transcription + ' ' + call.summary).length > 0 && (
-                            <div className="flex items-center gap-2 mb-3">
-                              <span className="text-xs text-gray-500">Ключевые слова:</span>
-                              {extractKeywords(call.transcription + ' ' + call.summary).map((keyword, index) => (
-                                <Badge key={index} variant="secondary" className="text-xs">
-                                  {keyword}
-                                </Badge>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-
-                        <CallActions 
-                          audioFileUrl={call.audio_file_url}
-                          callId={call.id}
-                          transcription={call.transcription}
-                          summary={call.summary}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Pagination */}
-                {totalPages > 1 && (
-                  <div className="mt-6">
-                    <Pagination>
-                      <PaginationContent>
-                        <PaginationItem>
-                          <PaginationPrevious 
-                            onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                            className={currentPage === 1 ? 'pointer-events-none opacity-50' : ''}
-                          />
-                        </PaginationItem>
-                        
-                        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                          const page = i + 1;
-                          return (
-                            <PaginationItem key={page}>
-                              <PaginationLink
-                                onClick={() => setCurrentPage(page)}
-                                isActive={currentPage === page}
-                              >
-                                {page}
-                              </PaginationLink>
-                            </PaginationItem>
-                          );
-                        })}
-                        
-                        <PaginationItem>
-                          <PaginationNext 
-                            onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                            className={currentPage === totalPages ? 'pointer-events-none opacity-50' : ''}
-                          />
-                        </PaginationItem>
-                      </PaginationContent>
-                    </Pagination>
                   </div>
+
+                  <div>
+                    <label className="text-sm font-semibold text-graphite mb-2 block">
+                      Менеджер
+                    </label>
+                    <Select value={selectedManager} onValueChange={setSelectedManager}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Выберите менеджера" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Все менеджеры</SelectItem>
+                        {managers.map((manager) => (
+                          <SelectItem key={manager.id} value={manager.id}>
+                            {manager.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-semibold text-graphite mb-2 block">
+                      Дата с
+                    </label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" className="w-full justify-start text-left font-normal">
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {dateFrom ? format(dateFrom, "dd.MM.yyyy", { locale: ru }) : "Выберите дату"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={dateFrom}
+                          onSelect={setDateFrom}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-semibold text-graphite mb-2 block">
+                      Дата до
+                    </label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" className="w-full justify-start text-left font-normal">
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {dateTo ? format(dateTo, "dd.MM.yyyy", { locale: ru }) : "Выберите дату"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={dateTo}
+                          onSelect={setDateTo}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <Button className="gap-2 bg-primary hover:bg-primary/90" onClick={handleSearch}>
+                    <SearchIcon className="h-4 w-4" />
+                    Найти
+                  </Button>
+                  <Button variant="outline" className="gap-2" onClick={handleResetFilters}>
+                    <Filter className="h-4 w-4" />
+                    Сбросить фильтры
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Search Results */}
+            <Card className="bg-white border-0 shadow-sm">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-graphite">Результаты поиска</CardTitle>
+                  <div className="flex items-center gap-4">
+                    <Badge variant="outline">
+                      Найдено: {callsData?.totalCount || 0} звонков
+                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-600">Показать:</span>
+                      <Select value={pageSize.toString()} onValueChange={(value) => {
+                        setPageSize(Number(value));
+                        setCurrentPage(1);
+                      }}>
+                        <SelectTrigger className="w-20">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="10">10</SelectItem>
+                          <SelectItem value="50">50</SelectItem>
+                          <SelectItem value="100">100</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {isLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-8 w-8 animate-spin" />
+                    <span className="ml-2">Загрузка звонков...</span>
+                  </div>
+                ) : !callsData?.calls.length ? (
+                  <div className="text-center py-8 text-gray-500">
+                    Звонки не найдены. Попробуйте изменить параметры поиска.
+                  </div>
+                ) : (
+                  <>
+                    <div className="space-y-4">
+                      {callsData.calls.map((call) => (
+                        <div key={call.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-4 mb-3">
+                                <div className="flex items-center gap-2">
+                                  <User className="h-4 w-4 text-gray-500" />
+                                  <span className="font-semibold text-graphite">{call.customer.name}</span>
+                                </div>
+                                <div className="flex items-center gap-2 text-gray-600">
+                                  <Phone className="h-3 w-3" />
+                                  <span className="text-sm">{call.customer.phone_number}</span>
+                                </div>
+                                <Badge variant="outline" className="text-xs">
+                                  ID: {call.id.slice(0, 8)}...
+                                </Badge>
+                              </div>
+
+                              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-sm text-gray-600 mb-3">
+                                <div>
+                                  <span className="block">Менеджер:</span>
+                                  <span className="font-semibold">{call.manager.name}</span>
+                                </div>
+                                <div>
+                                  <span className="block">Дата и время:</span>
+                                  <span className="font-semibold">{formatDate(call.date)}</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <Star className="h-3 w-3" />
+                                  <span className={`font-semibold ${getScoreColor(call.general_score)}`}>
+                                    {call.general_score}/10
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <span className="text-gray-500">Удовлетворенность:</span>
+                                  <span className="font-semibold text-green">{call.user_satisfaction_index * 10}%</span>
+                                </div>
+                              </div>
+
+                              <p className="text-sm text-gray-600 mb-3">{call.summary}</p>
+
+                              {extractKeywords(call.transcription + ' ' + call.summary).length > 0 && (
+                                <div className="flex items-center gap-2 mb-3">
+                                  <span className="text-xs text-gray-500">Ключевые слова:</span>
+                                  {extractKeywords(call.transcription + ' ' + call.summary).map((keyword, index) => (
+                                    <Badge key={index} variant="secondary" className="text-xs">
+                                      {keyword}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+
+                            <CallActions 
+                              audioFileUrl={call.audio_file_url}
+                              callId={call.id}
+                              transcription={call.transcription}
+                              summary={call.summary}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Pagination */}
+                    {totalPages > 1 && (
+                      <div className="mt-6">
+                        <Pagination>
+                          <PaginationContent>
+                            <PaginationItem>
+                              <PaginationPrevious 
+                                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                                className={currentPage === 1 ? 'pointer-events-none opacity-50' : ''}
+                              />
+                            </PaginationItem>
+                            
+                            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                              const page = i + 1;
+                              return (
+                                <PaginationItem key={page}>
+                                  <PaginationLink
+                                    onClick={() => setCurrentPage(page)}
+                                    isActive={currentPage === page}
+                                  >
+                                    {page}
+                                  </PaginationLink>
+                                </PaginationItem>
+                              );
+                            })}
+                            
+                            <PaginationItem>
+                              <PaginationNext 
+                                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                                className={currentPage === totalPages ? 'pointer-events-none opacity-50' : ''}
+                              />
+                            </PaginationItem>
+                          </PaginationContent>
+                        </Pagination>
+                      </div>
+                    )}
+                  </>
                 )}
-              </>
-            )}
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="telfin">
+            <TelfinCallsList />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
