@@ -1,35 +1,17 @@
 
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
-import { User, Menu } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import AnimatedLogoutButton from './AnimatedLogoutButton';
 import { ThemeToggle } from './ThemeToggle';
+import { UserMenu } from './UserMenu';
 
 interface HeaderProps {
   onMenuClick?: () => void;
 }
 
 const Header = ({ onMenuClick }: HeaderProps) => {
-  const { user, signOut } = useAuth();
-  const { toast } = useToast();
-
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-      toast({
-        title: 'Выход выполнен',
-        description: 'Вы успешно вышли из системы.',
-      });
-    } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Ошибка',
-        description: 'Не удалось выйти из системы.',
-      });
-    }
-  };
+  const { user } = useAuth();
 
   return (
     <div className="bg-card rounded-lg shadow-sm border p-6 mb-6">
@@ -56,15 +38,7 @@ const Header = ({ onMenuClick }: HeaderProps) => {
             Система активна
           </Badge>
           <ThemeToggle />
-          {user && (
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <User className="h-4 w-4" />
-                <span>{user.email}</span>
-              </div>
-              <AnimatedLogoutButton onClick={handleSignOut} />
-            </div>
-          )}
+          {user && <UserMenu />}
         </div>
       </div>
     </div>
