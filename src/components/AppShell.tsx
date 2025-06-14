@@ -13,17 +13,14 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
 
   const toggleSidebar = () => {
     if (window.innerWidth >= 1024) {
-      // На десктопе сворачиваем/разворачиваем
       setSidebarCollapsed(!sidebarCollapsed);
     } else {
-      // На мобильных открываем/закрываем
       setSidebarOpen(!sidebarOpen);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      {/* Единственный сайдбар, который адаптируется под размер экрана */}
+    <div className="min-h-screen bg-background flex">
       <AppSidebar 
         isOpen={sidebarOpen} 
         onClose={() => setSidebarOpen(false)} 
@@ -31,7 +28,6 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
         onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
       />
       
-      {/* Mobile Overlay */}
       {sidebarOpen && (
         <div
           className="fixed inset-0 z-40 bg-black bg-opacity-50 lg:hidden"
@@ -39,7 +35,6 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
         />
       )}
 
-      {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0">
         <Header onMenuClick={toggleSidebar} />
         <main className="flex-1 p-6">

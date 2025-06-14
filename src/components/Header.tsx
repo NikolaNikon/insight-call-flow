@@ -51,8 +51,8 @@ const Header = ({ onMenuClick }: HeaderProps) => {
           </div>
         </div>
         <div className="flex items-center gap-4">
-          <Badge variant="outline" className="text-green-600 border-green-200">
-            <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+          <Badge variant="outline" className="text-theme-green-text border-theme-green-text bg-theme-green-bg">
+            <div className="w-2 h-2 bg-theme-green-text rounded-full mr-2"></div>
             Система активна
           </Badge>
           <ThemeToggle />

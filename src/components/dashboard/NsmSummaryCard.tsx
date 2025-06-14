@@ -28,8 +28,8 @@ export const NsmSummaryCard = () => {
         </CardHeader>
         <CardContent>
           <div className="animate-pulse space-y-4">
-            <div className="h-8 bg-gray-200 rounded w-1/3"></div>
-            <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+            <div className="h-8 bg-muted rounded w-1/3"></div>
+            <div className="h-4 bg-muted rounded w-1/2"></div>
           </div>
         </CardContent>
       </Card>
@@ -38,15 +38,15 @@ export const NsmSummaryCard = () => {
 
   if (!nsmMetric) {
     return (
-      <Card className="col-span-2 border-dashed border-2 border-amber-200">
+      <Card className="col-span-2 border-dashed border-2 border-theme-yellow-text bg-theme-yellow-bg">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             🔷 Главная метрика команды
           </CardTitle>
         </CardHeader>
         <CardContent className="text-center py-8">
-          <p className="text-gray-600 mb-4">Метрика не выбрана</p>
-          <Button onClick={handleSetupNSM} className="bg-amber-600 hover:bg-amber-700">
+          <p className="text-muted-foreground mb-4">Метрика не выбрана</p>
+          <Button onClick={handleSetupNSM} className="bg-theme-orange-text hover:bg-theme-orange-text/90 text-theme-orange-bg">
             Выбрать NSM
           </Button>
         </CardContent>
@@ -58,21 +58,21 @@ export const NsmSummaryCard = () => {
   const targetValue = nsmMetric.target_value || 5;
   const percentage = Math.round((currentValue / targetValue) * 100);
   
-  // Mock trend data - в реальности нужно получать из metric_history
-  const trend = 5; // +5%
+  const trend = 5;
   const isPositiveTrend = trend > 0;
 
   return (
     <>
-      <Card className="col-span-2 bg-gradient-to-r from-blue-50 to-indigo-50">
+      <Card className="col-span-2 bg-theme-blue-bg border-theme-blue-text/20">
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-theme-blue-text">
             🔷 Главная метрика команды
           </CardTitle>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => setShowModal(true)}
+            className="text-theme-blue-text hover:bg-theme-blue-text/10"
           >
             <Settings className="h-4 w-4" />
           </Button>
@@ -80,12 +80,16 @@ export const NsmSummaryCard = () => {
         <CardContent>
           <div className="space-y-4">
             <div className="flex items-center gap-4">
-              <div className="text-3xl font-bold text-blue-900">
+              <div className="text-3xl font-bold text-theme-blue-text">
                 {currentValue.toFixed(1)} ★
               </div>
               <Badge
                 variant={isPositiveTrend ? "default" : "destructive"}
-                className="flex items-center gap-1"
+                className={`flex items-center gap-1 ${
+                  isPositiveTrend 
+                    ? 'bg-theme-green-bg text-theme-green-text border-theme-green-text' 
+                    : 'bg-theme-red-bg text-theme-red-text border-theme-red-text'
+                }`}
               >
                 {isPositiveTrend ? (
                   <TrendingUp className="h-3 w-3" />
@@ -97,19 +101,19 @@ export const NsmSummaryCard = () => {
             </div>
             
             <div className="space-y-2">
-              <div className="flex justify-between text-sm text-gray-600">
+              <div className="flex justify-between text-sm text-theme-blue-text/70">
                 <span>Средняя оценка звонков</span>
                 <span>{percentage}% от цели</span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
+              <div className="w-full bg-theme-gray-bg rounded-full h-2">
                 <div
-                  className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                  className="bg-theme-blue-text h-2 rounded-full transition-all duration-300"
                   style={{ width: `${Math.min(percentage, 100)}%` }}
                 ></div>
               </div>
             </div>
 
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-theme-blue-text/70">
               Цель: {targetValue} ★ | Текущий результат: {currentValue.toFixed(1)} ★
             </p>
           </div>

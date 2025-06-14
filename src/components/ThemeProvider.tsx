@@ -1,9 +1,29 @@
 
-import { useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 
 type Theme = 'light' | 'dark' | 'system';
 
+interface ThemeContextType {
+  theme: Theme;
+  resolvedTheme: 'light' | 'dark';
+  setTheme: (theme: Theme) => void;
+}
+
+const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+
 export const useTheme = () => {
+  const context = useContext(ThemeContext);
+  if (!context) {
+    throw new Error('useTheme must be used within ThemeProvider');
+  }
+  return context;
+};
+
+interface ThemeProviderProps {
+  children: React.ReactNode;
+}
+
+export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   const [theme, setTheme] = useState<Theme>(() => {
     if (typeof window !== 'undefined') {
       return (localStorage.getItem('theme') as Theme) || 'system';
@@ -14,7 +34,7 @@ export const useTheme = () => {
   const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('light');
 
   useEffect(() => {
-    const root = window.document.documentElement;
+    const root = document.documentElement;
     
     const applyTheme = (newTheme: 'light' | 'dark') => {
       root.classList.remove('light', 'dark');
@@ -31,18 +51,16 @@ export const useTheme = () => {
       applyTheme(theme);
     }
 
-    // Сохраняем в localStorage
     localStorage.setItem('theme', theme);
   }, [theme]);
 
-  // Слушаем изменения системной темы
   useEffect(() => {
     if (theme === 'system') {
       const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
       
       const handleChange = (e: MediaQueryListEvent) => {
         const systemTheme = e.matches ? 'dark' : 'light';
-        const root = window.document.documentElement;
+        const root = document.documentElement;
         root.classList.remove('light', 'dark');
         root.classList.add(systemTheme);
         setResolvedTheme(systemTheme);
@@ -53,9 +71,15 @@ export const useTheme = () => {
     }
   }, [theme]);
 
-  return {
+  const value = {
     theme,
     resolvedTheme,
     setTheme,
   };
+
+  return (
+    <ThemeContext.Provider value={value}>
+      {children}
+    </ThemeContext.Provider>
+  );
 };

@@ -1,5 +1,5 @@
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dashboard2 } from "@/components/dashboard/Dashboard2";
 import { useRealtimeUpdates } from "@/hooks/useRealtimeUpdates";
@@ -8,7 +8,6 @@ import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 
 const Index = () => {
-  // Подключаем real-time обновления
   useRealtimeUpdates();
   const navigate = useNavigate();
   
@@ -19,7 +18,6 @@ const Index = () => {
   });
 
   useEffect(() => {
-    // Проверяем статус настроек
     const telfinConfigured = localStorage.getItem('telfin_hostname') && 
                             localStorage.getItem('telfin_username') && 
                             localStorage.getItem('telfin_password');
@@ -39,7 +37,6 @@ const Index = () => {
   const allConfigured = setupStatus.telfin && setupStatus.telegram && setupStatus.users;
 
   const handleContinueSetup = () => {
-    // Сбрасываем onboarding и возвращаем на welcome
     localStorage.removeItem('onboarding_completed');
     window.dispatchEvent(new Event('onboardingCompleted'));
     navigate('/welcome');
@@ -47,14 +44,13 @@ const Index = () => {
 
   return (
     <div className="space-y-6">
-      {/* Компактное сообщение о настройке (если что-то не настроено) */}
       {!allConfigured && (
-        <Card className="border-amber-200 bg-amber-50">
+        <Card className="border-theme-yellow-text bg-theme-yellow-bg">
           <CardContent className="py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span>🔧</span>
-                <span className="text-sm text-amber-800">
+                <span className="text-sm text-theme-yellow-text">
                   Не всё подключено. Вы можете закончить настройку в любое время.
                 </span>
               </div>
@@ -62,7 +58,7 @@ const Index = () => {
                 onClick={handleContinueSetup} 
                 variant="outline"
                 size="sm"
-                className="text-amber-700 border-amber-300 hover:bg-amber-100"
+                className="text-theme-yellow-text border-theme-yellow-text hover:bg-theme-yellow-text/10"
               >
                 Продолжить настройку
                 <ArrowRight className="ml-2 h-4 w-4" />
@@ -72,7 +68,6 @@ const Index = () => {
         </Card>
       )}
 
-      {/* Основной контент - Dashboard 2.0 */}
       <Dashboard2 />
     </div>
   );

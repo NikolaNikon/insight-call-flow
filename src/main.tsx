@@ -5,14 +5,14 @@ import { SessionContextProvider } from '@supabase/auth-helpers-react'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { supabase } from '@/integrations/supabase/client'
 import { AuthProvider } from '@/hooks/useAuth'
+import { ThemeProvider } from '@/components/ThemeProvider'
 import App from './App.tsx'
 import './index.css'
 
-// Создаем QueryClient
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 5, // 5 минут
+      staleTime: 1000 * 60 * 5,
       retry: 1,
     },
   },
@@ -22,9 +22,11 @@ createRoot(document.getElementById("root")!).render(
   <QueryClientProvider client={queryClient}>
     <SessionContextProvider supabaseClient={supabase}>
       <AuthProvider>
-        <TooltipProvider>
-          <App />
-        </TooltipProvider>
+        <ThemeProvider>
+          <TooltipProvider>
+            <App />
+          </TooltipProvider>
+        </ThemeProvider>
       </AuthProvider>
     </SessionContextProvider>
   </QueryClientProvider>
