@@ -3,9 +3,9 @@ import { API_HOST, corsHeaders } from '../utils.ts';
 import { TelfinRequest } from '../types.ts';
 
 const ENDPOINTS: string[] = [
-  '/api/v1.0/client/',
-  '/api/v1.0/clients/',
-  '/api/v1.0/user/',
+  '/api/ver1.0/client/',
+  '/api/ver1.0/clients/',
+  '/api/ver1.0/user/',
 ];
 
 export async function handleGetUserInfo(body: TelfinRequest): Promise<Response> {
