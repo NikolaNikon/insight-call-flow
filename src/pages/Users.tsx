@@ -48,7 +48,16 @@ const Users = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setUsers(data || []);
+      // Map is_active to status ("active" or "inactive")
+      const mappedUsers: User[] = (data || []).map((row: any) => ({
+        id: row.id,
+        name: row.name,
+        email: row.email,
+        role: row.role,
+        status: row.is_active === false ? "inactive" : "active",
+        lastLogin: undefined, // you can set this if needed
+      }));
+      setUsers(mappedUsers);
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -274,13 +283,12 @@ const Users = () => {
                         <Badge className={getRoleColor(user.role)}>
                           {getRoleText(user.role)}
                         </Badge>
-                        <Badge className={getStatusColor(user.is_active !== false ? 'active' : 'inactive')}>
-                          {user.is_active !== false ? 'Активный' : 'Неактивный'}
+                        <Badge className={getStatusColor(user.status)}>
+                          {user.status === "active" ? 'Активный' : 'Неактивный'}
                         </Badge>
                       </div>
                       <div className="text-sm text-gray-600 space-x-4">
                         <span>{user.email}</span>
-                        {/* lastLogin больше не используется */}
                       </div>
                     </div>
                     <div className="flex gap-2">
