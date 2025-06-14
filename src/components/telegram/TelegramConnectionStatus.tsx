@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Bot, CheckCircle, Clock, XCircle } from 'lucide-react';
+import { CheckCircle, Clock, XCircle } from 'lucide-react';
 
 interface TelegramConnectionStatusProps {
   isConnected?: boolean;
@@ -52,12 +52,5 @@ export const TelegramConnectionStatus: React.FC<TelegramConnectionStatusProps> =
     );
   }
 
-  return (
-    <Alert className="border-gray-200 bg-gray-50">
-      <Bot className="h-4 w-4 text-gray-600" />
-      <AlertDescription className="text-gray-700">
-        🔌 Telegram не подключен к вашему аккаунту CallControl
-      </AlertDescription>
-    </Alert>
-  );
+  return null;
 };
