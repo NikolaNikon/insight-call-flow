@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Monitor, Moon, Sun } from 'lucide-react';
+import { Moon, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -32,11 +32,6 @@ export const ThemeToggle = () => {
           <Moon className="mr-2 h-4 w-4" />
           <span>Тёмная</span>
           {theme === 'dark' && <span className="ml-auto">✓</span>}
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme('system')}>
-          <Monitor className="mr-2 h-4 w-4" />
-          <span>Системная</span>
-          {theme === 'system' && <span className="ml-auto">✓</span>}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
