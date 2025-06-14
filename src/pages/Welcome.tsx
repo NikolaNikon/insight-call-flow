@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { CheckCircle, Phone, Bot, Users, ArrowRight, ArrowLeft } from 'lucide-react';
+import { CheckCircle, Phone, Bot, Users, ArrowRight, ArrowLeft, Loader2 } from 'lucide-react';
 import { OnboardingStepTelfin } from '@/components/onboarding/OnboardingStepTelfin';
 import { OnboardingStepTelegram } from '@/components/onboarding/OnboardingStepTelegram';
 import { OnboardingStepUsers } from '@/components/onboarding/OnboardingStepUsers';
@@ -13,14 +13,27 @@ const Welcome = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [completedSteps, setCompletedSteps] = useState<boolean[]>([false, false, false]);
   const navigate = useNavigate();
-  const { isSuperAdmin } = useUserRole();
+  const { isSuperAdmin, isLoading } = useUserRole();
 
-  // Суперадмин сразу переходит на главную, онбординг не показываем
+  // Если еще грузится роль — рендерим лоадер
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <Loader2 className="animate-spin h-8 w-8 text-blue-500" />
+      </div>
+    );
+  }
+
+  // Суперадмина немедленно редиректим на главную, не показывая никаких экранов
   useEffect(() => {
-    if (isSuperAdmin) {
+    if (!isLoading && isSuperAdmin) {
       navigate("/", { replace: true });
     }
-  }, [isSuperAdmin, navigate]);
+  }, [isSuperAdmin, isLoading, navigate]);
+
+  if (!isLoading && isSuperAdmin) {
+    return null; // ничего не рендерим во время редиректа
+  }
 
   const steps = [
     {
