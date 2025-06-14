@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -7,11 +7,20 @@ import { OnboardingStepTelfin } from '@/components/onboarding/OnboardingStepTelf
 import { OnboardingStepTelegram } from '@/components/onboarding/OnboardingStepTelegram';
 import { OnboardingStepUsers } from '@/components/onboarding/OnboardingStepUsers';
 import { useNavigate } from 'react-router-dom';
+import { useUserRole } from '@/hooks/useUserRole';
 
 const Welcome = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [completedSteps, setCompletedSteps] = useState<boolean[]>([false, false, false]);
   const navigate = useNavigate();
+  const { isSuperAdmin } = useUserRole();
+
+  // Суперадмин сразу переходит на главную, онбординг не показываем
+  useEffect(() => {
+    if (isSuperAdmin) {
+      navigate("/", { replace: true });
+    }
+  }, [isSuperAdmin, navigate]);
 
   const steps = [
     {
