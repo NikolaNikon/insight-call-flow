@@ -1,9 +1,11 @@
-
 interface TelfinOAuthConfig {
   hostname: string;
   clientId: string;
   clientSecret: string;
   redirectUri: string;
+  accessToken?: string | null;
+  refreshToken?: string | null;
+  tokenExpiry?: number | null;
 }
 
 interface TelfinTokenResponse {
@@ -31,7 +33,9 @@ export class TelfinOAuthAPI {
 
   constructor(config: TelfinOAuthConfig) {
     this.config = config;
-    this.loadTokenFromStorage();
+    this.accessToken = config.accessToken || null;
+    this.refreshToken = config.refreshToken || null;
+    this.tokenExpiry = config.tokenExpiry || null;
   }
 
   /**
@@ -81,8 +85,6 @@ export class TelfinOAuthAPI {
       this.accessToken = tokenData.access_token;
       this.refreshToken = tokenData.refresh_token || null;
       this.tokenExpiry = Date.now() + (tokenData.expires_in * 1000);
-      
-      this.saveTokenToStorage();
       
       return tokenData;
     } catch (error) {
@@ -154,8 +156,6 @@ export class TelfinOAuthAPI {
       
       this.accessToken = tokenData.access_token;
       this.tokenExpiry = Date.now() + (tokenData.expires_in * 1000);
-      
-      this.saveTokenToStorage();
       
       return tokenData;
     } catch (error) {
@@ -275,39 +275,9 @@ export class TelfinOAuthAPI {
         this.refreshToken = tokenData.refresh_token;
       }
       
-      this.saveTokenToStorage();
     } catch (error) {
       console.error('Error refreshing access token:', error);
       throw error;
-    }
-  }
-
-  /**
-   * Сохранение токена в localStorage
-   */
-  private saveTokenToStorage(): void {
-    const tokenData = {
-      accessToken: this.accessToken,
-      refreshToken: this.refreshToken,
-      tokenExpiry: this.tokenExpiry
-    };
-    localStorage.setItem('telfin_oauth_tokens', JSON.stringify(tokenData));
-  }
-
-  /**
-   * Загрузка токена из localStorage
-   */
-  private loadTokenFromStorage(): void {
-    const stored = localStorage.getItem('telfin_oauth_tokens');
-    if (stored) {
-      try {
-        const tokenData = JSON.parse(stored);
-        this.accessToken = tokenData.accessToken;
-        this.refreshToken = tokenData.refreshToken;
-        this.tokenExpiry = tokenData.tokenExpiry;
-      } catch (error) {
-        console.error('Error loading token from storage:', error);
-      }
     }
   }
 
@@ -318,7 +288,6 @@ export class TelfinOAuthAPI {
     this.accessToken = null;
     this.refreshToken = null;
     this.tokenExpiry = null;
-    localStorage.removeItem('telfin_oauth_tokens');
   }
 
   /**
@@ -327,13 +296,25 @@ export class TelfinOAuthAPI {
   hasValidToken(): boolean {
     return !!(this.accessToken && this.tokenExpiry && Date.now() < this.tokenExpiry);
   }
+
+  /**
+  * Получение текущих токенов
+  */
+  getTokens() {
+    return {
+      accessToken: this.accessToken,
+      refreshToken: this.refreshToken,
+      tokenExpiry: this.tokenExpiry,
+    };
+  }
 }
 
 // Singleton instance для OAuth API
 let telfinOAuthInstance: TelfinOAuthAPI | null = null;
 
-export const initTelfinOAuthAPI = (config: TelfinOAuthConfig) => {
+export const initTelfinOAuthAPI = (config: TelfinOAuthConfig): TelfinOAuthAPI => {
   telfinOAuthInstance = new TelfinOAuthAPI(config);
+  return telfinOAuthInstance;
 };
 
 export const getTelfinOAuthAPI = (): TelfinOAuthAPI => {
