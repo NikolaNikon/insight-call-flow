@@ -20,10 +20,12 @@ export const TelegramIntegrationCard = () => {
 
   const handleSaveTelegramSettings = () => {
     if (!telegramSettings.botToken || !telegramSettings.chatId) {
+      const errorText = "Заполните токен бота и ID чата";
       toast({
         title: "Ошибка",
-        description: "Заполните токен бота и ID чата",
-        variant: "destructive"
+        description: errorText,
+        variant: "destructive",
+        copyableText: `Title: Ошибка\nDescription: ${errorText}`
       });
       return;
     }
