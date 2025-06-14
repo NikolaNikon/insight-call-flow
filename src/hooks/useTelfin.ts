@@ -106,7 +106,7 @@ export const useTelfin = () => {
   const handleSaveConfig = () => {
     if (!orgId || !localConfig.clientId || !localConfig.clientSecret) {
       const errorCode = "TELFIN-HOOK-002";
-      const errorText = "Заполните Application ID и Application Secret";
+      const errorText = "Заполните Application ID и Application Secret.";
       toast({ 
         title: `Ошибка конфигурации [${errorCode}]`, 
         description: errorText, 
@@ -141,9 +141,9 @@ export const useTelfin = () => {
   };
   
   const handleConnect = async () => {
-    if (!apiInstance || !orgId) {
+    if (!orgId || !localConfig.clientId || !localConfig.clientSecret) {
       const errorCode = "TELFIN-HOOK-004";
-      const errorText = "Сначала сохраните настройки";
+      const errorText = "Заполните Application ID и Application Secret.";
       toast({ 
         title: `Ошибка [${errorCode}]`, 
         description: errorText, 
@@ -152,27 +152,35 @@ export const useTelfin = () => {
       });
       return;
     }
-    setIsConnecting(true);
-    try {
-      await apiInstance.getAccessToken();
-      const loadedUserInfo = await loadUserInfo(apiInstance);
 
-      if (loadedUserInfo) {
-        const tokens = apiInstance.getTokens();
-        await saveConnectionAsync({
-          org_id: orgId,
-          client_id: localConfig.clientId,
-          client_secret: localConfig.clientSecret,
-          access_token: tokens.accessToken,
-          refresh_token: null, // refresh_token не используется в client_credentials
-          token_expiry: tokens.tokenExpiry ? new Date(tokens.tokenExpiry).toISOString() : null,
-        });
-        
-        setIsAuthorized(true);
-        toast({ title: "Подключение успешно", description: "Авторизация с Телфин выполнена." });
-      } else {
-        // No toast here to prevent duplication, loadUserInfo handles it.
-      }
+    setIsConnecting(true);
+    
+    const tempApi = new TelfinClientCredentialsAPI({
+      clientId: localConfig.clientId,
+      clientSecret: localConfig.clientSecret,
+    });
+    
+    try {
+      console.log('Attempting to connect with clientId:', localConfig.clientId.substring(0, 5) + '...');
+      await tempApi.getAccessToken();
+      const loadedUserInfo = await tempApi.getUserInfo();
+
+      const tokens = tempApi.getTokens();
+      await saveConnectionAsync({
+        org_id: orgId,
+        client_id: localConfig.clientId,
+        client_secret: localConfig.clientSecret,
+        access_token: tokens.accessToken,
+        refresh_token: null,
+        token_expiry: tokens.tokenExpiry ? new Date(tokens.tokenExpiry).toISOString() : null,
+      });
+
+      setApiInstance(tempApi);
+      setIsAuthorized(true);
+      setUserInfo(loadedUserInfo);
+      
+      toast({ title: "Подключение успешно", description: `Авторизация для "${loadedUserInfo.name}" выполнена.` });
+
     } catch (error: any) {
       console.error('Connection error:', error);
       const [errorCode, errorMessage] = extractErrorCode(error.message);
@@ -185,6 +193,8 @@ export const useTelfin = () => {
         copyableText: `Error Code: ${finalErrorCode}\nTitle: Ошибка подключения\nDescription: ${errorMessage}\nDetails: ${JSON.stringify(error, null, 2)}`
       });
       setIsAuthorized(false);
+      setUserInfo(null);
+      setApiInstance(null);
     } finally {
       setIsConnecting(false);
     }
