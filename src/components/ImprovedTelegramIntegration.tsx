@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Bot } from 'lucide-react';
+import { Loader2, Bot, Info } from 'lucide-react';
 import { useTelegramSession } from '@/hooks/useTelegramSession';
 import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { TelegramConnectionStatus } from '@/components/telegram/TelegramConnectionStatus';
@@ -10,6 +10,7 @@ import { TelegramActiveConnections } from '@/components/telegram/TelegramActiveC
 import { useOrganization } from '@/hooks/useOrganization';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 
 export const ImprovedTelegramIntegration = () => {
   const [currentSessionCode, setCurrentSessionCode] = useState<string | null>(null);
@@ -134,16 +135,26 @@ export const ImprovedTelegramIntegration = () => {
       )}
 
       {/* Help Text */}
-      <div className="text-sm text-gray-600 space-y-2">
-        <p className="font-medium">Как это работает:</p>
-        <ol className="list-decimal list-inside space-y-1 text-xs">
-          <li>Нажмите "Подключить Telegram" для генерации персональной ссылки</li>
-          <li>Перейдите по ссылке или нажмите на неё - откроется Telegram</li>
-          <li>Нажмите "Запустить бота" или отправьте команду /start</li>
-          <li>Подтвердите подключение в появившемся диалоге</li>
-          <li>Готово! Теперь вы будете получать уведомления о звонках</li>
-        </ol>
-      </div>
+      <HoverCard>
+        <HoverCardTrigger asChild>
+          <Button variant="link" className="p-0 h-auto text-sm text-gray-600 flex items-center gap-1">
+            <Info className="h-4 w-4" />
+            Как это работает?
+          </Button>
+        </HoverCardTrigger>
+        <HoverCardContent className="w-80">
+          <div className="space-y-2">
+            <p className="font-medium text-sm">Инструкция по подключению:</p>
+            <ol className="list-decimal list-inside space-y-1 text-xs text-gray-700">
+              <li>Нажмите "Подключить Telegram" для генерации персональной ссылки</li>
+              <li>Перейдите по ссылке или нажмите на неё - откроется Telegram</li>
+              <li>Нажмите "Запустить бота" или отправьте команду /start</li>
+              <li>Подтвердите подключение в появившемся диалоге</li>
+              <li>Готово! Теперь вы будете получать уведомления о звонках</li>
+            </ol>
+          </div>
+        </HoverCardContent>
+      </HoverCard>
     </div>
   );
 };
