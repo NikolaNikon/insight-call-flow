@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -14,6 +13,21 @@ const Welcome = () => {
   const navigate = useNavigate();
   const { isSuperAdmin, isLoading } = useUserRole();
   const { orgId, setOrgId } = useImpersonateOrg();
+
+  // ---- НОВОЕ: если это суперадмин, сразу перебрасываем с welcome на главную (редирект) ----
+  if (isLoading) {
+    // Во время загрузки — просто лоадер (иначе возможен мигающий лишний контент)
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <Loader2 className="animate-spin h-8 w-8 text-blue-500" />
+      </div>
+    );
+  }
+  if (isSuperAdmin) {
+    // Хардконтролируем: мгновенный редирект (без показа welcome)
+    navigate("/", { replace: true });
+    return null;
+  }
 
   // Onboarding hooks — всегда вызываем
   const {
@@ -138,4 +152,3 @@ const Welcome = () => {
 };
 
 export default Welcome;
-
