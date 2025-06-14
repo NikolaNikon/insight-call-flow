@@ -5,5 +5,5 @@ export const corsHeaders = {
 };
 
 export const OAUTH_HOST = 'apiproxy.telphin.ru';
-export const API_HOST = 'api.telphin.ru';
+export const API_HOST = 'apiproxy.telphin.ru';
 
