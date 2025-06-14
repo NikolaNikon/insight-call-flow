@@ -22,7 +22,7 @@ interface TelfinUserInfo {
   login: string;
 }
 
-const API_HOST = 'apiproxy.telphin.ru';
+const API_HOST = 'api.telphin.ru';
 
 export class TelfinClientCredentialsAPI {
   private config: TelfinClientCredentialsConfig;
