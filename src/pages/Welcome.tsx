@@ -3,35 +3,16 @@ import React, { useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useUserRole } from '@/hooks/useUserRole';
+import { useOnboardingSteps } from '@/hooks/useOnboardingSteps';
+import { WelcomeScreen } from '@/components/onboarding/WelcomeScreen';
+import { OnboardingProgress } from '@/components/onboarding/OnboardingProgress';
 
-// 1. Call role-related hooks only, since these determine early exit.
-// 2. All onboarding hooks and logic MUST go *after* superadmin redirect/early return.
-
+// Hooks must be called in the same order for every render
 const Welcome = () => {
   const navigate = useNavigate();
   const { isSuperAdmin, isLoading } = useUserRole();
 
-  // 1. Early loading return
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Loader2 className="animate-spin h-8 w-8 text-blue-500" />
-      </div>
-    );
-  }
-
-  // 2. Early effect-based redirect/return for superadmins
-  useEffect(() => {
-    if (isSuperAdmin) {
-      navigate("/", { replace: true });
-    }
-  }, [isSuperAdmin, navigate]);
-
-  if (isSuperAdmin) {
-    return null;
-  }
-
-  // 3. All onboarding hooks only used for non-superadmins
+  // Onboarding hooks — always called, even if not used yet
   const {
     steps,
     currentStep,
@@ -41,10 +22,26 @@ const Welcome = () => {
     completeStep,
     setCurrentStep,
     setCompletedSteps
-  } = require('@/hooks/useOnboardingSteps').useOnboardingSteps(); // fix: require so never conditionally called
+  } = useOnboardingSteps();
 
-  const { WelcomeScreen } = require('@/components/onboarding/WelcomeScreen');
-  const { OnboardingProgress } = require('@/components/onboarding/OnboardingProgress');
+  useEffect(() => {
+    if (isSuperAdmin) {
+      navigate("/", { replace: true });
+    }
+  }, [isSuperAdmin, navigate]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <Loader2 className="animate-spin h-8 w-8 text-blue-500" />
+      </div>
+    );
+  }
+
+  if (isSuperAdmin) {
+    // Wait until effect performs redirect above
+    return null;
+  }
 
   const handleNext = () => {
     if (currentStep < steps.length - 1) {
