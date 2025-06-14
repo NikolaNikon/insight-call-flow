@@ -38,7 +38,7 @@ export const TelegramActiveConnections: React.FC<TelegramActiveConnectionsProps>
           onClick={onRefresh}
           disabled={loading}
         >
-          <RefreshCw className="h-4 w-4" />
+          <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
         </Button>
       </div>
       {links.map((link) => (
