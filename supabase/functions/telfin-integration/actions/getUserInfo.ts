@@ -10,15 +10,27 @@ export async function handleGetUserInfo(body: TelfinRequest): Promise<Response> 
   }
 
   const url = `https://${API_HOST}/api/ver1.0/client/`;
+  
+  const headers = {
+    'Authorization': `Bearer ${accessToken}`,
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+    'User-Agent': 'CallControl/1.0.0'
+  };
+
   console.log('Requesting user info from Telfin URL:', url);
+  console.log('Request Headers:', JSON.stringify(headers));
 
   const response = await fetch(url, {
-    headers: { 'Authorization': `Bearer ${accessToken}` }
+    method: 'GET',
+    headers: headers
   });
   
   // Клонируем ответ, чтобы иметь возможность прочитать его тело дважды (как текст и как JSON)
   const responseForText = response.clone();
   
+  console.log(`Telfin User Info API Response Status: ${response.status}`);
+
   if (!response.ok) {
     const errorText = await responseForText.text();
     console.error(`Telfin User Info API returned non-OK status: ${response.status}`);
@@ -28,6 +40,7 @@ export async function handleGetUserInfo(body: TelfinRequest): Promise<Response> 
   
   try {
     const responseData = await response.json();
+    console.log('Successfully parsed JSON from Telfin User Info API.');
     return new Response(JSON.stringify({ success: true, data: responseData }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
@@ -38,4 +51,3 @@ export async function handleGetUserInfo(body: TelfinRequest): Promise<Response> 
       throw new Error(`Failed to parse JSON. Telfin API returned: ${errorText.substring(0, 500)}`);
   }
 }
-
