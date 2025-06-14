@@ -1658,6 +1658,10 @@ export type Database = {
           change_percent: number
         }[]
       }
+      has_user_role: {
+        Args: { _role: string }
+        Returns: boolean
+      }
       import_chistopar_multigroup: {
         Args: { csv_content: string }
         Returns: number

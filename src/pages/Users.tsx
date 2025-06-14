@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,25 +26,8 @@ interface User {
 }
 
 const Users = () => {
-  const [users, setUsers] = useState<User[]>([
-    {
-      id: "1",
-      name: "Администратор",
-      email: "admin@callcontrol.ru",
-      role: "admin",
-      status: "active",
-      lastLogin: "2024-01-22 14:30"
-    },
-    {
-      id: "2",
-      name: "Иванов Иван",
-      email: "ivanov@callcontrol.ru", 
-      role: "manager",
-      status: "active",
-      lastLogin: "2024-01-22 12:15"
-    },
-  ]);
-
+  // Вместо мок-данных — загружаем пользователей из Supabase c учетом RLS и org_id
+  const [users, setUsers] = useState<User[]>([]);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -54,8 +36,34 @@ const Users = () => {
     password: "",
     role: "viewer"
   });
-
   const { toast } = useToast();
+
+  // --- Загрузить пользователей из БД с учетом RLS и org_id ---
+  const fetchUsers = async () => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setUsers(data || []);
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Ошибка",
+        description: error.message || "Не удалось загрузить пользователей"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUsers();
+    // eslint-disable-next-line
+  }, []);
 
   const handleCreateUser = async () => {
     if (!formData.name || !formData.email || !formData.password) {
@@ -79,7 +87,7 @@ const Users = () => {
     setIsLoading(true);
 
     try {
-      // Создаем пользователя через Supabase Auth
+      // Создание пользователя через Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
@@ -91,33 +99,19 @@ const Users = () => {
         }
       });
 
-      if (authError) {
-        throw authError;
-      }
+      if (authError) throw authError;
 
       if (authData.user) {
-        // Добавляем пользователя в локальный список
-        const newUser: User = {
-          id: authData.user.id,
-          name: formData.name,
-          email: formData.email,
-          role: formData.role,
-          status: "active"
-        };
-
-        setUsers(prev => [...prev, newUser]);
-
         toast({
           title: "Пользователь создан",
           description: `Пользователь ${formData.name} успешно создан`
         });
 
-        // Очищаем форму и закрываем диалог
         setFormData({ name: "", email: "", password: "", role: "viewer" });
         setIsCreateDialogOpen(false);
+        fetchUsers(); // обновить список
       }
     } catch (error: any) {
-      console.error("Error creating user:", error);
       toast({
         variant: "destructive",
         title: "Ошибка создания пользователя",
@@ -130,25 +124,28 @@ const Users = () => {
 
   const getRoleColor = (role: string) => {
     switch (role) {
+      case 'superadmin': return 'bg-purple-100 text-purple-800';
       case 'admin': return 'bg-red-100 text-red-800';
       case 'manager': return 'bg-blue-100 text-blue-800';
       case 'analyst': return 'bg-green-100 text-green-800';
+      case 'viewer': return 'bg-gray-100 text-gray-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
 
-  const getStatusColor = (status: string) => {
-    return status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800';
-  };
-
   const getRoleText = (role: string) => {
     switch (role) {
+      case 'superadmin': return 'Суперадмин';
       case 'admin': return 'Администратор';
       case 'manager': return 'Менеджер';
       case 'analyst': return 'Аналитик';
       case 'viewer': return 'Просмотр';
       default: return 'Пользователь';
     }
+  };
+
+  const getStatusColor = (status: string) => {
+    return status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800';
   };
 
   return (
@@ -166,7 +163,6 @@ const Users = () => {
                   Добавление, редактирование и управление доступом пользователей
                 </CardDescription>
               </div>
-              
               <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
                 <DialogTrigger asChild>
                   <Button className="gap-2">
@@ -258,37 +254,48 @@ const Users = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {users.map((user) => (
-                <div key={user.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <span className="font-medium text-gray-900">{user.name}</span>
-                      <Badge className={getRoleColor(user.role)}>
-                        {getRoleText(user.role)}
-                      </Badge>
-                      <Badge className={getStatusColor(user.status)}>
-                        {user.status === 'active' ? 'Активный' : 'Неактивный'}
-                      </Badge>
-                    </div>
-                    <div className="text-sm text-gray-600 space-x-4">
-                      <span>{user.email}</span>
-                      {user.lastLogin && (
-                        <span>Последний вход: {user.lastLogin}</span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline" className="gap-2">
-                      <Edit className="h-3 w-3" />
-                      Редактировать
-                    </Button>
-                    <Button size="sm" variant="outline" className="gap-2 text-red-600 hover:text-red-700">
-                      <Trash2 className="h-3 w-3" />
-                      Удалить
-                    </Button>
-                  </div>
+              {isLoading ? (
+                <div className="text-center text-gray-400 py-12">
+                  <Loader2 className="mx-auto mb-2 h-5 w-5 animate-spin" />
+                  Загрузка пользователей...
                 </div>
-              ))}
+              ) : users.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <UsersIcon className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                  <p>В организации пока нет пользователей</p>
+                  <p className="text-sm">Добавьте первого пользователя, нажав кнопку выше</p>
+                </div>
+              ) : (
+                users.map((user) => (
+                  <div key={user.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <span className="font-medium text-gray-900">{user.name}</span>
+                        <Badge className={getRoleColor(user.role)}>
+                          {getRoleText(user.role)}
+                        </Badge>
+                        <Badge className={getStatusColor(user.is_active !== false ? 'active' : 'inactive')}>
+                          {user.is_active !== false ? 'Активный' : 'Неактивный'}
+                        </Badge>
+                      </div>
+                      <div className="text-sm text-gray-600 space-x-4">
+                        <span>{user.email}</span>
+                        {/* lastLogin больше не используется */}
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="outline" className="gap-2" disabled>
+                        <Edit className="h-3 w-3" />
+                        Редактировать
+                      </Button>
+                      <Button size="sm" variant="outline" className="gap-2 text-red-600 hover:text-red-700" disabled>
+                        <Trash2 className="h-3 w-3" />
+                        Удалить
+                      </Button>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </CardContent>
         </Card>
