@@ -1,14 +1,15 @@
 
 import React from "react";
-import { useUser } from "@supabase/auth-helpers-react";
 import { useOrganization } from "@/hooks/useOrganization";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
+import { useUserRole } from "@/hooks/useUserRole"; // добавили импорт
 
 const ProfileBasics = () => {
   const { user } = useAuth();
   const { organization } = useOrganization();
+  const { userRole, isLoading } = useUserRole();
 
   return (
     <div className="space-y-2">
@@ -20,7 +21,11 @@ const ProfileBasics = () => {
       </div>
       <div>
         <strong>Роль:</strong>{" "}
-        <Badge variant="outline">{user?.user_metadata?.role || "viewer"}</Badge>
+        {isLoading ? (
+          <span className="text-gray-500">Загрузка...</span>
+        ) : (
+          <Badge variant="outline">{userRole || "viewer"}</Badge>
+        )}
       </div>
       <div>
         <strong>Организация:</strong> {organization?.name || "—"}
