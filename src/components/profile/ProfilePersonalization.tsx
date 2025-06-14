@@ -10,9 +10,11 @@ const ProfilePersonalization = () => {
   const { setTheme } = useTheme();
 
   const handleThemeChange = (value: string) => {
-    updatePreferences({ theme: value });
-    setTheme(value as "light" | "dark" | "system");
-  }
+    if (value === "light" || value === "dark") {
+      updatePreferences({ theme: value });
+      setTheme(value);
+    }
+  };
 
   return (
     <div className="space-y-4 max-w-md">
@@ -35,7 +37,7 @@ const ProfilePersonalization = () => {
       <div>
         <Label htmlFor="theme-select">Тема:</Label>
         <Select
-          value={prefs?.theme || "system"}
+          value={prefs?.theme === 'dark' ? 'dark' : 'light'}
           onValueChange={handleThemeChange}
           disabled={loading}
         >
@@ -45,7 +47,6 @@ const ProfilePersonalization = () => {
           <SelectContent>
             <SelectItem value="light">Светлая</SelectItem>
             <SelectItem value="dark">Тёмная</SelectItem>
-            <SelectItem value="system">Системная</SelectItem>
           </SelectContent>
         </Select>
       </div>
