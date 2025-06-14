@@ -35,10 +35,10 @@ serve(async (req) => {
 
     console.log('User authenticated:', user.id);
 
-    // Получаем информацию о пользователе из таблицы users
+    // Получаем информацию о пользователе из таблицы users, включая org_id
     const { data: userData, error: userError } = await supabaseClient
       .from('users')
-      .select('name, role')
+      .select('name, role, org_id')
       .eq('id', user.id)
       .single();
 
@@ -47,7 +47,12 @@ serve(async (req) => {
       throw new Error('User not found in database');
     }
 
-    console.log('User data retrieved:', userData.name, userData.role);
+    if (!userData.org_id) {
+      console.error(`User ${user.id} does not have an organization.`);
+      throw new Error('User does not belong to an organization');
+    }
+
+    console.log('User data retrieved:', userData.name, userData.role, userData.org_id);
 
     // Генерируем уникальный session_code с префиксом tg_
     const sessionCode = generateSessionCodeWithPrefix();
@@ -63,14 +68,15 @@ serve(async (req) => {
       console.error('Error deleting old sessions:', deleteError);
     }
 
-    // Создаем новую сессию с информацией о пользователе
+    // Создаем новую сессию с информацией о пользователе и организацией
     const { data: session, error: sessionError } = await supabaseClient
       .from('telegram_sessions')
       .insert({
         session_code: sessionCode,
         user_id: user.id,
         user_name: userData.name,
-        user_role: userData.role
+        user_role: userData.role,
+        org_id: userData.org_id
       })
       .select()
       .single();

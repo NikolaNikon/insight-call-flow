@@ -14,51 +14,84 @@ export const handleStartCommand = async (
   console.log('Command parts:', parts);
   
   if (parts.length > 1) {
-    // Есть session_code - процесс подключения через ссылку
     const sessionCode = parts[1];
     console.log('Processing session code:', sessionCode);
-    
-    // Вызываем функцию confirm для обработки кода
+
     try {
-      const { data: confirmResult, error: confirmError } = await supabaseClient.functions.invoke(
-        'telegram-confirm',
-        {
-          body: {
-            code: sessionCode,
-            chat_id: chatId,
-            first_name: user.first_name,
-            username: user.username
-          }
-        }
-      );
+      // 1. Находим сессию по коду
+      const { data: session, error: sessionError } = await supabaseClient
+        .from('telegram_sessions')
+        .select('*')
+        .eq('session_code', sessionCode)
+        .single();
 
-      console.log('Confirm function result:', { confirmResult, confirmError });
-
-      if (confirmError || !confirmResult || confirmResult.status !== 'ok') {
-        const errorMsg = confirmResult?.error || confirmError?.message || 'Unknown error';
-        console.log('Confirmation failed:', errorMsg);
-        
-        if (errorMsg.includes('Code not found') || errorMsg.includes('expired')) {
-          return "❌ Неверный или истекший код подключения.\n\n🔄 Попробуйте сгенерировать новую ссылку в CallControl:\nНастройки → Интеграции → Подключить Telegram бот";
-        } else if (errorMsg.includes('already linked')) {
-          return "⚠️ Этот Telegram-аккаунт уже привязан к другому пользователю.\n\nДля подключения используйте другой Telegram-аккаунт или обратитесь к администратору.";
-        } else {
-          return "❌ Ошибка при подключении. Попробуйте еще раз или обратитесь к администратору.";
-        }
-      } else {
-        // Успешное подключение
-        const userRole = confirmResult.user_role || 'operator';
-        const roleDisplayName = getRoleDisplayName(userRole);
-        const roleGreeting = greetingsByRole[userRole as keyof typeof greetingsByRole] || greetingsByRole.operator;
-        const friendlyName = getFriendlyName(user.first_name, user.username);
-
-        console.log('Creating personalized greeting for:', { friendlyName, userRole, roleDisplayName });
-
-        return `Привет, ${friendlyName}! 👋\n✅ Telegram подключён к CallControl как ${roleDisplayName}.\n\n${roleGreeting}\n\n💡 Используйте /help для просмотра доступных команд.`;
+      if (sessionError || !session) {
+        console.log('Session not found for code:', sessionCode);
+        return "❌ Неверный или истекший код подключения.\n\n🔄 Попробуйте сгенерировать новую ссылку в CallControl:\nНастройки → Интеграции → Подключить Telegram бот";
       }
+
+      // 2. Проверяем, не истекла ли сессия или не была ли использована
+      if (session.used) {
+        return "❌ Код подключения уже был использован.";
+      }
+      if (new Date(session.expires_at) < new Date()) {
+        return "❌ Истек срок действия кода подключения. Сгенерируйте новый.";
+      }
+
+      // 3. Проверяем, не привязан ли этот chat_id к другому пользователю
+      const { data: existingLink, error: existingLinkError } = await supabaseClient
+        .from('telegram_links')
+        .select('user_id')
+        .eq('chat_id', chatId)
+        .eq('active', true)
+        .maybeSingle();
+
+      if (existingLink && existingLink.user_id !== session.user_id) {
+        return "⚠️ Этот Telegram-аккаунт уже привязан к другому пользователю.\n\nДля подключения используйте другой Telegram-аккаунт или обратитесь к администратору.";
+      }
+      
+      // Деактивируем любые существующие подключения для этого пользователя
+      await supabaseClient
+        .from('telegram_links')
+        .update({ active: false })
+        .eq('user_id', session.user_id);
+
+      // 4. Создаем новую связь с org_id
+      const { error: newLinkError } = await supabaseClient
+        .from('telegram_links')
+        .insert({
+          user_id: session.user_id,
+          org_id: session.org_id,
+          chat_id: chatId,
+          telegram_username: user.username,
+          first_name: user.first_name,
+          active: true,
+        });
+      
+      if (newLinkError) {
+        console.error('Error creating telegram link:', newLinkError);
+        return "❌ Ошибка при подключении. Попробуйте еще раз или обратитесь к администратору.";
+      }
+
+      // 5. Помечаем сессию как использованную
+      await supabaseClient
+        .from('telegram_sessions')
+        .update({ used: true })
+        .eq('id', session.id);
+
+      // Успешное подключение
+      const userRole = session.user_role || 'operator';
+      const roleDisplayName = getRoleDisplayName(userRole);
+      const roleGreeting = greetingsByRole[userRole as keyof typeof greetingsByRole] || greetingsByRole.operator;
+      const friendlyName = getFriendlyName(user.first_name, user.username);
+
+      console.log('Creating personalized greeting for:', { friendlyName, userRole, roleDisplayName });
+
+      return `Привет, ${friendlyName}! 👋\n✅ Telegram подключён к CallControl как ${roleDisplayName}.\n\n${roleGreeting}\n\n💡 Используйте /help для просмотра доступных команд.`;
+
     } catch (error) {
-      console.error('Error calling confirm function:', error);
-      return "❌ Ошибка сервера при подтверждении кода. Попробуйте позже.";
+      console.error('Error during start command processing:', error);
+      return "❌ Ошибка сервера при обработке вашего запроса. Попробуйте позже.";
     }
   } else {
     // Обычный /start без параметров
