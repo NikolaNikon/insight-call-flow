@@ -24,8 +24,9 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const [hasCheckedOrg, setHasCheckedOrg] = useState(false);
 
   // useEffect тоже должен вызываться безусловно
+  // Показываем уведомление ТОЛЬКО обычным пользователям (не суперадминам)
   useEffect(() => {
-    if (user && !organization && !hasCheckedOrg && !isSuperAdmin) {
+    if (user && !organization && !hasCheckedOrg && !isSuperAdmin && !roleLoading) {
       console.log('⚠️ Обычный пользователь без организации');
       toast({
         title: "Организация не найдена",
@@ -34,7 +35,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
       });
       setHasCheckedOrg(true);
     }
-  }, [user, organization, hasCheckedOrg, isSuperAdmin, toast]);
+  }, [user, organization, hasCheckedOrg, isSuperAdmin, roleLoading, toast]);
 
   console.log('🛡️ ProtectedRoute:', { 
     isSuperAdmin, 
