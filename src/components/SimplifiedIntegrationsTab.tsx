@@ -6,7 +6,6 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Bot, Phone, Settings, ChevronDown, Building2 } from 'lucide-react';
 import { ImprovedTelegramIntegration } from '@/components/ImprovedTelegramIntegration';
 import { OrganizationTelegramSettings } from '@/components/OrganizationTelegramSettings';
-import { TelfinSettings } from '@/components/TelfinSettings';
 import { TelfinOAuthSettings } from '@/components/TelfinOAuthSettings';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useOrganization } from '@/hooks/useOrganization';
@@ -58,22 +57,14 @@ export const SimplifiedIntegrationsTab = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-graphite">
             <Phone className="h-5 w-5 text-green-600" />
-            Интеграция с Телфин
+            Интеграция с Телфин (OAuth 2.0)
           </CardTitle>
           <CardDescription>
-            Настройка подключения к системе телефонии Телфин для получения аудиозаписей
+            Настройка безопасного подключения к телефонии Телфин для получения аудиозаписей
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="space-y-4">
-            <h4 className="font-medium text-sm">Базовая интеграция (HTTP Basic Auth)</h4>
-            <TelfinSettings />
-          </div>
-          
-          <div className="border-t pt-6 space-y-4">
-            <h4 className="font-medium text-sm">OAuth 2.0 интеграция (рекомендуется)</h4>
-            <TelfinOAuthSettings />
-          </div>
+        <CardContent>
+          <TelfinOAuthSettings />
         </CardContent>
       </Card>
 
@@ -121,3 +112,4 @@ export const SimplifiedIntegrationsTab = () => {
     </div>
   );
 };
+
