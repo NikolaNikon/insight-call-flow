@@ -1,19 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Save, TestTube, ExternalLink, CheckCircle, XCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { initTelfinOAuthAPI, getTelfinOAuthAPI } from '@/services/telfinOAuthApi';
+import { TelfinConfigForm } from './telfin/TelfinConfigForm';
+import { TelfinStatusDisplay } from './telfin/TelfinStatusDisplay';
 
 export const TelfinOAuthSettings = () => {
   const [config, setConfig] = useState({
     hostname: localStorage.getItem('telfin_oauth_hostname') || '',
     clientId: localStorage.getItem('telfin_oauth_client_id') || '',
     clientSecret: localStorage.getItem('telfin_oauth_client_secret') || '',
-    redirectUri: `${window.location.origin}/settings?tab=telfin&oauth_callback=true`
+    redirectUri: `${window.location.origin}/settings?tab=integrations&oauth_callback=true`
   });
   
   const [isAuthorized, setIsAuthorized] = useState(false);
@@ -134,7 +131,10 @@ export const TelfinOAuthSettings = () => {
       });
 
       // Очищаем URL от параметров
-      window.history.replaceState({}, document.title, window.location.pathname);
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.delete('code');
+      newUrl.searchParams.delete('oauth_callback');
+      window.history.replaceState({}, document.title, newUrl.toString());
       
     } catch (error) {
       console.error('OAuth callback error:', error);
@@ -210,108 +210,23 @@ export const TelfinOAuthSettings = () => {
           <TabsTrigger value="status">Статус</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="config" className="space-y-4 pt-4">
-          <div className="grid grid-cols-1 gap-4">
-            <div>
-              <Label htmlFor="hostname">Hostname Телфин</Label>
-              <Input
-                id="hostname"
-                placeholder="example.telfin.ru"
-                value={config.hostname}
-                onChange={(e) => setConfig({ ...config, hostname: e.target.value })}
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="client-id">Client ID (App ID)</Label>
-              <Input
-                id="client-id"
-                placeholder="a80f1e618ddd4d4584e2bd48fd404194"
-                value={config.clientId}
-                onChange={(e) => setConfig({ ...config, clientId: e.target.value })}
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="client-secret">Client Secret (App Secret)</Label>
-              <Input
-                id="client-secret"
-                type="password"
-                placeholder="a2423941f5be408c998d5f7207570990"
-                value={config.clientSecret}
-                onChange={(e) => setConfig({ ...config, clientSecret: e.target.value })}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="redirect-uri">Redirect URI</Label>
-              <Input
-                id="redirect-uri"
-                value={config.redirectUri}
-                readOnly
-                className="bg-gray-100"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Укажите этот URI при создании OAuth приложения в Телфин
-              </p>
-            </div>
-          </div>
-
-          <Button onClick={handleSaveConfig} className="gap-2">
-            <Save className="h-4 w-4" />
-            Сохранить настройки
-          </Button>
+        <TabsContent value="config">
+           <TelfinConfigForm 
+            config={config} 
+            setConfig={setConfig} 
+            handleSaveConfig={handleSaveConfig} 
+          />
         </TabsContent>
 
-        <TabsContent value="status" className="space-y-4 pt-4">
-          <div className="flex items-center gap-3 p-4 border rounded-lg">
-            <div className="flex items-center gap-2">
-              {isAuthorized ? (
-                <CheckCircle className="h-5 w-5 text-green-600" />
-              ) : (
-                <XCircle className="h-5 w-5 text-red-600" />
-              )}
-              <span className="font-medium">
-                {isAuthorized ? 'Авторизован' : 'Не авторизован'}
-              </span>
-            </div>
-            
-            <Badge variant={isAuthorized ? 'default' : 'destructive'}>
-              {isAuthorized ? 'Активно' : 'Неактивно'}
-            </Badge>
-          </div>
-
-          {userInfo && (
-            <div className="p-4 border rounded-lg bg-gray-50">
-              <h4 className="font-medium mb-2">Информация о пользователе:</h4>
-              <div className="text-sm space-y-1">
-                <p><strong>Логин:</strong> {userInfo.login}</p>
-                <p><strong>ID:</strong> {userInfo.id}</p>
-                <p><strong>Client ID:</strong> {userInfo.client_id}</p>
-                <p><strong>Администратор:</strong> {userInfo.admin ? 'Да' : 'Нет'}</p>
-              </div>
-            </div>
-          )}
-
-          <div className="flex gap-2">
-            {!isAuthorized ? (
-              <Button onClick={handleStartOAuth} className="gap-2" disabled={isLoading}>
-                <ExternalLink className="h-4 w-4" />
-                {isLoading ? 'Авторизация...' : 'Начать OAuth авторизацию'}
-              </Button>
-            ) : (
-              <>
-                <Button onClick={testConnection} variant="outline" className="gap-2" disabled={isLoading}>
-                  <TestTube className="h-4 w-4" />
-                  {isLoading ? 'Тестируем...' : 'Тест подключения'}
-                </Button>
-                <Button onClick={handleLogout} variant="destructive" className="gap-2">
-                  <XCircle className="h-4 w-4" />
-                  Отозвать доступ
-                </Button>
-              </>
-            )}
-          </div>
+        <TabsContent value="status">
+          <TelfinStatusDisplay
+            isAuthorized={isAuthorized}
+            userInfo={userInfo}
+            isLoading={isLoading}
+            handleStartOAuth={handleStartOAuth}
+            testConnection={testConnection}
+            handleLogout={handleLogout}
+          />
         </TabsContent>
       </Tabs>
 
