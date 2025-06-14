@@ -1,3 +1,4 @@
+
 import React from "react";
 import {
   BarChart3,
@@ -85,65 +86,77 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
             icon={<BarChart3 className="h-4 w-4" />}
             text="Дашборд"
             collapsed={collapsed}
+            onClick={onClose}
           />
           <SidebarLink
             to="/calls"
             icon={<Phone className="h-4 w-4" />}
             text="Звонки"
             collapsed={collapsed}
+            onClick={onClose}
           />
           <SidebarLink
             to="/keyword-trackers"
             icon={<Search className="h-4 w-4" />}
             text="Ключевые слова"
             collapsed={collapsed}
+            onClick={onClose}
           />
           <SidebarLink
             to="/analytics"
             icon={<FileBarChart className="h-4 w-4" />}
             text="Аналитика"
             collapsed={collapsed}
+            onClick={onClose}
           />
           <SidebarLink
             to="/knowledge-base"
             icon={<BookOpen className="h-4 w-4" />}
             text="База знаний"
             collapsed={collapsed}
+            onClick={onClose}
           />
           <SidebarLink
             to="/search"
             icon={<Search className="h-4 w-4" />}
             text="Поиск"
             collapsed={collapsed}
+            onClick={onClose}
           />
           <SidebarLink
             to="/monitoring"
             icon={<Activity className="h-4 w-4" />}
             text="Мониторинг"
             collapsed={collapsed}
+            onClick={onClose}
           />
           <SidebarLink
             to="/upload"
             icon={<Upload className="h-4 w-4" />}
             text="Загрузка"
             collapsed={collapsed}
+            onClick={onClose}
           />
           <SidebarLink
             to="/users"
             icon={<Users className="h-4 w-4" />}
             text="Пользователи"
             collapsed={collapsed}
+            onClick={onClose}
           />
           <SidebarLink
             to="/settings"
             icon={<Settings className="h-4 w-4" />}
             text="Настройки"
             collapsed={collapsed}
+            onClick={onClose}
           />
           <SidebarLink
             to="/profile"
             icon={<User className="h-5 w-5" />}
             text="Личный кабинет"
+            collapsed={collapsed}
+            onClick={onClose}
           />
         </nav>
       </div>
