@@ -145,6 +145,8 @@ export type Database = {
           processing_status: string | null
           processing_step: string | null
           sales_technique: number | null
+          source: string | null
+          source_call_id: string | null
           summary: string | null
           task_id: string | null
           transcription: string | null
@@ -172,6 +174,8 @@ export type Database = {
           processing_status?: string | null
           processing_step?: string | null
           sales_technique?: number | null
+          source?: string | null
+          source_call_id?: string | null
           summary?: string | null
           task_id?: string | null
           transcription?: string | null
@@ -199,6 +203,8 @@ export type Database = {
           processing_status?: string | null
           processing_step?: string | null
           sales_technique?: number | null
+          source?: string | null
+          source_call_id?: string | null
           summary?: string | null
           task_id?: string | null
           transcription?: string | null
@@ -1439,6 +1445,123 @@ export type Database = {
           },
           {
             foreignKeyName: "telegram_settings_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: true
+            referencedRelation: "v_org_dashboard_metrics"
+            referencedColumns: ["org_id"]
+          },
+        ]
+      }
+      telfin_calls: {
+        Row: {
+          call_id: string
+          called_number: string | null
+          caller_number: string | null
+          created_at: string
+          duration: number | null
+          end_time: string | null
+          extension_id: string | null
+          has_record: boolean | null
+          id: string
+          org_id: string
+          processing_status: string | null
+          record_url: string | null
+          start_time: string | null
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          call_id: string
+          called_number?: string | null
+          caller_number?: string | null
+          created_at?: string
+          duration?: number | null
+          end_time?: string | null
+          extension_id?: string | null
+          has_record?: boolean | null
+          id?: string
+          org_id: string
+          processing_status?: string | null
+          record_url?: string | null
+          start_time?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          call_id?: string
+          called_number?: string | null
+          caller_number?: string | null
+          created_at?: string
+          duration?: number | null
+          end_time?: string | null
+          extension_id?: string | null
+          has_record?: boolean | null
+          id?: string
+          org_id?: string
+          processing_status?: string | null
+          record_url?: string | null
+          start_time?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "telfin_calls_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "telfin_calls_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "v_org_dashboard_metrics"
+            referencedColumns: ["org_id"]
+          },
+        ]
+      }
+      telfin_connections: {
+        Row: {
+          access_token: string | null
+          client_id: string
+          client_secret: string
+          created_at: string
+          org_id: string
+          refresh_token: string | null
+          token_expiry: string | null
+          updated_at: string
+        }
+        Insert: {
+          access_token?: string | null
+          client_id: string
+          client_secret: string
+          created_at?: string
+          org_id: string
+          refresh_token?: string | null
+          token_expiry?: string | null
+          updated_at?: string
+        }
+        Update: {
+          access_token?: string | null
+          client_id?: string
+          client_secret?: string
+          created_at?: string
+          org_id?: string
+          refresh_token?: string | null
+          token_expiry?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "telfin_connections_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "telfin_connections_org_id_fkey"
             columns: ["org_id"]
             isOneToOne: true
             referencedRelation: "v_org_dashboard_metrics"
