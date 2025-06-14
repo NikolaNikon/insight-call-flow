@@ -3,13 +3,27 @@ import React, { useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useUserRole } from '@/hooks/useUserRole';
+import { useOnboardingSteps } from '@/hooks/useOnboardingSteps';
+import { WelcomeScreen } from '@/components/onboarding/WelcomeScreen';
+import { OnboardingProgress } from '@/components/onboarding/OnboardingProgress';
 
-// Early exit for loading and superadmin
 const Welcome = () => {
   const navigate = useNavigate();
   const { isSuperAdmin, isLoading } = useUserRole();
 
-  // Show loader while loading
+  // Always call onboarding state hooks, but logic below prevents them from rendering
+  const {
+    steps,
+    currentStep,
+    completedSteps,
+    next,
+    prev,
+    completeStep,
+    setCurrentStep,
+    setCompletedSteps
+  } = useOnboardingSteps();
+
+  // Show loader while role is loading
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -24,27 +38,10 @@ const Welcome = () => {
       navigate("/", { replace: true });
     }
   }, [isSuperAdmin, navigate]);
+
   if (isSuperAdmin) {
     return null;
   }
-
-  // Only import/use onboarding logic/components when not superadmin and not loading
-  // (avoids extra hook calls on superadmin renders)
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const { useOnboardingSteps } = require('@/hooks/useOnboardingSteps');
-  const { WelcomeScreen } = require('@/components/onboarding/WelcomeScreen');
-  const { OnboardingProgress } = require('@/components/onboarding/OnboardingProgress');
-
-  const {
-    steps,
-    currentStep,
-    completedSteps,
-    next,
-    prev,
-    completeStep,
-    setCurrentStep,
-    setCompletedSteps
-  } = useOnboardingSteps();
 
   const handleNext = () => {
     if (currentStep < steps.length - 1) {
@@ -87,4 +84,3 @@ const Welcome = () => {
 };
 
 export default Welcome;
-
