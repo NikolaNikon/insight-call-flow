@@ -1,37 +1,18 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Bot, Phone, Settings, ChevronDown, Building2 } from 'lucide-react';
+import { Bot, Phone, Settings, ChevronDown } from 'lucide-react';
 import { ImprovedTelegramIntegration } from '@/components/ImprovedTelegramIntegration';
 import { TelfinOAuthSettings } from '@/components/TelfinOAuthSettings';
 import { useUserRole } from '@/hooks/useUserRole';
-import { useOrganization } from '@/hooks/useOrganization';
 
 export const SimplifiedIntegrationsTab = () => {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const { isAdmin } = useUserRole();
-  const { organization } = useOrganization();
 
   return (
     <div className="space-y-6">
-      {/* Organization Info */}
-      {organization && (
-        <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-blue-800">
-              <Building2 className="h-5 w-5" />
-              Организация: {organization.name}
-            </CardTitle>
-            <CardDescription className="text-blue-700">
-              Все интеграции настраиваются на уровне организации
-              {organization.subdomain && ` • Субдомен: ${organization.subdomain}`}
-            </CardDescription>
-          </CardHeader>
-        </Card>
-      )}
-
       {/* User Telegram Connection */}
       <Card className="bg-white border-0 shadow-sm">
         <CardHeader>
