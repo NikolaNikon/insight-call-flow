@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -14,8 +15,6 @@ const Welcome = () => {
   const navigate = useNavigate();
   const { isSuperAdmin, isLoading } = useUserRole();
   const { orgId, setOrgId } = useImpersonateOrg();
-
-  // Все хуки до любых return!
   const {
     steps,
     currentStep,
@@ -27,7 +26,7 @@ const Welcome = () => {
     setCompletedSteps
   } = useOnboardingSteps();
 
-  // -- Loader при загрузке роли/организации
+  // -- Early loader while loading user/org state
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -36,56 +35,58 @@ const Welcome = () => {
     );
   }
 
-  // -- Суперадмин: мгновенный редирект на главную, скрываем welcome/onboarding
-  if (isSuperAdmin) {
-    navigate("/", { replace: true });
-    return null;
-  }
-
-  // --- Автоматическая инициализация DEMO организации для сверхпользователя
+  // If superadmin: auto-assign/create demo org, then redirect to "/"
   useEffect(() => {
-    const autoAssignOrCreateDemoOrg = async () => {
-      if (!isSuperAdmin || orgId) return;
-      const { data: org, error } = await supabase
-        .from('organizations')
-        .select('id')
-        .eq('subdomain', 'demo')
-        .maybeSingle();
-      if (error) {
-        // eslint-disable-next-line no-console
-        console.error('Ошибка поиска DEMO-организации:', error);
-        return;
-      }
-      if (org && org.id) {
-        setOrgId(org.id);
-      } else {
-        const { data: created, error: createError } = await supabase
+    if (isSuperAdmin && !orgId) {
+      const autoAssignOrCreateDemoOrg = async () => {
+        const { data: org, error } = await supabase
           .from('organizations')
-          .insert({
-            name: 'DEMO',
-            subdomain: 'demo',
-            is_active: true,
-            settings: {},
-          })
           .select('id')
-          .single();
-        if (createError) {
+          .eq('subdomain', 'demo')
+          .maybeSingle();
+        if (error) {
           // eslint-disable-next-line no-console
-          console.error('Ошибка создания DEMO-организации:', createError);
+          console.error('Ошибка поиска DEMO-организации:', error);
           return;
         }
-        if (created?.id) setOrgId(created.id);
-      }
-    };
-    autoAssignOrCreateDemoOrg();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        if (org && org.id) {
+          setOrgId(org.id);
+        } else {
+          const { data: created, error: createError } = await supabase
+            .from('organizations')
+            .insert({
+              name: 'DEMO',
+              subdomain: 'demo',
+              is_active: true,
+              settings: {},
+            })
+            .select('id')
+            .single();
+          if (createError) {
+            // eslint-disable-next-line no-console
+            console.error('Ошибка создания DEMO-организации:', createError);
+            return;
+          }
+          if (created?.id) setOrgId(created.id);
+        }
+      };
+      autoAssignOrCreateDemoOrg();
+    }
   }, [isSuperAdmin, orgId, setOrgId]);
 
+  // Redirect superadmin to the dashboard when orgId appears
   useEffect(() => {
     if (isSuperAdmin && orgId) {
       navigate("/", { replace: true });
     }
   }, [isSuperAdmin, orgId, navigate]);
+
+  // If superadmin, don't render onboarding
+  if (isSuperAdmin) {
+    // Could optionally show a loader if org isn't set yet, but
+    // per flow, loader is handled above in isLoading, and redirect handles UI after.
+    return null;
+  }
 
   // ---- Обычная онбординг-логика для обычных пользователей ----
   const handleNext = () => {
