@@ -1,3 +1,4 @@
+
 import { useAuth } from '@/hooks/useAuth';
 import { Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -41,7 +42,7 @@ const Header = ({ onMenuClick }: HeaderProps) => {
   const pageTitle = getPageTitle(location.pathname);
 
   return (
-    <div className="bg-card rounded-lg shadow-sm border p-6 mb-6">
+    <div className="bg-card rounded-lg shadow-sm border p-4 mb-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           {onMenuClick && (

@@ -81,8 +81,8 @@ const KnowledgeBase = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="min-h-screen bg-gray-50 p-4">
+      <div className="max-w-7xl mx-auto space-y-4">
         <KnowledgeBaseHeader />
 
         <div className="flex items-center justify-between gap-4">
@@ -110,7 +110,7 @@ const KnowledgeBase = () => {
           </Button>
         </div>
 
-        <Tabs defaultValue="articles" className="space-y-6">
+        <Tabs defaultValue="articles" className="space-y-4">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="articles" className="gap-2">
               <BookOpen className="h-4 w-4" />
@@ -130,7 +130,7 @@ const KnowledgeBase = () => {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="articles" className="space-y-6">
+          <TabsContent value="articles" className="space-y-4">
             <div className="flex gap-6">
               <div className="w-64">
                 <ArticleCategories 
@@ -149,8 +149,8 @@ const KnowledgeBase = () => {
             </div>
           </TabsContent>
 
-          <TabsContent value="categories" className="space-y-6">
-            <div className="bg-white rounded-lg shadow-sm border p-6">
+          <TabsContent value="categories" className="space-y-4">
+            <div className="bg-white rounded-lg shadow-sm border p-4">
               <h3 className="text-lg font-semibold text-graphite mb-4">Управление категориями</h3>
               <p className="text-gray-600">
                 Здесь вы сможете создавать, редактировать и удалять категории для организации статей.
@@ -162,8 +162,8 @@ const KnowledgeBase = () => {
             </div>
           </TabsContent>
 
-          <TabsContent value="recent" className="space-y-6">
-            <div className="bg-white rounded-lg shadow-sm border p-6">
+          <TabsContent value="recent" className="space-y-4">
+            <div className="bg-white rounded-lg shadow-sm border p-4">
               <h3 className="text-lg font-semibold text-graphite mb-4">Последние изменения</h3>
               <p className="text-gray-600">
                 История изменений и обновлений статей в базе знаний.
@@ -171,8 +171,8 @@ const KnowledgeBase = () => {
             </div>
           </TabsContent>
 
-          <TabsContent value="analytics" className="space-y-6">
-            <div className="bg-white rounded-lg shadow-sm border p-6">
+          <TabsContent value="analytics" className="space-y-4">
+            <div className="bg-white rounded-lg shadow-sm border p-4">
               <h3 className="text-lg font-semibold text-graphite mb-4">Аналитика базы знаний</h3>
               <p className="text-gray-600">
                 Статистика просмотров, популярные статьи и анализ пользовательского фидбека.

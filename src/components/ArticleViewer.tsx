@@ -110,7 +110,7 @@ export const ArticleViewer = ({
 
           {/* Основной контент */}
           <div className="flex-1 flex flex-col">
-            <DialogHeader className="px-6 py-4 border-b">
+            <DialogHeader className="p-4 border-b">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
@@ -191,7 +191,7 @@ export const ArticleViewer = ({
               </div>
             </DialogHeader>
 
-            <ScrollArea className="flex-1 px-6 py-4">
+            <ScrollArea className="flex-1 p-4">
               <div className="max-w-4xl">
                 <MarkdownRenderer 
                   content={article.content} 
