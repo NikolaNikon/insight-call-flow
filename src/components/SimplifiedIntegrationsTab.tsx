@@ -33,9 +33,6 @@ export const SimplifiedIntegrationsTab = () => {
             <Phone className="h-5 w-5 text-green-600" />
             Интеграция с Телфин (OAuth 2.0)
           </CardTitle>
-          <CardDescription>
-            Настройка безопасного подключения к телефонии Телфин для получения аудиозаписей
-          </CardDescription>
         </CardHeader>
         <CardContent>
           <TelfinOAuthSettings />
