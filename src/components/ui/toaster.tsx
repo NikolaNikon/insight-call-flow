@@ -21,9 +21,12 @@ export function Toaster() {
         description: "Текст скопирован в буфер обмена.",
       })
     }, () => {
+      const errorCode = 'TOASTER-001';
+      const errorText = "Не удалось скопировать текст.";
       toast({
         variant: "destructive",
-        description: "Не удалось скопировать текст.",
+        title: `Ошибка [${errorCode}]`,
+        description: errorText,
       })
     })
   }

@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -48,10 +47,13 @@ export const useTelegramWebhook = () => {
         throw new Error(data.error);
       }
     } catch (error: any) {
+      const errorCode = "WEBHOOK-SETUP-001";
+      const errorText = error.message || "Не удалось настроить webhook";
       toast({
-        title: "❌ Ошибка",
-        description: error.message || "Не удалось настроить webhook",
-        variant: "destructive"
+        title: `❌ Ошибка [${errorCode}]`,
+        description: errorText,
+        variant: "destructive",
+        copyableText: `Error Code: ${errorCode}\nTitle: Ошибка настройки webhook\nDescription: ${errorText}\nDetails: ${JSON.stringify(error, null, 2)}`
       });
       return false;
     } finally {
@@ -79,10 +81,13 @@ export const useTelegramWebhook = () => {
         throw new Error(data.error);
       }
     } catch (error: any) {
+      const errorCode = "WEBHOOK-SETUP-002";
+      const errorText = error.message || "Не удалось получить информацию о webhook";
       toast({
-        title: "❌ Ошибка",
-        description: error.message || "Не удалось получить информацию о webhook",
-        variant: "destructive"
+        title: `❌ Ошибка [${errorCode}]`,
+        description: errorText,
+        variant: "destructive",
+        copyableText: `Error Code: ${errorCode}\nTitle: Ошибка получения информации о webhook\nDescription: ${errorText}\nDetails: ${JSON.stringify(error, null, 2)}`
       });
       return null;
     } finally {
@@ -110,10 +115,13 @@ export const useTelegramWebhook = () => {
         throw new Error(data.error);
       }
     } catch (error: any) {
+      const errorCode = "WEBHOOK-SETUP-003";
+      const errorText = error.message || "Не удалось удалить webhook";
       toast({
-        title: "❌ Ошибка",
-        description: error.message || "Не удалось удалить webhook",
-        variant: "destructive"
+        title: `❌ Ошибка [${errorCode}]`,
+        description: errorText,
+        variant: "destructive",
+        copyableText: `Error Code: ${errorCode}\nTitle: Ошибка удаления webhook\nDescription: ${errorText}\nDetails: ${JSON.stringify(error, null, 2)}`
       });
       return false;
     } finally {
@@ -141,10 +149,13 @@ export const useTelegramWebhook = () => {
         throw new Error(data.error);
       }
     } catch (error: any) {
+      const errorCode = "WEBHOOK-SETUP-004";
+      const errorText = error.message || "Не удалось проверить бота";
       toast({
-        title: "❌ Ошибка",
-        description: error.message || "Не удалось проверить бота",
-        variant: "destructive"
+        title: `❌ Ошибка [${errorCode}]`,
+        description: errorText,
+        variant: "destructive",
+        copyableText: `Error Code: ${errorCode}\nTitle: Ошибка проверки бота\nDescription: ${errorText}\nDetails: ${JSON.stringify(error, null, 2)}`
       });
       return null;
     } finally {

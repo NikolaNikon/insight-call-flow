@@ -10,10 +10,13 @@ export const useTelegramTest = () => {
 
   const testConnection = async (botToken: string, chatId: string) => {
     if (!botToken || !chatId) {
+      const errorCode = "TELEGRAM-TEST-001";
+      const errorText = "Заполните токен бота и ID чата";
       toast({
-        title: "Ошибка",
-        description: "Заполните токен бота и ID чата",
-        variant: "destructive"
+        title: `Ошибка [${errorCode}]`,
+        description: errorText,
+        variant: "destructive",
+        copyableText: `Error Code: ${errorCode}\nTitle: Ошибка\nDescription: ${errorText}`
       });
       return false;
     }
@@ -38,10 +41,14 @@ export const useTelegramTest = () => {
     } catch (error: any) {
       console.error('Telegram test error:', error);
       
+      const errorCode = "TELEGRAM-TEST-002";
+      const errorText = error.message || "Не удалось отправить сообщение в Telegram";
+      
       toast({
-        title: "Ошибка подключения",
-        description: error.message || "Не удалось отправить сообщение в Telegram",
-        variant: "destructive"
+        title: `Ошибка подключения [${errorCode}]`,
+        description: errorText,
+        variant: "destructive",
+        copyableText: `Error Code: ${errorCode}\nTitle: Ошибка подключения\nDescription: ${errorText}\nDetails: ${JSON.stringify(error, null, 2)}`
       });
       
       return false;
