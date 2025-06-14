@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -73,19 +74,14 @@ const Welcome = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSuperAdmin, orgId, setOrgId]);
 
-  // --- НОВОЕ: сразу уводим суперадмина с welcome/onboarding
+  // --- Строго блокируем всё на этом экране для суперадмина, кроме редиректа/лоадера
   useEffect(() => {
     if (isSuperAdmin && orgId) {
       navigate("/", { replace: true });
     }
   }, [isSuperAdmin, orgId, navigate]);
 
-  // Если суперадмин — не показываем ничего (ждём редиректа)
-  if (isSuperAdmin) {
-    return null;
-  }
-
-  // Если загружается роль — показываем лоадер
+  // Если роль пользователя загружается — показываем лоадер
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -94,7 +90,12 @@ const Welcome = () => {
     );
   }
 
-  // ---- Обычная онбординг-логика
+  // Если определили, что пользователь — суперадмин, не показываем ничего (ждём редиректа)
+  if (isSuperAdmin) {
+    return null;
+  }
+
+  // ---- Обычная онбординг-логика для обычных пользователей ----
 
   const handleNext = () => {
     if (currentStep < steps.length - 1) {
@@ -137,3 +138,4 @@ const Welcome = () => {
 };
 
 export default Welcome;
+
