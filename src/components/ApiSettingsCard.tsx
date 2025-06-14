@@ -13,9 +13,9 @@ export const ApiSettingsCard = () => {
   });
 
   return (
-    <Card className="bg-white border-0 shadow-sm">
+    <Card className="bg-card border shadow-sm">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-graphite">
+        <CardTitle className="flex items-center gap-2 text-foreground">
           <Key className="h-5 w-5" />
           API настройки
         </CardTitle>
@@ -25,7 +25,7 @@ export const ApiSettingsCard = () => {
       </CardHeader>
       <CardContent className="space-y-4">
         <div>
-          <Label htmlFor="ai-api-url" className="text-sm font-semibold text-graphite mb-2 block">
+          <Label htmlFor="ai-api-url" className="text-sm font-semibold text-foreground mb-2 block">
             URL API анализа
           </Label>
           <Input 
@@ -34,7 +34,7 @@ export const ApiSettingsCard = () => {
           />
         </div>
         <div>
-          <Label htmlFor="ai-api-key" className="text-sm font-semibold text-graphite mb-2 block">
+          <Label htmlFor="ai-api-key" className="text-sm font-semibold text-foreground mb-2 block">
             API ключ
           </Label>
           <Input 
@@ -45,10 +45,10 @@ export const ApiSettingsCard = () => {
         </div>
         <div className="flex items-center justify-between">
           <div>
-            <Label htmlFor="api-enabled" className="text-sm font-semibold text-graphite">
+            <Label htmlFor="api-enabled" className="text-sm font-semibold text-foreground">
               API включен
             </Label>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-muted-foreground">
               Разрешить внешний доступ к API
             </p>
           </div>

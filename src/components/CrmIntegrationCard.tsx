@@ -10,9 +10,9 @@ import { Database } from 'lucide-react';
 export const CrmIntegrationCard = () => {
   return (
     <div className="relative">
-      <Card className="bg-white border-0 shadow-sm blur-sm pointer-events-none">
+      <Card className="bg-card border shadow-sm blur-sm pointer-events-none">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-graphite">
+          <CardTitle className="flex items-center gap-2 text-foreground">
             <Database className="h-5 w-5" />
             CRM интеграция
           </CardTitle>
@@ -22,7 +22,7 @@ export const CrmIntegrationCard = () => {
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <Label htmlFor="crm-url" className="text-sm font-semibold text-graphite mb-2 block">
+            <Label htmlFor="crm-url" className="text-sm font-semibold text-foreground mb-2 block">
               URL API
             </Label>
             <Input 
@@ -31,7 +31,7 @@ export const CrmIntegrationCard = () => {
             />
           </div>
           <div>
-            <Label htmlFor="api-key" className="text-sm font-semibold text-graphite mb-2 block">
+            <Label htmlFor="api-key" className="text-sm font-semibold text-foreground mb-2 block">
               API ключ
             </Label>
             <Input 
@@ -41,7 +41,7 @@ export const CrmIntegrationCard = () => {
             />
           </div>
           <div className="flex items-center justify-between">
-            <Label htmlFor="sync-enabled" className="text-sm font-semibold text-graphite">
+            <Label htmlFor="sync-enabled" className="text-sm font-semibold text-foreground">
               Автоматическая синхронизация
             </Label>
             <Switch id="sync-enabled" />
@@ -53,8 +53,8 @@ export const CrmIntegrationCard = () => {
       </Card>
       
       <div className="absolute inset-0 flex items-center justify-center">
-        <div className="bg-white/90 backdrop-blur-sm px-6 py-3 rounded-lg border shadow-sm">
-          <span className="text-lg font-semibold text-gray-600">Soon</span>
+        <div className="bg-card/90 backdrop-blur-sm px-6 py-3 rounded-lg border shadow-sm">
+          <span className="text-lg font-semibold text-muted-foreground">Soon</span>
         </div>
       </div>
     </div>

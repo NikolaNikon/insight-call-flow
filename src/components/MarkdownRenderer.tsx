@@ -42,10 +42,10 @@ export const MarkdownRenderer = ({
         .replace(/\*(.*?)\*/g, '<em class="italic">$1</em>')
         
         // Код
-        .replace(/`(.*?)`/g, '<code class="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono">$1</code>')
+        .replace(/`(.*?)`/g, '<code class="bg-muted px-1 py-0.5 rounded text-sm font-mono">$1</code>')
         
         // Блоки кода
-        .replace(/```(\w+)?\n([\s\S]*?)```/g, '<pre class="bg-gray-100 p-4 rounded-lg overflow-x-auto"><code class="text-sm">$2</code></pre>')
+        .replace(/```(\w+)?\n([\s\S]*?)```/g, '<pre class="bg-muted p-4 rounded-lg overflow-x-auto"><code class="text-sm">$2</code></pre>')
         
         // Ссылки
         .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="text-primary hover:underline" target="_blank" rel="noopener noreferrer">$1</a>')
@@ -55,10 +55,10 @@ export const MarkdownRenderer = ({
         .replace(/^(\d+)\. (.*$)/gm, '<li class="ml-4 mb-1">$1. $2</li>')
         
         // Блокноты
-        .replace(/^> (.*$)/gm, '<blockquote class="border-l-4 border-gray-300 pl-4 italic text-gray-600 my-4">$1</blockquote>')
+        .replace(/^> (.*$)/gm, '<blockquote class="border-l-4 border-border pl-4 italic text-muted-foreground my-4">$1</blockquote>')
         
         // Горизонтальная линия
-        .replace(/^---$/gm, '<hr class="my-6 border-gray-300">')
+        .replace(/^---$/gm, '<hr class="my-6 border-border">')
         
         // Параграфы
         .split('\n\n')

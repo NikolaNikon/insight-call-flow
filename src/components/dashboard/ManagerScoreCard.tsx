@@ -17,8 +17,8 @@ export const ManagerScoreCard = () => {
           <div className="animate-pulse space-y-4">
             {[1, 2, 3].map(i => (
               <div key={i} className="space-y-2">
-                <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-                <div className="h-2 bg-gray-200 rounded"></div>
+                <div className="h-4 bg-muted rounded w-1/2"></div>
+                <div className="h-2 bg-muted rounded"></div>
               </div>
             ))}
           </div>
@@ -29,12 +29,12 @@ export const ManagerScoreCard = () => {
 
   if (!managerRatings || managerRatings.length === 0) {
     return (
-      <Card className="border-dashed border-2 border-gray-200">
+      <Card className="border-dashed border-2">
         <CardHeader>
           <CardTitle>🎯 Оценки менеджеров</CardTitle>
         </CardHeader>
         <CardContent className="text-center py-8">
-          <p className="text-gray-600">Пока нет оценок по звонкам</p>
+          <p className="text-muted-foreground">Пока нет оценок по звонкам</p>
         </CardContent>
       </Card>
     );
@@ -53,14 +53,14 @@ export const ManagerScoreCard = () => {
             return (
               <div key={manager.manager_id} className="space-y-2">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium text-gray-900">
+                  <span className="text-sm font-medium text-foreground">
                     {manager.manager_name}
                   </span>
                   <div className="text-right">
                     <span className="text-sm font-bold">
                       {manager.average_score.toFixed(1)}
                     </span>
-                    <span className="text-xs text-gray-500 ml-1">
+                    <span className="text-xs text-muted-foreground ml-1">
                       ({manager.call_count} звонков)
                     </span>
                   </div>
@@ -74,7 +74,7 @@ export const ManagerScoreCard = () => {
           })}
           
           {managerRatings.length > 5 && (
-            <p className="text-xs text-gray-500 text-center">
+            <p className="text-xs text-muted-foreground text-center">
               и еще {managerRatings.length - 5} менеджеров...
             </p>
           )}

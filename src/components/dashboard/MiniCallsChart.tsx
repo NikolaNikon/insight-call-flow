@@ -3,9 +3,13 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { useDashboardData } from '@/hooks/useDashboardData';
+import { useTheme } from '../ThemeProvider';
 
 export const MiniCallsChart = () => {
   const { callVolumeData, isLoading } = useDashboardData();
+  const { resolvedTheme } = useTheme();
+
+  const primaryColor = resolvedTheme === 'dark' ? 'hsl(219 56% 53%)' : 'hsl(208 41% 47%)';
 
   if (isLoading) {
     return (
@@ -14,7 +18,7 @@ export const MiniCallsChart = () => {
           <CardTitle>📈 Объем звонков за 7 дней</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-32 animate-pulse bg-gray-200 rounded"></div>
+          <div className="h-32 animate-pulse bg-muted rounded"></div>
         </CardContent>
       </Card>
     );
@@ -22,12 +26,12 @@ export const MiniCallsChart = () => {
 
   if (!callVolumeData || callVolumeData.length === 0) {
     return (
-      <Card className="border-dashed border-2 border-gray-200">
+      <Card className="border-dashed border-2">
         <CardHeader>
           <CardTitle>📈 Объем звонков за 7 дней</CardTitle>
         </CardHeader>
         <CardContent className="text-center py-8">
-          <p className="text-gray-600">Нет звонков за выбранный период</p>
+          <p className="text-muted-foreground">Нет звонков за выбранный период</p>
         </CardContent>
       </Card>
     );
@@ -56,21 +60,25 @@ export const MiniCallsChart = () => {
           <LineChart data={chartData}>
             <XAxis 
               dataKey="formattedDate" 
-              tick={{ fontSize: 12 }}
+              tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
               axisLine={false}
               tickLine={false}
             />
             <YAxis hide />
             <Tooltip 
+              contentStyle={{
+                backgroundColor: 'hsl(var(--card))',
+                borderColor: 'hsl(var(--border))',
+              }}
               labelFormatter={(value) => `Дата: ${value}`}
               formatter={(value) => [`${value} звонков`, 'Количество']}
             />
             <Line 
               type="monotone" 
               dataKey="count" 
-              stroke="#3b82f6" 
+              stroke={primaryColor} 
               strokeWidth={2}
-              dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
+              dot={{ fill: primaryColor, strokeWidth: 2, r: 4 }}
               activeDot={{ r: 6 }}
             />
           </LineChart>

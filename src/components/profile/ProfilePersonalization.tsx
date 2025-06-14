@@ -1,57 +1,73 @@
 
 import React from "react";
 import { useUserPreferences } from "@/hooks/useUserPreferences";
+import { Label } from "../ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import { useTheme } from "../ThemeProvider";
 
 const ProfilePersonalization = () => {
   const { prefs, updatePreferences, loading, nsmMetrics } = useUserPreferences();
+  const { setTheme } = useTheme();
+
+  const handleThemeChange = (value: string) => {
+    updatePreferences({ theme: value });
+    setTheme(value as "light" | "dark" | "system");
+  }
 
   return (
     <div className="space-y-4 max-w-md">
       <div>
-        <label className="font-medium">Язык интерфейса:</label>
-        <select
-          className="w-full border px-2 py-1 rounded mt-1"
+        <Label htmlFor="language-select">Язык интерфейса:</Label>
+        <Select
           value={prefs?.locale || "ru"}
-          onChange={(e) =>
-            updatePreferences({ locale: e.target.value })
-          }
+          onValueChange={(value) => updatePreferences({ locale: value })}
           disabled={loading}
         >
-          <option value="ru">Русский</option>
-          <option value="en">English</option>
-        </select>
+          <SelectTrigger id="language-select" className="mt-1">
+            <SelectValue placeholder="Выберите язык" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ru">Русский</SelectItem>
+            <SelectItem value="en">English</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
       <div>
-        <label className="font-medium">Тема:</label>
-        <select
-          className="w-full border px-2 py-1 rounded mt-1"
-          value={prefs?.theme || "light"}
-          onChange={(e) =>
-            updatePreferences({ theme: e.target.value })
-          }
+        <Label htmlFor="theme-select">Тема:</Label>
+        <Select
+          value={prefs?.theme || "system"}
+          onValueChange={handleThemeChange}
           disabled={loading}
         >
-          <option value="light">Светлая</option>
-          <option value="dark">Тёмная</option>
-        </select>
+          <SelectTrigger id="theme-select" className="mt-1">
+            <SelectValue placeholder="Выберите тему" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="light">Светлая</SelectItem>
+            <SelectItem value="dark">Тёмная</SelectItem>
+            <SelectItem value="system">Системная</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
       <div>
-        <label className="font-medium">Моя метрика недели (NSM):</label>
-        <select
-          className="w-full border px-2 py-1 rounded mt-1"
+        <Label htmlFor="nsm-select">Моя метрика недели (NSM):</Label>
+        <Select
           value={prefs?.preferred_nsm || ""}
-          onChange={(e) =>
-            updatePreferences({ preferred_nsm: e.target.value })
-          }
+          onValueChange={(value) => updatePreferences({ preferred_nsm: value })}
           disabled={loading}
         >
-          <option value="">— Не выбрано —</option>
-          {nsmMetrics.map((m) => (
-            <option key={m.id} value={m.id}>
-              {m.metric_name}
-            </option>
-          ))}
-        </select>
+          <SelectTrigger id="nsm-select" className="mt-1">
+            <SelectValue placeholder="— Не выбрано —" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">— Не выбрано —</SelectItem>
+            {nsmMetrics.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.metric_name}
+              </option>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
     </div>
   );

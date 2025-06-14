@@ -27,13 +27,13 @@ const UpdatedHeader = () => {
   };
 
   return (
-    <header className="bg-white border-b border-gray-200 px-4 py-3">
+    <header className="bg-card border-b px-4 py-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <SidebarTrigger />
           <div>
-            <h1 className="text-xl font-bold text-gray-900">CallControl</h1>
-            <p className="text-sm text-gray-600">Система контроля и аналитики звонков</p>
+            <h1 className="text-xl font-bold text-foreground">CallControl</h1>
+            <p className="text-sm text-muted-foreground">Система контроля и аналитики звонков</p>
           </div>
         </div>
         
@@ -42,7 +42,7 @@ const UpdatedHeader = () => {
           
           {user && (
             <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 text-sm text-gray-500">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <User className="h-4 w-4" />
                 <span>{user.email}</span>
               </div>
