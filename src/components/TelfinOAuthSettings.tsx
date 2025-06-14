@@ -5,13 +5,15 @@ import { TelfinConfigForm } from './telfin/TelfinConfigForm';
 import { TelfinStatusDisplay } from './telfin/TelfinStatusDisplay';
 import { useTelfin } from '@/hooks/useTelfin';
 import { useOrganization } from '@/hooks/useOrganization';
+import { useUserRole } from '@/hooks/useUserRole';
 import { Loader2 } from 'lucide-react';
 
 export const TelfinOAuthSettings = () => {
   const { organization, isLoading: isLoadingOrg } = useOrganization();
+  const { isAdmin, isLoading: isLoadingRole } = useUserRole();
   const telfin = useTelfin();
 
-  if (isLoadingOrg) {
+  if (isLoadingOrg || isLoadingRole) {
     return <div className="flex items-center justify-center p-8"><Loader2 className="h-6 w-6 animate-spin" /></div>;
   }
   
@@ -36,6 +38,7 @@ export const TelfinOAuthSettings = () => {
             config={telfin.config} 
             setConfig={telfin.setConfig} 
             handleSaveConfig={telfin.handleSaveConfig} 
+            isAdmin={isAdmin}
           />
         </TabsContent>
 
@@ -48,6 +51,7 @@ export const TelfinOAuthSettings = () => {
             testConnection={telfin.testConnection}
             handleLogout={telfin.handleLogout}
             handleSyncCallHistory={telfin.handleSyncCallHistory}
+            isAdmin={isAdmin}
           />
         </TabsContent>
       </Tabs>

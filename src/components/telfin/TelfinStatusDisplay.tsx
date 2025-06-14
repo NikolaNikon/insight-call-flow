@@ -12,6 +12,7 @@ interface TelfinStatusDisplayProps {
   testConnection: () => void;
   handleLogout: () => void;
   handleSyncCallHistory: () => void;
+  isAdmin: boolean;
 }
 
 export const TelfinStatusDisplay: React.FC<TelfinStatusDisplayProps> = ({
@@ -22,6 +23,7 @@ export const TelfinStatusDisplay: React.FC<TelfinStatusDisplayProps> = ({
   testConnection,
   handleLogout,
   handleSyncCallHistory,
+  isAdmin,
 }) => {
   return (
     <div className="space-y-4 pt-4">
@@ -56,7 +58,7 @@ export const TelfinStatusDisplay: React.FC<TelfinStatusDisplayProps> = ({
 
       <div className="flex flex-wrap gap-2">
         {!isAuthorized ? (
-          <Button onClick={handleStartOAuth} className="gap-2" disabled={isLoading}>
+          <Button onClick={handleStartOAuth} className="gap-2" disabled={isLoading || !isAdmin}>
             <ExternalLink className="h-4 w-4" />
             {isLoading ? 'Авторизация...' : 'Начать OAuth авторизацию'}
           </Button>
@@ -66,17 +68,27 @@ export const TelfinStatusDisplay: React.FC<TelfinStatusDisplayProps> = ({
               <TestTube className="h-4 w-4" />
               {isLoading ? 'Тестируем...' : 'Тест подключения'}
             </Button>
-             <Button onClick={handleSyncCallHistory} variant="outline" className="gap-2" disabled={isLoading}>
+             <Button onClick={handleSyncCallHistory} variant="outline" className="gap-2" disabled={isLoading || !isAdmin}>
               <RefreshCw className="h-4 w-4" />
               {isLoading ? 'Синхронизация...' : 'Синхронизировать звонки'}
             </Button>
-            <Button onClick={handleLogout} variant="destructive" className="gap-2" disabled={isLoading}>
+            <Button onClick={handleLogout} variant="destructive" className="gap-2" disabled={isLoading || !isAdmin}>
               <XCircle className="h-4 w-4" />
               Отозвать доступ
             </Button>
           </>
         )}
       </div>
+      {!isAdmin && isAuthorized && (
+        <p className="text-xs text-gray-500 mt-2">
+          Управление интеграцией и синхронизация доступны только администраторам.
+        </p>
+      )}
+      {!isAdmin && !isAuthorized && (
+        <p className="text-xs text-gray-500 mt-2">
+          Интеграция не настроена. Обратитесь к администратору для подключения.
+        </p>
+      )}
     </div>
   );
 };
