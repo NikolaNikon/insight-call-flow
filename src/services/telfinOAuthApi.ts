@@ -1,3 +1,5 @@
+import { supabase } from '@/integrations/supabase/client';
+
 interface TelfinClientCredentialsConfig {
   clientId: string;
   clientSecret: string;
@@ -40,50 +42,33 @@ export class TelfinClientCredentialsAPI {
   }
 
   /**
-   * Получение токена доступа по client_credentials
+   * Получение токена доступа по client_credentials через Edge Function
    */
   async getAccessToken(): Promise<TelfinTokenResponse> {
-    const url = `https://${OAUTH_HOST}/oauth/token`;
-    
-    const body = new URLSearchParams({
-      grant_type: 'client_credentials',
-      client_id: this.config.clientId,
-      client_secret: this.config.clientSecret,
-    });
-
-    console.log('Requesting Telfin access token with client_id:', this.config.clientId);
+    console.log('Requesting Telfin access token via Edge Function with client_id:', this.config.clientId);
 
     try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
+      const { data, error } = await supabase.functions.invoke('telfin-integration', {
+        body: {
+          action: 'get_access_token',
+          clientId: this.config.clientId,
+          clientSecret: this.config.clientSecret,
         },
-        body: body.toString()
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Telfin API Error Response Text:', errorText);
-        try {
-            const errorData = JSON.parse(errorText);
-            console.error('Telfin API Error:', response.status, errorData);
-            throw new Error(`[TELFIN-API-001] Ошибка API Телфин: ${errorData.error_description || errorData.error || `HTTP ${response.status}`}`);
-        } catch (e) {
-            // The response was not JSON, throw error with the text content, truncated
-            throw new Error(`[TELFIN-API-001] Ошибка API Телфин: ${errorText.substring(0, 300) || `HTTP ${response.status}`}`);
-        }
-      }
+      if (error) throw error;
+      if (!data.success) throw new Error(data.error);
 
-      const tokenData: TelfinTokenResponse = await response.json();
+      const tokenData: TelfinTokenResponse = data.data;
       
       this.accessToken = tokenData.access_token;
       this.tokenExpiry = Date.now() + (tokenData.expires_in * 1000);
       
       return tokenData;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error getting access token:', error);
-      throw error;
+      const message = error.message || JSON.stringify(error);
+      throw new Error(`[TELFIN-API-001] Ошибка API Телфин: ${message}`);
     }
   }
 
@@ -102,75 +87,67 @@ export class TelfinClientCredentialsAPI {
   }
 
   /**
-   * Получение информации об авторизованном пользователе
+   * Получение информации об авторизованном пользователе через Edge Function
    */
   async getUserInfo(): Promise<TelfinClientInfo> {
     await this.ensureValidToken();
     
-    const url = `https://${API_HOST}/api/ver1.0/client/`;
-    
     try {
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${this.accessToken}`
-        }
+       const { data, error } = await supabase.functions.invoke('telfin-integration', {
+        body: {
+          action: 'get_user_info',
+          accessToken: this.accessToken,
+        },
       });
 
-      if (!response.ok) {
-        throw new Error(`[TELFIN-API-003] HTTP error! Status: ${response.status}`);
-      }
+      if (error) throw error;
+      if (!data.success) throw new Error(data.error);
       
-      const data = await response.json();
-      // API может вернуть массив с одним объектом клиента
-      if (Array.isArray(data) && data.length > 0) {
-        return data[0];
+      const responseData = data.data;
+      if (Array.isArray(responseData) && responseData.length > 0) {
+        return responseData[0];
       }
-      // Или один объект клиента
-      if (!Array.isArray(data) && data.client_id) {
-        return data;
+      if (!Array.isArray(responseData) && responseData.client_id) {
+        return responseData;
       }
       
       throw new Error("[TELFIN-API-004] Информация о клиенте не найдена в ответе API.");
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error getting user info:', error);
-      throw error;
+      const message = error.message || JSON.stringify(error);
+      if (message.includes('[TELFIN-API-004]')) {
+          throw error;
+      }
+      throw new Error(`[TELFIN-API-003] HTTP error! Details: ${message}`);
     }
   }
 
   /**
-   * Получение истории звонков
+   * Получение истории звонков через Edge Function
    */
   async getCallHistory(dateFrom: string, dateTo: string): Promise<any[]> {
     await this.ensureValidToken();
     
-    const params = new URLSearchParams({
-      date_start: dateFrom,
-      date_end: dateTo,
-      limit: '1000'
-    });
-    
-    const url = `https://${API_HOST}/api/ver1.0/client/cdr/?${params.toString()}`;
-    
     try {
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${this.accessToken}`
-        }
+      const { data, error } = await supabase.functions.invoke('telfin-integration', {
+        body: {
+          action: 'get_call_history',
+          accessToken: this.accessToken,
+          dateFrom,
+          dateTo,
+        },
       });
 
-      if (!response.ok) {
-        throw new Error(`[TELFIN-API-005] HTTP error! Status: ${response.status}`);
-      }
+      if (error) throw error;
+      if (!data.success) throw new Error(data.error);
 
-      const data = await response.json();
-      // API может вернуть объект с полем records или просто массив
-      return data.records || data || [];
-    } catch (error) {
+      const responseData = data.data;
+      return responseData.records || responseData || [];
+    } catch (error: any) {
       console.error('Error getting call history:', error);
-      throw error;
+      const message = error.message || JSON.stringify(error);
+      throw new Error(`[TELFIN-API-005] HTTP error! Details: ${message}`);
     }
   }
 

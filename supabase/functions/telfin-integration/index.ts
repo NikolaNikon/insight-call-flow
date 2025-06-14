@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
@@ -6,16 +7,20 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const OAUTH_HOST = 'apiproxy.telphin.ru';
 const API_HOST = 'apiproxy.telphin.ru';
 
 interface TelfinRequest {
-  action: 'get_audio_url' | 'download_audio_with_oauth' | 'save_call_history' | 'process_call_record_and_create_call';
-  clientId?: string; // Made optional
-  recordUuid?: string; // Made optional
+  action: 'get_access_token' | 'get_user_info' | 'get_call_history' | 'get_audio_url' | 'download_audio_with_oauth' | 'save_call_history' | 'process_call_record_and_create_call';
+  clientId?: string;
+  clientSecret?: string;
   accessToken?: string;
+  recordUuid?: string;
   calls?: any[];
   orgId?: string;
   telfinCall?: any;
+  dateFrom?: string;
+  dateTo?: string;
 }
 
 interface TelfinStorageUrlResponse {
@@ -34,6 +39,87 @@ serve(async (req) => {
     console.log('Telfin integration request:', { action });
 
     switch (action) {
+      case 'get_access_token': {
+        const { clientId, clientSecret } = body;
+        if (!clientId || !clientSecret) {
+          throw new Error('clientId and clientSecret are required');
+        }
+
+        const url = `https://${OAUTH_HOST}/oauth/token`;
+        const requestBody = new URLSearchParams({
+          grant_type: 'client_credentials',
+          client_id: clientId,
+          client_secret: clientSecret,
+        });
+
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: requestBody.toString()
+        });
+
+        const responseData = await response.json();
+        if (!response.ok) {
+          console.error('Telfin Token API Error:', response.status, responseData);
+          throw new Error(responseData.error_description || responseData.error || `HTTP ${response.status}`);
+        }
+        
+        return new Response(JSON.stringify({ success: true, data: responseData }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      case 'get_user_info': {
+        const { accessToken } = body;
+        if (!accessToken) {
+          throw new Error('accessToken is required');
+        }
+
+        const url = `https://${API_HOST}/api/ver1.0/client/`;
+        const response = await fetch(url, {
+          headers: { 'Authorization': `Bearer ${accessToken}` }
+        });
+        
+        const responseData = await response.json();
+        if (!response.ok) {
+          console.error('Telfin User Info API Error:', response.status, responseData);
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        
+        return new Response(JSON.stringify({ success: true, data: responseData }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      case 'get_call_history': {
+        const { accessToken, dateFrom, dateTo } = body;
+        if (!accessToken || !dateFrom || !dateTo) {
+          throw new Error('accessToken, dateFrom, and dateTo are required');
+        }
+
+        const params = new URLSearchParams({
+          date_start: dateFrom,
+          date_end: dateTo,
+          limit: '1000'
+        });
+        const url = `https://${API_HOST}/api/ver1.0/client/cdr/?${params.toString()}`;
+        
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: { 'Authorization': `Bearer ${accessToken}` }
+        });
+
+        const responseData = await response.json();
+        if (!response.ok) {
+           console.error('Telfin Call History API Error:', response.status, responseData);
+           throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        
+        return new Response(JSON.stringify({ success: true, data: responseData }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
       case 'get_audio_url': {
         const { clientId, recordUuid, accessToken } = body;
         if (!accessToken || !clientId || !recordUuid) {
