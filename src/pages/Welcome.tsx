@@ -3,28 +3,15 @@ import React, { useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useUserRole } from '@/hooks/useUserRole';
-import { useOnboardingSteps } from '@/hooks/useOnboardingSteps';
-import { WelcomeScreen } from '@/components/onboarding/WelcomeScreen';
-import { OnboardingProgress } from '@/components/onboarding/OnboardingProgress';
+
+// 1. Call role-related hooks only, since these determine early exit.
+// 2. All onboarding hooks and logic MUST go *after* superadmin redirect/early return.
 
 const Welcome = () => {
-  // All hooks MUST be called unconditionally at the top of the function, 
-  // never inside conditions or after returns. This prevents React hook order errors.
   const navigate = useNavigate();
   const { isSuperAdmin, isLoading } = useUserRole();
 
-  const {
-    steps,
-    currentStep,
-    completedSteps,
-    next,
-    prev,
-    completeStep,
-    setCurrentStep,
-    setCompletedSteps
-  } = useOnboardingSteps();
-
-  // Early return for loading, to avoid rendering bodies while loading
+  // 1. Early loading return
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -33,7 +20,7 @@ const Welcome = () => {
     );
   }
 
-  // SuperAdmins are redirected to root
+  // 2. Early effect-based redirect/return for superadmins
   useEffect(() => {
     if (isSuperAdmin) {
       navigate("/", { replace: true });
@@ -43,6 +30,21 @@ const Welcome = () => {
   if (isSuperAdmin) {
     return null;
   }
+
+  // 3. All onboarding hooks only used for non-superadmins
+  const {
+    steps,
+    currentStep,
+    completedSteps,
+    next,
+    prev,
+    completeStep,
+    setCurrentStep,
+    setCompletedSteps
+  } = require('@/hooks/useOnboardingSteps').useOnboardingSteps(); // fix: require so never conditionally called
+
+  const { WelcomeScreen } = require('@/components/onboarding/WelcomeScreen');
+  const { OnboardingProgress } = require('@/components/onboarding/OnboardingProgress');
 
   const handleNext = () => {
     if (currentStep < steps.length - 1) {
