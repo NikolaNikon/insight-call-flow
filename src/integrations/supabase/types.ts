@@ -1429,6 +1429,116 @@ export type Database = {
           },
         ]
       }
+      user_notifications: {
+        Row: {
+          channel: string | null
+          notify_calls: boolean | null
+          notify_metrics: boolean | null
+          notify_risks: boolean | null
+          user_id: string
+        }
+        Insert: {
+          channel?: string | null
+          notify_calls?: boolean | null
+          notify_metrics?: boolean | null
+          notify_risks?: boolean | null
+          user_id: string
+        }
+        Update: {
+          channel?: string | null
+          notify_calls?: boolean | null
+          notify_metrics?: boolean | null
+          notify_risks?: boolean | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_preferences: {
+        Row: {
+          locale: string | null
+          preferred_nsm: string | null
+          theme: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          locale?: string | null
+          preferred_nsm?: string | null
+          theme?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          locale?: string | null
+          preferred_nsm?: string | null
+          theme?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_preferences_preferred_nsm_fkey"
+            columns: ["preferred_nsm"]
+            isOneToOne: false
+            referencedRelation: "org_metrics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_preferences_preferred_nsm_fkey"
+            columns: ["preferred_nsm"]
+            isOneToOne: false
+            referencedRelation: "v_active_nsm"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_preferences_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_sessions: {
+        Row: {
+          created_at: string | null
+          id: string
+          ip_address: string | null
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          ip_address?: string | null
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          ip_address?: string | null
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_sessions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       users: {
         Row: {
           created_at: string

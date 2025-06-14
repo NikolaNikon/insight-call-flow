@@ -1,4 +1,3 @@
-
 import React from "react";
 import {
   BarChart3,
@@ -13,6 +12,7 @@ import {
   Users,
   ChevronLeft,
   ChevronRight,
+  User
 } from "lucide-react";
 import { SidebarLink } from "./SidebarLink";
 
@@ -139,6 +139,11 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
             icon={<Settings className="h-4 w-4" />}
             text="Настройки"
             collapsed={collapsed}
+          />
+          <SidebarLink
+            to="/profile"
+            icon={<User className="h-5 w-5" />}
+            text="Личный кабинет"
           />
         </nav>
       </div>

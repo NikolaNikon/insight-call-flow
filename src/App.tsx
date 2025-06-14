@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   BrowserRouter as Router,
@@ -22,6 +21,7 @@ import TelegramTracker from '@/pages/TelegramTracker';
 import Welcome from '@/pages/Welcome';
 import NotFound from '@/pages/NotFound';
 import KeywordTrackers from '@/pages/KeywordTrackers';
+import ProfilePage from "@/pages/ProfilePage";
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { Toaster } from '@/components/ui/toaster';
 
@@ -84,6 +84,11 @@ function App() {
           <Route path="/telegram-auth" element={<TelegramAuth />} />
           <Route path="/telegram-tracker" element={<TelegramTracker />} />
           <Route path="/welcome" element={<Welcome />} />
+          <Route path="/profile" element={
+            <ProtectedRoute>
+              <ProfilePage />
+            </ProtectedRoute>
+          } />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Router>
