@@ -20,9 +20,6 @@ export const SimplifiedIntegrationsTab = () => {
             <Bot className="h-5 w-5 text-blue-600" />
             Подключение к Telegram
           </CardTitle>
-          <CardDescription>
-            Подключите свой личный аккаунт Telegram для получения уведомлений
-          </CardDescription>
         </CardHeader>
         <CardContent>
           <ImprovedTelegramIntegration />
