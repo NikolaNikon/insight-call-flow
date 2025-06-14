@@ -15,12 +15,26 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
+  // ВСЕ ХУКИ ДОЛЖНЫ БЫТЬ ВЫЗВАНЫ БЕЗУСЛОВНО В НАЧАЛЕ КОМПОНЕНТА
   const user = useUser();
   const { organization, isLoading: orgLoading } = useOrganization();
   const { toast } = useToast();
   const { isSuperAdmin, isLoading: roleLoading } = useUserRole();
   const { orgId } = useImpersonateOrg();
   const [hasCheckedOrg, setHasCheckedOrg] = useState(false);
+
+  // useEffect тоже должен вызываться безусловно
+  useEffect(() => {
+    if (user && !organization && !hasCheckedOrg && !isSuperAdmin) {
+      console.log('⚠️ Обычный пользователь без организации');
+      toast({
+        title: "Организация не найдена",
+        description: "Обратитесь к администратору для добавления в организацию.",
+        variant: "destructive",
+      });
+      setHasCheckedOrg(true);
+    }
+  }, [user, organization, hasCheckedOrg, isSuperAdmin, toast]);
 
   console.log('🛡️ ProtectedRoute:', { 
     isSuperAdmin, 
@@ -29,6 +43,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     isLoading: orgLoading || roleLoading 
   });
 
+  // Теперь можно делать условные возвраты
   if (!user) {
     console.log('🚫 Нет пользователя - редирект на авторизацию');
     return <Navigate to="/auth" replace />;
@@ -51,18 +66,6 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     console.log('🔧 Суперадмин без организации - показываем селектор');
     return <SuperadminOrgSelector />;
   }
-
-  useEffect(() => {
-    if (user && !organization && !hasCheckedOrg && !isSuperAdmin) {
-      console.log('⚠️ Обычный пользователь без организации');
-      toast({
-        title: "Организация не найдена",
-        description: "Обратитесь к администратору для добавления в организацию.",
-        variant: "destructive",
-      });
-      setHasCheckedOrg(true);
-    }
-  }, [user, organization, hasCheckedOrg, isSuperAdmin, toast]);
 
   // Проверяем организацию только для обычных пользователей
   if (!organization && hasCheckedOrg && !isSuperAdmin) {
