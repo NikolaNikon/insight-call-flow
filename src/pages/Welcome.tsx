@@ -9,9 +9,8 @@ import { useOnboardingSteps } from '@/hooks/useOnboardingSteps';
 import { WelcomeScreen } from '@/components/onboarding/WelcomeScreen';
 import { OnboardingProgress } from '@/components/onboarding/OnboardingProgress';
 
-// Hooks must be called in the same order for every render
+// All hooks MUST be called unconditionally at the top of the component!
 const Welcome = () => {
-  // 1. Hooks — ВСЕГДА В ВЕРХУ!
   const navigate = useNavigate();
   const { isSuperAdmin, isLoading } = useUserRole();
   const { orgId, setOrgId } = useImpersonateOrg();
@@ -26,16 +25,7 @@ const Welcome = () => {
     setCompletedSteps
   } = useOnboardingSteps();
 
-  // -- Early loader while loading user/org state
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Loader2 className="animate-spin h-8 w-8 text-blue-500" />
-      </div>
-    );
-  }
-
-  // If superadmin: auto-assign/create demo org, then redirect to "/"
+  // Demo org auto-assign for superadmin (always in useEffect)
   useEffect(() => {
     if (isSuperAdmin && !orgId) {
       const autoAssignOrCreateDemoOrg = async () => {
@@ -81,11 +71,22 @@ const Welcome = () => {
     }
   }, [isSuperAdmin, orgId, navigate]);
 
-  // If superadmin, don't render onboarding
+  // Always render the loader while loading
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <Loader2 className="animate-spin h-8 w-8 text-blue-500" />
+      </div>
+    );
+  }
+
+  // For superadmin: always render a loader while waiting for org assignment or navigation (never return null abruptly!)
   if (isSuperAdmin) {
-    // Could optionally show a loader if org isn't set yet, but
-    // per flow, loader is handled above in isLoading, and redirect handles UI after.
-    return null;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <Loader2 className="animate-spin h-8 w-8 text-blue-500" />
+      </div>
+    );
   }
 
   // ---- Обычная онбординг-логика для обычных пользователей ----
