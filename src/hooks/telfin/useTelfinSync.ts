@@ -24,7 +24,9 @@ export const useTelfinSync = (apiInstance: TelfinClientCredentialsAPI | null, or
       });
       return;
     }
+    
     setIsSyncing(true);
+    
     try {
       const dateTo = new Date();
       const dateFrom = new Date();
@@ -33,10 +35,22 @@ export const useTelfinSync = (apiInstance: TelfinClientCredentialsAPI | null, or
       const dateToString = dateTo.toISOString().split('T')[0];
       const dateFromString = dateFrom.toISOString().split('T')[0];
 
+      console.log('Starting call history sync:', {
+        dateFrom: dateFromString,
+        dateTo: dateToString,
+        clientId: userInfo.client_id,
+        orgId
+      });
+
       toast({ title: "Синхронизация запущена", description: `Загрузка истории звонков с ${dateFromString} по ${dateToString}`});
 
       // Передаем userInfo в getCallHistory
       const callHistory = await apiInstance.getCallHistory(dateFromString, dateToString, userInfo);
+
+      console.log('Call history received:', {
+        count: callHistory.length,
+        hasData: callHistory.length > 0
+      });
 
       if (callHistory.length > 0) {
         const { data, error } = await supabase.functions.invoke('telfin-integration', {
@@ -107,13 +121,25 @@ export const useTelfinSync = (apiInstance: TelfinClientCredentialsAPI | null, or
 
     } catch (error: any) {
       console.error('Error syncing or processing call history:', error);
+      
+      // Улучшенная обработка ошибок с диагностической информацией
       const [errorCode, errorMessage] = extractErrorCode(error.message);
       const finalErrorCode = errorCode || 'TELFIN-HOOK-009';
+      
+      // Добавляем дополнительную диагностическую информацию если доступна
+      let copyableText = `Error Code: ${finalErrorCode}\nTitle: Ошибка\nDescription: ${errorMessage}`;
+      
+      if (error.diagnostics) {
+        copyableText += `\n\nДиагностика:\n${JSON.stringify(error.diagnostics, null, 2)}`;
+      } else {
+        copyableText += `\n\nDetails: ${JSON.stringify(error, null, 2)}`;
+      }
+      
       toast({ 
         title: `Ошибка [${finalErrorCode}]`, 
         description: errorMessage, 
         variant: "destructive",
-        copyableText: `Error Code: ${finalErrorCode}\nTitle: Ошибка\nDescription: ${errorMessage}\nDetails: ${JSON.stringify(error, null, 2)}`
+        copyableText
       });
     } finally {
       setIsSyncing(false);

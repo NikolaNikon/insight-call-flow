@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 interface TelfinClientCredentialsConfig {
@@ -129,6 +130,13 @@ export class TelfinClientCredentialsAPI {
   async getCallHistory(dateFrom: string, dateTo: string, clientInfo?: TelfinClientInfo): Promise<any[]> {
     await this.ensureValidToken();
     
+    console.log('Getting call history:', {
+      dateFrom,
+      dateTo,
+      clientId: clientInfo?.client_id,
+      hasAccessToken: !!this.accessToken
+    });
+    
     try {
       const { data, error } = await supabase.functions.invoke('telfin-integration', {
         body: {
@@ -140,10 +148,36 @@ export class TelfinClientCredentialsAPI {
         },
       });
 
-      if (error) throw error;
-      if (!data.success) throw new Error(data.error);
+      if (error) {
+        console.error('Supabase function invoke error:', error);
+        throw error;
+      }
+      
+      if (!data.success) {
+        console.error('Function returned error:', data.error);
+        // Передаем диагностическую информацию если есть
+        if (data.diagnostics) {
+          console.error('Diagnostics:', data.diagnostics);
+          // Формируем более детальное сообщение об ошибке
+          let detailedError = data.error;
+          if (data.errorCategory) {
+            detailedError += ` (Категория: ${data.errorCategory})`;
+          }
+          if (data.diagnostics.recommendedAction) {
+            detailedError += ` Рекомендация: ${data.diagnostics.recommendedAction}`;
+          }
+          throw new Error(detailedError);
+        }
+        throw new Error(data.error);
+      }
 
       const responseData = data.data;
+      console.log('Call history response received:', {
+        hasData: !!responseData,
+        dataType: Array.isArray(responseData) ? 'array' : typeof responseData,
+        recordsCount: data.recordsCount || 'unknown'
+      });
+      
       // Поддерживаем разные структуры ответа
       if (responseData.results && Array.isArray(responseData.results)) {
         return responseData.results;
@@ -155,6 +189,12 @@ export class TelfinClientCredentialsAPI {
     } catch (error: any) {
       console.error('Error getting call history:', error);
       const message = error.message || JSON.stringify(error);
+      
+      // Сохраняем коды ошибок для правильной диагностики
+      if (message.includes('[TELFIN-API-005]')) {
+        throw error;
+      }
+      
       throw new Error(`[TELFIN-API-005] HTTP error! Details: ${message}`);
     }
   }
