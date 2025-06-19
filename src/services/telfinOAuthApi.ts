@@ -130,12 +130,20 @@ export class TelfinClientCredentialsAPI {
   async getCallHistory(dateFrom: string, dateTo: string, clientInfo?: TelfinClientInfo): Promise<any[]> {
     await this.ensureValidToken();
     
+    // Преобразуем client_id в строку и добавляем валидацию
+    const telfinClientId = clientInfo?.client_id ? String(clientInfo.client_id).trim() : undefined;
+    
     console.log('Getting call history:', {
       dateFrom,
       dateTo,
-      clientId: clientInfo?.client_id,
+      clientId: telfinClientId,
+      clientIdType: typeof telfinClientId,
       hasAccessToken: !!this.accessToken
     });
+    
+    if (!telfinClientId) {
+      throw new Error('[TELFIN-API-005] Client ID отсутствует или неверен в данных пользователя');
+    }
     
     try {
       const { data, error } = await supabase.functions.invoke('telfin-integration', {
@@ -144,7 +152,7 @@ export class TelfinClientCredentialsAPI {
           accessToken: this.accessToken,
           dateFrom,
           dateTo,
-          telfinClientId: clientInfo?.client_id, // Передаем client_id
+          telfinClientId, // Передаем уже проверенный и преобразованный в строку client_id
         },
       });
 

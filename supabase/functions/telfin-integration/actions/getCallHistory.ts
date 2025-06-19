@@ -29,6 +29,7 @@ export async function handleGetCallHistory(body: TelfinRequest): Promise<Respons
   console.log('- dateFrom:', dateFrom);
   console.log('- dateTo:', dateTo);
   console.log('- telfinClientId:', telfinClientId);
+  console.log('- telfinClientId type:', typeof telfinClientId);
   
   // Валидация входящих параметров
   if (!accessToken) {
@@ -70,6 +71,31 @@ export async function handleGetCallHistory(body: TelfinRequest): Promise<Respons
     });
   }
 
+  // Преобразуем telfinClientId в строку и проверяем корректность
+  const clientIdString = String(telfinClientId).trim();
+  console.log('Client ID processing:');
+  console.log('- Original:', telfinClientId);
+  console.log('- Type:', typeof telfinClientId);
+  console.log('- Converted to string:', clientIdString);
+  console.log('- String length:', clientIdString.length);
+  
+  if (!clientIdString || clientIdString === 'undefined' || clientIdString === 'null') {
+    const error = '[TELFIN-API-005] Invalid telfinClientId value';
+    console.error('VALIDATION ERROR:', error);
+    return new Response(JSON.stringify({
+      success: false,
+      error,
+      diagnostics: { 
+        invalidClientId: telfinClientId,
+        convertedValue: clientIdString,
+        recommendation: 'Check user info retrieval - client_id should be a valid number or string'
+      }
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 400
+    });
+  }
+
   // Параметры для GET запроса
   const params: CallHistoryParams = {
     date_from: dateFrom,
@@ -88,9 +114,42 @@ export async function handleGetCallHistory(body: TelfinRequest): Promise<Respons
     attemptCount++;
     console.log(`\n=== ATTEMPT ${attemptCount}/${CALL_HISTORY_ENDPOINTS.length} ===`);
     
-    // Заменяем {client_id} на реальный client_id
-    const path = pathTemplate.replace('{client_id}', telfinClientId);
-    console.log('Using path:', path);
+    // Заменяем {client_id} на реальный client_id и проверяем успешность замены
+    const path = pathTemplate.replace('{client_id}', clientIdString);
+    console.log('Path template:', pathTemplate);
+    console.log('Client ID for replacement:', clientIdString);
+    console.log('Resulting path:', path);
+    
+    // Проверяем, что замена прошла успешно
+    if (path === pathTemplate) {
+      console.error('WARNING: client_id replacement failed - path unchanged');
+      const error = `[TELFIN-API-005] Failed to replace {client_id} in path template: ${pathTemplate}`;
+      diagnosticInfo.push({
+        attempt: attemptCount,
+        endpoint: pathTemplate,
+        error: 'client_id replacement failed',
+        clientIdUsed: clientIdString,
+        pathResult: path,
+        timestamp: new Date().toISOString(),
+      });
+      lastError = error;
+      continue;
+    }
+    
+    if (path.includes('{client_id}')) {
+      console.error('WARNING: {client_id} placeholder still present after replacement');
+      const error = `[TELFIN-API-005] Incomplete client_id replacement in path: ${path}`;
+      diagnosticInfo.push({
+        attempt: attemptCount,
+        endpoint: pathTemplate,
+        error: 'incomplete client_id replacement',
+        clientIdUsed: clientIdString,
+        pathResult: path,
+        timestamp: new Date().toISOString(),
+      });
+      lastError = error;
+      continue;
+    }
     
     const urlParams = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {
@@ -128,7 +187,10 @@ export async function handleGetCallHistory(body: TelfinRequest): Promise<Respons
         method: 'GET',
         status: response.status,
         url: url,
-        clientId: telfinClientId,
+        clientId: clientIdString,
+        clientIdOriginal: telfinClientId,
+        pathTemplate: pathTemplate,
+        replacementSuccess: true,
         timestamp: new Date().toISOString(),
       };
 
@@ -208,7 +270,7 @@ export async function handleGetCallHistory(body: TelfinRequest): Promise<Respons
           success: true, 
           method: 'GET',
           endpoint: path, 
-          clientId: telfinClientId,
+          clientId: clientIdString,
           recordsCount,
           data: responseData,
           diagnostics: diagnosticInfo,
@@ -237,7 +299,9 @@ export async function handleGetCallHistory(body: TelfinRequest): Promise<Respons
         endpoint: path,
         method: 'GET',
         networkError: errorMessage,
-        clientId: telfinClientId,
+        clientId: clientIdString,
+        clientIdOriginal: telfinClientId,
+        pathTemplate: pathTemplate,
         timestamp: new Date().toISOString(),
       });
       
@@ -254,11 +318,15 @@ export async function handleGetCallHistory(body: TelfinRequest): Promise<Respons
   const authIssues = diagnosticInfo.filter(d => d.authIssue || d.status === 401 || d.status === 403);
   const notFoundIssues = diagnosticInfo.filter(d => d.status === 404);
   const serverErrors = diagnosticInfo.filter(d => d.status >= 500);
+  const replacementIssues = diagnosticInfo.filter(d => d.error && (d.error.includes('replacement failed') || d.error.includes('incomplete')));
   
   let recommendedAction = '';
   let errorCategory = 'unknown';
   
-  if (authIssues.length > 0) {
+  if (replacementIssues.length > 0) {
+    errorCategory = 'client_id_replacement';
+    recommendedAction = 'Проблема с заменой {client_id} в URL. Проверьте корректность передачи client_id из getUserInfo().';
+  } else if (authIssues.length > 0) {
     errorCategory = 'authentication';
     recommendedAction = 'Проверьте права доступа приложения. Возможно, требуется уровень доступа "All" вместо "Call API". Также проверьте, не истек ли токен доступа.';
   } else if (notFoundIssues.length === diagnosticInfo.length) {
@@ -280,7 +348,9 @@ export async function handleGetCallHistory(body: TelfinRequest): Promise<Respons
       error: `[TELFIN-API-005] ${lastError || 'Не удалось получить историю звонков ни по одному из endpoint\'ов.'}`,
       errorCategory,
       diagnostics: {
-        clientId: telfinClientId,
+        clientId: clientIdString,
+        clientIdOriginal: telfinClientId,
+        clientIdType: typeof telfinClientId,
         totalEndpointsTried: CALL_HISTORY_ENDPOINTS.length,
         detailedResults: diagnosticInfo,
         recommendedAction,
@@ -289,6 +359,7 @@ export async function handleGetCallHistory(body: TelfinRequest): Promise<Respons
           notFoundIssuesFound: notFoundIssues.length,
           serverErrorsFound: serverErrors.length,
           networkErrorsFound: diagnosticInfo.filter(d => d.networkError).length,
+          replacementIssuesFound: replacementIssues.length,
         },
         apiExplorerUrl: `https://${API_HOST}/api/ver1.0/client_api_explorer/`,
         supportInfo: {
@@ -296,6 +367,7 @@ export async function handleGetCallHistory(body: TelfinRequest): Promise<Respons
             'Неправильный client_id',
             'Недостаточные права доступа приложения', 
             'Истекший или неверный токен авторизации',
+            'Ошибка замены {client_id} в URL',
             'Неверные параметры запроса',
             'Проблемы с сервером Telfin API'
           ]
