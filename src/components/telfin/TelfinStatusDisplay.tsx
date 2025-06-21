@@ -1,9 +1,11 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { TestTube, Plug, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
-import { TelfinClientInfo } from '@/services/telfinOAuthApi';
+import { TelfinClientInfo, TelfinClientCredentialsAPI } from '@/services/telfinOAuthApi';
 import { TelfinApiDiagnostics } from './TelfinApiDiagnostics';
+import { TelfinTokenDiagnostics } from './TelfinTokenDiagnostics';
 
 interface TelfinStatusDisplayProps {
   isAuthorized: boolean;
@@ -14,6 +16,8 @@ interface TelfinStatusDisplayProps {
   handleLogout: () => void;
   handleSyncCallHistory: () => void;
   isAdmin: boolean;
+  apiInstance?: TelfinClientCredentialsAPI | null;
+  onTokenRefresh?: () => void;
 }
 
 export const TelfinStatusDisplay: React.FC<TelfinStatusDisplayProps> = ({
@@ -25,6 +29,8 @@ export const TelfinStatusDisplay: React.FC<TelfinStatusDisplayProps> = ({
   handleLogout,
   handleSyncCallHistory,
   isAdmin,
+  apiInstance,
+  onTokenRefresh,
 }) => {
   return (
     <div className="space-y-4 pt-4">
@@ -54,6 +60,14 @@ export const TelfinStatusDisplay: React.FC<TelfinStatusDisplayProps> = ({
             <p><strong>Часовой пояс:</strong> {userInfo.timezone}</p>
           </div>
         </div>
+      )}
+
+      {/* Добавляем диагностику токена */}
+      {isAuthorized && apiInstance && (
+        <TelfinTokenDiagnostics 
+          apiInstance={apiInstance}
+          onTokenRefresh={onTokenRefresh}
+        />
       )}
 
       <div className="flex flex-wrap gap-2">
@@ -91,7 +105,7 @@ export const TelfinStatusDisplay: React.FC<TelfinStatusDisplayProps> = ({
         </p>
       )}
 
-      {/* Добавляем компонент диагностики с userInfo */}
+      {/* Существующий компонент диагностики API */}
       {isAuthorized && (
         <TelfinApiDiagnostics 
           accessToken={userInfo ? 'token-available' : null} 

@@ -42,6 +42,7 @@ export const useTelfin = () => {
     setConfig: setLocalConfig,
     isAuthorized,
     userInfo,
+    apiInstance, // Добавляем apiInstance в возвращаемые значения
     isLoading: isLoadingConnection || isSavingConnection || isConnecting || isSyncing,
     handleSaveConfig,
     handleConnect,

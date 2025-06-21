@@ -26,6 +26,11 @@ export const TelfinOAuthSettings = () => {
     );
   }
 
+  const handleTokenRefresh = () => {
+    // Можно добавить дополнительную логику при обновлении токена
+    console.log('Token refreshed successfully');
+  };
+
   return (
     <>
       <Tabs defaultValue="config" className="w-full">
@@ -54,6 +59,8 @@ export const TelfinOAuthSettings = () => {
             handleLogout={telfin.handleLogout}
             handleSyncCallHistory={telfin.handleSyncCallHistory}
             isAdmin={isAdmin}
+            apiInstance={telfin.apiInstance}
+            onTokenRefresh={handleTokenRefresh}
           />
         </TabsContent>
 

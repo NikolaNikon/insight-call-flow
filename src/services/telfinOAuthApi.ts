@@ -65,6 +65,9 @@ export class TelfinClientCredentialsAPI {
       this.accessToken = tokenData.access_token;
       this.tokenExpiry = Date.now() + (tokenData.expires_in * 1000);
       
+      console.log('Token successfully obtained. Expires in:', tokenData.expires_in, 'seconds');
+      console.log('Token expiry time:', new Date(this.tokenExpiry).toISOString());
+      
       return tokenData;
     } catch (error: any) {
       console.error('Error getting access token:', error);
@@ -77,11 +80,32 @@ export class TelfinClientCredentialsAPI {
    * Проверка валидности токена и обновление при необходимости
    */
   private async ensureValidToken(): Promise<void> {
-    // Проверяем токен с запасом в 1 минуту
-    if (!this.accessToken || !this.tokenExpiry || Date.now() > (this.tokenExpiry - 60000)) {
-      console.log('Токен недействителен или истекает, запрашиваем новый.');
-      await this.getAccessToken();
+    const now = Date.now();
+    const timeBuffer = 5 * 60 * 1000; // Увеличиваем запас времени до 5 минут
+    
+    console.log('Token validation check:', {
+      hasToken: !!this.accessToken,
+      tokenExpiry: this.tokenExpiry ? new Date(this.tokenExpiry).toISOString() : null,
+      currentTime: new Date(now).toISOString(),
+      timeUntilExpiry: this.tokenExpiry ? Math.round((this.tokenExpiry - now) / 1000) : null,
+      needsRefresh: !this.accessToken || !this.tokenExpiry || now > (this.tokenExpiry - timeBuffer)
+    });
+
+    // Проверяем токен с увеличенным запасом в 5 минут
+    if (!this.accessToken || !this.tokenExpiry || now > (this.tokenExpiry - timeBuffer)) {
+      console.log('Token is invalid or expiring soon, requesting new token...');
+      
+      try {
+        await this.getAccessToken();
+        console.log('Token successfully refreshed');
+      } catch (error) {
+        console.error('Failed to refresh token:', error);
+        throw error;
+      }
+    } else {
+      console.log('Token is still valid for', Math.round((this.tokenExpiry - now) / 1000), 'seconds');
     }
+    
     if (!this.accessToken) {
       throw new Error('[TELFIN-API-002] Не удалось получить действительный токен доступа.');
     }
@@ -125,9 +149,9 @@ export class TelfinClientCredentialsAPI {
   }
 
   /**
-   * Получение истории звонков через Edge Function
+   * Получение истории звонков через Edge Function с автоматическим retry при ошибках авторизации
    */
-  async getCallHistory(dateFrom: string, dateTo: string, clientInfo?: TelfinClientInfo): Promise<any[]> {
+  async getCallHistory(dateFrom: string, dateTo: string, clientInfo?: TelfinClientInfo, retryCount = 0): Promise<any[]> {
     await this.ensureValidToken();
     
     // Преобразуем client_id в строку и добавляем валидацию
@@ -138,7 +162,8 @@ export class TelfinClientCredentialsAPI {
       dateTo,
       clientId: telfinClientId,
       clientIdType: typeof telfinClientId,
-      hasAccessToken: !!this.accessToken
+      hasAccessToken: !!this.accessToken,
+      retryAttempt: retryCount
     });
     
     if (!telfinClientId) {
@@ -152,7 +177,7 @@ export class TelfinClientCredentialsAPI {
           accessToken: this.accessToken,
           dateFrom,
           dateTo,
-          telfinClientId, // Передаем уже проверенный и преобразованный в строку client_id
+          telfinClientId,
         },
       });
 
@@ -163,10 +188,29 @@ export class TelfinClientCredentialsAPI {
       
       if (!data.success) {
         console.error('Function returned error:', data.error);
+        
+        // Проверяем, является ли это ошибкой авторизации
+        const errorMessage = data.error || '';
+        const isAuthError = errorMessage.includes('401') || errorMessage.includes('403') || 
+                           errorMessage.includes('unauthorized') || errorMessage.includes('forbidden') ||
+                           data.errorCategory === 'authentication';
+        
+        if (isAuthError && retryCount < 2) {
+          console.log('Authorization error detected, forcing token refresh and retrying...');
+          
+          // Принудительно очищаем токен и получаем новый
+          this.accessToken = null;
+          this.tokenExpiry = null;
+          
+          await this.ensureValidToken();
+          
+          // Retry запрос с новым токеном
+          return this.getCallHistory(dateFrom, dateTo, clientInfo, retryCount + 1);
+        }
+        
         // Передаем диагностическую информацию если есть
         if (data.diagnostics) {
           console.error('Diagnostics:', data.diagnostics);
-          // Формируем более детальное сообщение об ошибке
           let detailedError = data.error;
           if (data.errorCategory) {
             detailedError += ` (Категория: ${data.errorCategory})`;
@@ -210,16 +254,40 @@ export class TelfinClientCredentialsAPI {
   clearTokens(): void {
     this.accessToken = null;
     this.tokenExpiry = null;
+    console.log('Tokens cleared');
   }
 
   hasValidToken(): boolean {
-    return !!(this.accessToken && this.tokenExpiry && Date.now() < this.tokenExpiry);
+    const now = Date.now();
+    const timeBuffer = 5 * 60 * 1000; // 5 минут запас
+    const isValid = !!(this.accessToken && this.tokenExpiry && now < (this.tokenExpiry - timeBuffer));
+    
+    console.log('Token validity check:', {
+      hasToken: !!this.accessToken,
+      tokenExpiry: this.tokenExpiry ? new Date(this.tokenExpiry).toISOString() : null,
+      currentTime: new Date(now).toISOString(),
+      isValid
+    });
+    
+    return isValid;
   }
 
   getTokens() {
     return {
       accessToken: this.accessToken,
       tokenExpiry: this.tokenExpiry,
+    };
+  }
+
+  // Новый метод для диагностики токена
+  getTokenDiagnostics() {
+    const now = Date.now();
+    return {
+      hasToken: !!this.accessToken,
+      tokenExpiry: this.tokenExpiry ? new Date(this.tokenExpiry).toISOString() : null,
+      currentTime: new Date(now).toISOString(),
+      timeUntilExpiry: this.tokenExpiry ? Math.round((this.tokenExpiry - now) / 1000) : null,
+      isValid: this.hasValidToken(),
     };
   }
 }
