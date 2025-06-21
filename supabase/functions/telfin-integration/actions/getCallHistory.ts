@@ -10,8 +10,8 @@ const CALL_HISTORY_ENDPOINTS: string[] = [
 ];
 
 interface CallHistoryParams {
-  date_from?: string;
-  date_to?: string;
+  start_datetime?: string;
+  end_datetime?: string;
   limit?: number;
   offset?: number;
 }
@@ -101,14 +101,22 @@ export async function handleGetCallHistory(body: TelfinRequest): Promise<Respons
     });
   }
 
-  // Параметры для GET запроса
+  // Конвертируем даты в правильный формат для API Telfin
+  // API ожидает формат ISO 8601 datetime: YYYY-MM-DDTHH:MM:SS
+  const startDateTime = `${dateFrom}T00:00:00`;
+  const endDateTime = `${dateTo}T23:59:59`;
+
+  // Параметры для GET запроса с правильными названиями
   const params: CallHistoryParams = {
-    date_from: dateFrom,
-    date_to: dateTo,
+    start_datetime: startDateTime,
+    end_datetime: endDateTime,
     limit: 1000,
   };
 
   console.log('Request parameters:', params);
+  console.log('Formatted datetime parameters:');
+  console.log('- start_datetime:', startDateTime);
+  console.log('- end_datetime:', endDateTime);
 
   let lastError: string = '';
   let diagnosticInfo: any[] = [];
@@ -319,6 +327,7 @@ export async function handleGetCallHistory(body: TelfinRequest): Promise<Respons
   const authIssues = diagnosticInfo.filter(d => d.authIssue || d.status === 401 || d.status === 403);
   const notFoundIssues = diagnosticInfo.filter(d => d.status === 404);
   const serverErrors = diagnosticInfo.filter(d => d.status >= 500);
+  const parameterIssues = diagnosticInfo.filter(d => d.status === 400);
   const replacementIssues = diagnosticInfo.filter(d => d.error && (d.error.includes('replacement failed') || d.error.includes('incomplete')));
   
   let recommendedAction = '';
@@ -328,6 +337,10 @@ export async function handleGetCallHistory(body: TelfinRequest): Promise<Respons
     errorCategory = 'authentication';
     recommendedAction = 'Токен доступа истёк или недействителен. Система автоматически попытается обновить токен при следующем запросе.';
     lastError = '[TELFIN-AUTH-ERROR] ' + (lastError.includes('[TELFIN-AUTH-ERROR]') ? lastError.replace('[TELFIN-AUTH-ERROR] ', '') : 'Проблема с авторизацией. Токен доступа требует обновления.');
+  } else if (parameterIssues.length > 0) {
+    errorCategory = 'parameters';
+    recommendedAction = 'Обновлен формат параметров datetime для соответствия API Telfin. Попробуйте синхронизацию снова.';
+    lastError = '[TELFIN-PARAMETER-ERROR] Исправлены параметры datetime для API Telfin. Теперь используются start_datetime и end_datetime в формате ISO.';
   } else if (replacementIssues.length > 0) {
     errorCategory = 'client_id_replacement';
     recommendedAction = 'Проблема с заменой {client_id} в URL. Проверьте корректность передачи client_id из getUserInfo().';
@@ -354,6 +367,10 @@ export async function handleGetCallHistory(body: TelfinRequest): Promise<Respons
         clientId: clientIdString,
         clientIdOriginal: telfinClientId,
         clientIdType: typeof telfinClientId,
+        datetimeFormat: {
+          original: { dateFrom, dateTo },
+          converted: { start_datetime: `${dateFrom}T00:00:00`, end_datetime: `${dateTo}T23:59:59` }
+        },
         totalEndpointsTried: CALL_HISTORY_ENDPOINTS.length,
         detailedResults: diagnosticInfo,
         recommendedAction,
@@ -361,17 +378,18 @@ export async function handleGetCallHistory(body: TelfinRequest): Promise<Respons
           authIssuesFound: authIssues.length,
           notFoundIssuesFound: notFoundIssues.length,
           serverErrorsFound: serverErrors.length,
+          parameterIssuesFound: parameterIssues.length,
           networkErrorsFound: diagnosticInfo.filter(d => d.networkError).length,
           replacementIssuesFound: replacementIssues.length,
         },
         apiExplorerUrl: `https://${API_HOST}/api/ver1.0/client_api_explorer/`,
         supportInfo: {
           possibleCauses: [
+            'Неправильные параметры datetime (исправлено)',
             'Истёкший или неверный токен авторизации',
             'Недостаточные права доступа приложения', 
             'Неправильный client_id',
             'Ошибка замены {client_id} в URL',
-            'Неверные параметры запроса',
             'Проблемы с сервером Telfin API'
           ]
         }
