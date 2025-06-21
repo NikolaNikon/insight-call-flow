@@ -1,4 +1,5 @@
 
+
 import { API_HOST, corsHeaders } from '../utils.ts';
 import { TelfinRequest } from '../types.ts';
 
@@ -102,9 +103,9 @@ export async function handleGetCallHistory(body: TelfinRequest): Promise<Respons
   }
 
   // Конвертируем даты в правильный формат для API Telfin
-  // API ожидает формат ISO 8601 datetime: YYYY-MM-DDTHH:MM:SS
-  const startDateTime = `${dateFrom}T00:00:00`;
-  const endDateTime = `${dateTo}T23:59:59`;
+  // API ожидает формат: YYYY-MM-DD HH:MM:SS (с пробелом, а не с буквой T)
+  const startDateTime = `${dateFrom} 00:00:00`;
+  const endDateTime = `${dateTo} 23:59:59`;
 
   // Параметры для GET запроса с правильными названиями
   const params: CallHistoryParams = {
@@ -114,7 +115,7 @@ export async function handleGetCallHistory(body: TelfinRequest): Promise<Respons
   };
 
   console.log('Request parameters:', params);
-  console.log('Formatted datetime parameters:');
+  console.log('Formatted datetime parameters (corrected format):');
   console.log('- start_datetime:', startDateTime);
   console.log('- end_datetime:', endDateTime);
 
@@ -339,8 +340,8 @@ export async function handleGetCallHistory(body: TelfinRequest): Promise<Respons
     lastError = '[TELFIN-AUTH-ERROR] ' + (lastError.includes('[TELFIN-AUTH-ERROR]') ? lastError.replace('[TELFIN-AUTH-ERROR] ', '') : 'Проблема с авторизацией. Токен доступа требует обновления.');
   } else if (parameterIssues.length > 0) {
     errorCategory = 'parameters';
-    recommendedAction = 'Обновлен формат параметров datetime для соответствия API Telfin. Попробуйте синхронизацию снова.';
-    lastError = '[TELFIN-PARAMETER-ERROR] Исправлены параметры datetime для API Telfin. Теперь используются start_datetime и end_datetime в формате ISO.';
+    recommendedAction = 'Исправлен формат datetime параметров - теперь используется пробел вместо буквы T. Попробуйте синхронизацию снова.';
+    lastError = '[TELFIN-PARAMETER-FIXED] Формат datetime исправлен с ISO на требуемый API формат (пробел вместо T).';
   } else if (replacementIssues.length > 0) {
     errorCategory = 'client_id_replacement';
     recommendedAction = 'Проблема с заменой {client_id} в URL. Проверьте корректность передачи client_id из getUserInfo().';
@@ -369,7 +370,8 @@ export async function handleGetCallHistory(body: TelfinRequest): Promise<Respons
         clientIdType: typeof telfinClientId,
         datetimeFormat: {
           original: { dateFrom, dateTo },
-          converted: { start_datetime: `${dateFrom}T00:00:00`, end_datetime: `${dateTo}T23:59:59` }
+          corrected: { start_datetime: `${dateFrom} 00:00:00`, end_datetime: `${dateTo} 23:59:59` },
+          note: 'Изменен формат с ISO (T) на API формат (пробел)'
         },
         totalEndpointsTried: CALL_HISTORY_ENDPOINTS.length,
         detailedResults: diagnosticInfo,
@@ -385,7 +387,7 @@ export async function handleGetCallHistory(body: TelfinRequest): Promise<Respons
         apiExplorerUrl: `https://${API_HOST}/api/ver1.0/client_api_explorer/`,
         supportInfo: {
           possibleCauses: [
-            'Неправильные параметры datetime (исправлено)',
+            'Неправильный формат datetime (исправлено: пробел вместо T)',
             'Истёкший или неверный токен авторизации',
             'Недостаточные права доступа приложения', 
             'Неправильный client_id',
@@ -401,3 +403,4 @@ export async function handleGetCallHistory(body: TelfinRequest): Promise<Respons
     }
   );
 }
+
